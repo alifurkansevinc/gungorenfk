@@ -70,7 +70,12 @@ export function KayitFormu({ cities }: Props) {
       const supabase = createClient();
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({ email, password });
       if (signUpError) {
-        setError(signUpError.message);
+        const msg = signUpError.message.toLowerCase();
+        if (msg.includes("rate limit") || msg.includes("email rate limit")) {
+          setError("E-posta limiti aşıldı. Lütfen bir süre sonra (örn. 1 saat) tekrar deneyin.");
+        } else {
+          setError(signUpError.message);
+        }
         setLoading(false);
         return;
       }

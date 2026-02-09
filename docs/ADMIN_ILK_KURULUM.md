@@ -68,6 +68,13 @@ VALUES ('BURAYA_USER_UUID_YAPIŞTIR');
 
 ---
 
+## E-posta limiti (Email rate limit)
+
+Kayıt formunda "email rate limit exceeded" hatası alınıyorsa Supabase ücretsiz planda e-posta gönderim limiti aşılmıştır. Seçenekler:
+
+- **Bekleyin:** Limit genelde 1 saat içinde sıfırlanır.
+- **E-posta onayını kapatın:** Supabase Dashboard → **Authentication** → **Providers** → **Email** → **Confirm email** kapalı olsun. Böylece kayıtta onay e-postası gönderilmez ve limit daha az zorlanır. (Kullanıcılar şifreyle doğrudan giriş yapar.)
+
 ## Logo (opsiyonel)
 
 - Güngören FK logosunu **`public/logo.png`** olarak projeye ekleyin.  
