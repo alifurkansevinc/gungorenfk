@@ -79,7 +79,7 @@ export function KayitFormu({ cities }: Props) {
         setLoading(false);
         return;
       }
-      const profileResult = await createFanProfileAfterSignup({
+      const profilePayload = {
         first_name,
         last_name,
         memleket_city_id,
@@ -88,7 +88,17 @@ export function KayitFormu({ cities }: Props) {
         residence_neighbourhood_id,
         birth_year,
         email,
-      });
+      };
+      // Session cookie sunucuya hemen gitmeyebiliyor; önce bekle, gerekirse bir kez daha dene
+      const tryCreateProfile = async (): Promise<{ error?: string }> => {
+        await new Promise((r) => setTimeout(r, 600));
+        return createFanProfileAfterSignup(profilePayload);
+      };
+      let profileResult = await tryCreateProfile();
+      if (profileResult.error && profileResult.error.includes("Oturum bulunamadı")) {
+        await new Promise((r) => setTimeout(r, 1000));
+        profileResult = await createFanProfileAfterSignup(profilePayload);
+      }
       if (profileResult.error) {
         setError(profileResult.error);
         setLoading(false);
