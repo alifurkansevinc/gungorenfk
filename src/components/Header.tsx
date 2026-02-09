@@ -5,6 +5,8 @@ import Image from "next/image";
 import { useState } from "react";
 
 const navLinks = [
+  { href: "/kulup", label: "Kulüp" },
+  { href: "/kulup/yonetim-kurulu", label: "Yönetim Kurulu" },
   { href: "/maclar", label: "Maçlar" },
   { href: "/kadro", label: "Kadro" },
   { href: "/haberler", label: "Gelişmeler" },

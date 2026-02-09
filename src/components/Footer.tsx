@@ -21,7 +21,8 @@ const columns = [
     title: "Kulüp",
     links: [
       { href: "/", label: "Anasayfa" },
-      { href: "/haberler", label: "Gelişmeler" },
+      { href: "/kulup", label: "Kulüp" },
+      { href: "/kulup/yonetim-kurulu", label: "Yönetim Kurulu" },
     ],
   },
 ];

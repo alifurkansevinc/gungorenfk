@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getMatches, getLatestNews, getFeaturedProducts } from "@/lib/data";
 import { AnadoluTemsilcisi } from "@/components/AnadoluTemsilcisi";
+import { TaraftarBarStrip } from "@/components/TaraftarBarStrip";
 import { FadeInSection } from "@/components/FadeInSection";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 
@@ -59,6 +60,34 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      {/* Taraftar sayacı — hero'dan hemen sonra, her zaman görünsün */}
+      <TaraftarBarStrip />
+
+      {/* Kulüp — anasayfa önceliği: maçlardan önce kulüp tanıtımı */}
+      <FadeInSection>
+        <section className="border-y border-siyah/10 bg-beyaz py-14 sm:py-20">
+          <div className="mx-auto max-w-7xl px-6">
+            <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-siyah/50">Kulüp</p>
+            <h2 className="font-display mt-1 text-2xl font-bold text-siyah">Güngören Belediye Spor Kulübü</h2>
+            <p className="mt-4 max-w-2xl text-siyah/80">
+              İstanbul Güngören&apos;in resmi futbol kulübü. Bölgesel Amatör Lig&apos;de mücadele ediyoruz; 
+              taraftar ailesi ve bölge sporuna güç katıyoruz.
+            </p>
+            <div className="mt-6 flex flex-wrap gap-4">
+              <Link href="/kulup" className="inline-flex rounded-full bg-bordo px-6 py-3 text-sm font-bold text-beyaz hover:bg-bordo-dark transition-colors">
+                Kulüp sayfası
+              </Link>
+              <Link href="/kulup/yonetim-kurulu" className="inline-flex rounded-full border-2 border-siyah/20 px-6 py-3 text-sm font-bold text-siyah hover:bg-siyah/5 transition-colors">
+                Yönetim Kurulu
+              </Link>
+            </div>
+          </div>
+        </section>
+      </FadeInSection>
+
+      {/* Taraftar bar (1000 Taraftar 1 Bayrak) — detaylı bölüm */}
+      <AnadoluTemsilcisi />
 
       {/* Öne çıkan kartlar */}
       <FadeInSection>
@@ -157,8 +186,6 @@ export default async function Home() {
         </div>
       </section>
       </FadeInSection>
-
-      <AnadoluTemsilcisi />
 
       {news.length > 0 && (
         <FadeInSection>

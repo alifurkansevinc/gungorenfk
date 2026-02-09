@@ -14,7 +14,7 @@ export async function AnadoluTemsilcisi() {
 
   return (
     <FadeInSection>
-      <section className="relative overflow-hidden border-y border-bordo/20 bg-gradient-to-b from-siyah via-siyah to-bordo/30 py-16 sm:py-24 text-beyaz">
+      <section id="taraftar-bar" className="relative overflow-hidden border-y border-bordo/20 bg-gradient-to-b from-siyah via-siyah to-bordo/30 py-16 sm:py-24 text-beyaz">
         {/* Arka plan deseni */}
         <div className="absolute inset-0 opacity-[0.07]">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,_var(--bordo)_0%,_transparent_50%)]" />
