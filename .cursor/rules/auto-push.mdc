@@ -1,0 +1,14 @@
+---
+description: Otomatik push — değişikliklerden sonra sormadan commit ve push yap
+alwaysApply: true
+---
+
+# Otomatik push
+
+Bu projede (Güngören FK) yapılan kod değişiklikleri tamamlandığında:
+
+1. **Sorma**: Kullanıcıya "Push yapayım mı?" diye sorma.
+2. **Otomatik yap**: `git add -A`, anlamlı bir commit mesajı ile `git commit`, ardından `git push` çalıştır.
+3. Commit mesajı: Yapılan değişiklikleri kısaca Türkçe özetleyen bir satır (örn. "Header'a Kulüp menüsü eklendi", "Taraftar bar şeridi düzeltmesi").
+
+Değişiklik yoksa veya kullanıcı özellikle "pushlama" derse push atma.
