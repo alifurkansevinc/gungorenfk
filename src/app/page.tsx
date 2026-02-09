@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { getMatches, getLatestNews, getFeaturedProducts } from "@/lib/data";
 import { AnadoluTemsilcisi } from "@/components/AnadoluTemsilcisi";
+import { FadeInSection } from "@/components/FadeInSection";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 
 export default async function Home() {
@@ -20,9 +21,9 @@ export default async function Home() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#fafafa]">
-      {/* Hero: tam ekran hissi, güçlü overlay */}
-      <section className="relative min-h-[85vh] flex items-center justify-center bg-siyah text-beyaz">
+    <div className="min-h-screen bg-[#f8f8f8]">
+      {/* Hero */}
+      <section className="relative min-h-[85vh] flex items-center justify-center bg-siyah text-beyaz overflow-hidden">
         <Image
           src={DEMO_IMAGES.hero}
           alt=""
@@ -31,25 +32,27 @@ export default async function Home() {
           priority
           sizes="100vw"
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-siyah/70 via-siyah/50 to-siyah/90" />
+        <div className="absolute inset-0 bg-gradient-to-b from-siyah/75 via-siyah/50 to-siyah/85" />
         <div className="relative z-10 mx-auto max-w-5xl px-6 text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-beyaz/70">Güngören Belediye Spor Kulübü</p>
-          <h1 className="mt-4 text-5xl font-extrabold tracking-tight drop-shadow-lg sm:text-6xl md:text-7xl lg:text-8xl">
+          <p className="font-display text-xs font-semibold uppercase tracking-[0.4em] text-beyaz/80 animate-fade-in-up">
+            Güngören Belediye Spor Kulübü
+          </p>
+          <h1 className="font-display mt-5 text-5xl font-bold tracking-tight drop-shadow-2xl sm:text-6xl md:text-7xl lg:text-8xl animate-fade-in-up animate-delay-100">
             Güngören FK
           </h1>
-          <p className="mt-6 max-w-md mx-auto text-lg text-beyaz/90 font-light">
+          <p className="mt-6 max-w-md mx-auto text-lg text-beyaz/90 font-light animate-fade-in-up animate-delay-200">
             Güngören&apos;in takımı. Maçlar, gelişmeler ve taraftar ailesi.
           </p>
-          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-4 animate-fade-in-up animate-delay-400">
             <Link
               href="/taraftar/kayit"
-              className="inline-flex items-center rounded-full bg-beyaz px-8 py-4 text-sm font-bold text-bordo shadow-xl transition hover:bg-white/95 hover:scale-[1.02]"
+              className="inline-flex items-center rounded-full bg-beyaz px-8 py-4 text-sm font-bold text-bordo shadow-xl transition-all duration-300 hover:bg-white hover:scale-105 btn-glow"
             >
               Taraftar Ol
             </Link>
             <Link
               href="/maclar"
-              className="inline-flex items-center rounded-full border-2 border-beyaz px-8 py-4 text-sm font-bold text-beyaz transition hover:bg-beyaz/10"
+              className="inline-flex items-center rounded-full border-2 border-beyaz px-8 py-4 text-sm font-bold text-beyaz transition-all duration-300 hover:bg-beyaz/15 hover:scale-105"
             >
               Maçlar
             </Link>
@@ -57,26 +60,27 @@ export default async function Home() {
         </div>
       </section>
 
-      {/* Öne çıkan: 1 büyük + 3 küçük kart, gölge ve yuvarlak köşe */}
+      {/* Öne çıkan kartlar */}
+      <FadeInSection>
       <section className="py-16 sm:py-20">
         <div className="mx-auto max-w-7xl px-6">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-siyah/50">Öne çıkan</p>
-          <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <p className="font-display text-xs font-semibold uppercase tracking-[0.25em] text-siyah/50">Öne çıkan</p>
+          <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             <Link
               href={nextMatch ? `/maclar/${nextMatch.id}` : "/maclar"}
-              className="group relative overflow-hidden rounded-2xl bg-siyah shadow-xl lg:col-span-2 lg:row-span-2 min-h-[280px]"
+              className="group relative overflow-hidden rounded-2xl bg-siyah shadow-xl card-hover lg:col-span-2 lg:row-span-2 min-h-[280px]"
             >
               <Image
                 src={DEMO_IMAGES.match}
                 alt=""
                 fill
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                 sizes="(max-width: 1024px) 100vw, 50vw"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-siyah/95 via-siyah/40 to-transparent" />
               <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8">
                 <span className="text-xs font-semibold uppercase tracking-wider text-bordo">Sonraki maç</span>
-                <span className="mt-2 text-xl font-bold text-beyaz sm:text-2xl">
+                <span className="font-display mt-2 text-xl font-bold text-beyaz sm:text-2xl">
                   {nextMatch ? nextMatch.opponent_name : "Maçlar"}
                 </span>
                 {nextMatch?.match_date && (
@@ -84,48 +88,49 @@ export default async function Home() {
                 )}
               </div>
             </Link>
-            <Link href="/haberler" className="group relative overflow-hidden rounded-2xl bg-siyah shadow-lg min-h-[180px]">
-              <Image src={DEMO_IMAGES.news} alt="" fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="25vw" />
+            <Link href="/haberler" className="group relative overflow-hidden rounded-2xl bg-siyah shadow-lg card-hover min-h-[180px]">
+              <Image src={DEMO_IMAGES.news} alt="" fill className="object-cover transition-transform duration-700 ease-out group-hover:scale-110" sizes="25vw" />
               <div className="absolute inset-0 bg-gradient-to-t from-siyah/90 to-transparent" />
               <div className="absolute inset-0 flex flex-col justify-end p-5">
                 <span className="text-xs font-semibold uppercase tracking-wider text-beyaz/70">Gelişmeler</span>
-                <span className="mt-1 font-bold text-beyaz">Tümü →</span>
+                <span className="font-display mt-1 text-lg font-bold text-beyaz">Tümü →</span>
               </div>
             </Link>
-            <Link href="/kadro" className="group relative overflow-hidden rounded-2xl bg-siyah shadow-lg min-h-[180px]">
-              <Image src={DEMO_IMAGES.team} alt="" fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="25vw" />
+            <Link href="/kadro" className="group relative overflow-hidden rounded-2xl bg-siyah shadow-lg card-hover min-h-[180px]">
+              <Image src={DEMO_IMAGES.team} alt="" fill className="object-cover transition-transform duration-700 ease-out group-hover:scale-110" sizes="25vw" />
               <div className="absolute inset-0 bg-gradient-to-t from-siyah/90 to-transparent" />
               <div className="absolute inset-0 flex flex-col justify-end p-5">
                 <span className="text-xs font-semibold uppercase tracking-wider text-beyaz/70">Kadro</span>
-                <span className="mt-1 font-bold text-beyaz">Takım →</span>
+                <span className="font-display mt-1 text-lg font-bold text-beyaz">Takım →</span>
               </div>
             </Link>
-            <Link href="/taraftar/kayit" className="group relative overflow-hidden rounded-2xl bg-bordo shadow-lg min-h-[180px]">
-              <Image src={DEMO_IMAGES.taraftar} alt="" fill className="object-cover opacity-40 transition-transform duration-500 group-hover:scale-105" sizes="25vw" />
+            <Link href="/taraftar/kayit" className="group relative overflow-hidden rounded-2xl bg-bordo shadow-lg card-hover min-h-[180px]">
+              <Image src={DEMO_IMAGES.taraftar} alt="" fill className="object-cover opacity-40 transition-transform duration-700 ease-out group-hover:scale-110" sizes="25vw" />
               <div className="absolute inset-0 bg-bordo/80" />
               <div className="absolute inset-0 flex flex-col justify-end p-5">
                 <span className="text-xs font-semibold uppercase tracking-wider text-beyaz/90">Taraftar</span>
-                <span className="mt-1 font-bold text-beyaz">Resmi taraftar ol →</span>
+                <span className="font-display mt-1 text-lg font-bold text-beyaz">Resmi taraftar ol →</span>
               </div>
             </Link>
           </div>
         </div>
       </section>
+      </FadeInSection>
 
-      {/* Maçlar: sade tablo, üstte ince görsel band */}
+      <FadeInSection>
       <section className="border-y border-siyah/10 bg-beyaz py-14 sm:py-20">
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-siyah/50">Fikstür</p>
-              <h2 className="mt-1 text-2xl font-bold text-siyah">Maçlar ve sonuçlar</h2>
+              <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-siyah/50">Fikstür</p>
+              <h2 className="font-display mt-1 text-2xl font-bold text-siyah">Maçlar ve sonuçlar</h2>
             </div>
             <Link href="/maclar" className="text-sm font-bold text-bordo hover:underline">Tüm maçlar →</Link>
           </div>
-          <div className="relative mt-8 h-44 overflow-hidden rounded-2xl sm:h-52">
+          <div className="relative mt-8 h-44 overflow-hidden rounded-2xl sm:h-52 shadow-lg">
             <Image src={DEMO_IMAGES.stadium} alt="" fill className="object-cover" sizes="100vw" />
             <div className="absolute inset-0 bg-siyah/60 flex items-center justify-center">
-              <span className="text-beyaz text-lg font-semibold tracking-wide">Güngören Stadyumu</span>
+              <span className="font-display text-beyaz text-lg font-semibold tracking-wide">Güngören Stadyumu</span>
             </div>
           </div>
           <div className="mt-6 divide-y divide-siyah/10 overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm">
@@ -134,7 +139,7 @@ export default async function Home() {
                 <Link
                   key={m.id}
                   href={`/maclar/${m.id}`}
-                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition hover:bg-siyah/[0.03]"
+                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition-all duration-200 hover:bg-bordo/5 hover:pl-6"
                 >
                   <span className="font-semibold text-siyah">{m.opponent_name}</span>
                   <span className="text-sm text-siyah/60">
@@ -151,17 +156,18 @@ export default async function Home() {
           </div>
         </div>
       </section>
+      </FadeInSection>
 
       <AnadoluTemsilcisi />
 
-      {/* Gelişmeler */}
       {news.length > 0 && (
+        <FadeInSection>
         <section className="py-14 sm:py-20">
           <div className="mx-auto max-w-7xl px-6">
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-siyah/50">İçerik</p>
-                <h2 className="mt-1 text-2xl font-bold text-siyah">Gelişmeler</h2>
+                <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-siyah/50">İçerik</p>
+                <h2 className="font-display mt-1 text-2xl font-bold text-siyah">Gelişmeler</h2>
               </div>
               <Link href="/haberler" className="text-sm font-bold text-bordo hover:underline">Tümü →</Link>
             </div>
@@ -170,14 +176,14 @@ export default async function Home() {
                 <Link
                   key={n.id}
                   href={`/haberler/${n.slug}`}
-                  className="group block overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm transition hover:shadow-lg hover:border-siyah/20"
+                  className="group block overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm card-hover"
                 >
                   <div className="relative aspect-[16/10] overflow-hidden">
                     <Image
                       src={n.image_url || DEMO_IMAGES.news}
                       alt=""
                       fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      className="object-cover transition-transform duration-500 ease-out group-hover:scale-110"
                       sizes="(max-width: 768px) 100vw, 25vw"
                     />
                   </div>
@@ -192,15 +198,17 @@ export default async function Home() {
             </div>
           </div>
         </section>
+        </FadeInSection>
       )}
 
       {/* Mağaza */}
+      <FadeInSection>
       <section className="border-t border-siyah/10 bg-beyaz py-14 sm:py-20">
         <div className="mx-auto max-w-7xl px-6">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-siyah/50">Resmi ürünler</p>
-              <h2 className="mt-1 text-2xl font-bold text-siyah">Mağaza</h2>
+              <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-siyah/50">Resmi ürünler</p>
+              <h2 className="font-display mt-1 text-2xl font-bold text-siyah">Mağaza</h2>
             </div>
             <Link href="/magaza" className="text-sm font-bold text-bordo hover:underline">Mağazaya git →</Link>
           </div>
@@ -209,14 +217,14 @@ export default async function Home() {
               <Link
                 key={p.id}
                 href={p.slug ? `/magaza/${p.slug}` : "/magaza"}
-                className="group block overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm transition hover:shadow-lg hover:border-siyah/20"
+                className="group block overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm card-hover"
               >
                 <div className="relative aspect-square overflow-hidden bg-siyah/5">
                   <Image
                     src={p.image_url || DEMO_IMAGES.product}
                     alt={p.name}
                     fill
-                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="object-cover transition-transform duration-500 ease-out group-hover:scale-110"
                     sizes="(max-width: 768px) 100vw, 25vw"
                   />
                 </div>
@@ -229,23 +237,26 @@ export default async function Home() {
           </div>
         </div>
       </section>
+      </FadeInSection>
 
       {/* CTA */}
+      <FadeInSection>
       <section className="relative overflow-hidden bg-bordo py-16 sm:py-20 text-beyaz">
         <div className="absolute inset-0 opacity-10">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_white_1px,_transparent_1px)] bg-[size:24px_24px]" />
         </div>
         <div className="relative mx-auto max-w-2xl px-6 text-center">
-          <h2 className="text-2xl font-bold sm:text-3xl">Resmi taraftar ol</h2>
+          <h2 className="font-display text-2xl font-bold sm:text-3xl">Resmi taraftar ol</h2>
           <p className="mt-3 text-beyaz/90">Ailemize katıl, rozetini kazan. Maçlara gelerek ve mağazadan alışveriş yaparak kademe atla.</p>
           <Link
             href="/taraftar/kayit"
-            className="mt-8 inline-flex rounded-full bg-beyaz px-8 py-4 text-sm font-bold text-bordo shadow-lg transition hover:bg-white/95 hover:scale-[1.02]"
+            className="mt-8 inline-flex rounded-full bg-beyaz px-8 py-4 text-sm font-bold text-bordo shadow-lg transition-all duration-300 hover:bg-white hover:scale-105 btn-glow"
           >
             Hemen kayıt ol
           </Link>
         </div>
       </section>
+      </FadeInSection>
     </div>
   );
 }

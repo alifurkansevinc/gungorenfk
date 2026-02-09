@@ -33,7 +33,7 @@ export function Footer() {
         <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
           {/* Logo + slogan */}
           <div className="lg:col-span-1">
-            <p className="text-lg font-bold tracking-tight text-beyaz">Güngören FK</p>
+            <p className="font-display text-lg font-bold tracking-tight text-beyaz">Güngören FK</p>
             <p className="mt-2 text-sm text-white/70">Güngören Belediye Spor Kulübü</p>
           </div>
           {/* Sütunlar */}

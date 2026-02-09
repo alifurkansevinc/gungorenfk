@@ -34,7 +34,7 @@ export function Header() {
             ) : null}
             <span className="absolute inset-0 flex items-center justify-center text-base font-bold text-beyaz">G</span>
           </div>
-          <span className="font-bold tracking-tight text-siyah sm:text-lg">Güngören FK</span>
+          <span className="font-display font-bold tracking-tight text-siyah sm:text-lg">Güngören FK</span>
         </Link>
 
         {/* Desktop nav */}

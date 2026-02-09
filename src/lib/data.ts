@@ -2,6 +2,8 @@ import { createClient } from "@/lib/supabase/server";
 import type { MemleketCount, Match, SquadMember } from "@/types/db";
 
 const TARGET_PER_CITY = 1000;
+/** Anasayfa toplam taraftar barı hedefi */
+export const TARGET_TOTAL_FANS = 10_000;
 
 /** Demo maçlar (veri yokken tasarım için) */
 export const DEMO_MATCHES: (Match & { id: string })[] = [
@@ -41,6 +43,17 @@ const DEMO_MEMLEKET_COUNTS: MemleketCount[] = [
   { city_id: 27, city_name: "Gaziantep", count: 52 },
   { city_id: 55, city_name: "Samsun", count: 41 },
 ];
+
+/** Anasayfa: Toplam kayıtlı taraftar sayısı. Veri yoksa demo toplam. */
+export async function getTotalFanCount(): Promise<{ total: number; target: number }> {
+  const supabase = await createClient();
+  const { count, error } = await supabase.from("fan_profiles").select("id", { count: "exact", head: true });
+  if (error || count === null) {
+    const demoTotal = DEMO_MEMLEKET_COUNTS.reduce((s, c) => s + c.count, 0);
+    return { total: demoTotal, target: TARGET_TOTAL_FANS };
+  }
+  return { total: count, target: TARGET_TOTAL_FANS };
+}
 
 /** Anasayfa: Memleket bazında kayıtlı taraftar sayıları (0–1000 progress bar için). Veri yoksa demo gösterilir. */
 export async function getMemleketCounts(): Promise<MemleketCount[]> {
