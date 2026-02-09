@@ -1,7 +1,34 @@
 import { createClient } from "@/lib/supabase/server";
-import type { MemleketCount } from "@/types/db";
+import type { MemleketCount, Match, SquadMember } from "@/types/db";
 
 const TARGET_PER_CITY = 1000;
+
+/** Demo maçlar (veri yokken tasarım için) */
+export const DEMO_MATCHES: (Match & { id: string })[] = [
+  { id: "demo-1", opponent_name: "Kartal Belediyespor", home_away: "home", venue: "Güngören Stadyumu", match_date: "2025-02-15", competition: "Bölgesel Amatör Lig", season: "2024-25", goals_for: 2, goals_against: 1, status: "finished", created_at: "", updated_at: "" },
+  { id: "demo-2", opponent_name: "Sultanbeyli Belediyespor", home_away: "away", venue: "Sultanbeyli Stadyumu", match_date: "2025-02-08", competition: "Bölgesel Amatör Lig", season: "2024-25", goals_for: 1, goals_against: 1, status: "finished", created_at: "", updated_at: "" },
+  { id: "demo-3", opponent_name: "Esenler Erokspor", home_away: "home", venue: "Güngören Stadyumu", match_date: "2025-02-01", competition: "Bölgesel Amatör Lig", season: "2024-25", goals_for: 3, goals_against: 0, status: "finished", created_at: "", updated_at: "" },
+  { id: "demo-4", opponent_name: "Bayrampaşa FK", home_away: "away", venue: "Bayrampaşa Stadyumu", match_date: "2025-01-25", competition: "Bölgesel Amatör Lig", season: "2024-25", goals_for: 0, goals_against: 2, status: "finished", created_at: "", updated_at: "" },
+  { id: "demo-5", opponent_name: "Gaziosmanpaşa FK", home_away: "away", venue: "Gaziosmanpaşa Stadyumu", match_date: "2025-03-01", competition: "Bölgesel Amatör Lig", season: "2024-25", goals_for: null, goals_against: null, status: "scheduled", created_at: "", updated_at: "" },
+];
+
+/** Demo kadro (veri yokken tasarım için) */
+export const DEMO_SQUAD: (SquadMember & { id: string })[] = [
+  { id: "demo-1", name: "Ahmet Yılmaz", shirt_number: 1, position: "Kaleci", photo_url: null, bio: "Deneyimli kaleci.", sort_order: 1, is_active: true },
+  { id: "demo-2", name: "Mehmet Kaya", shirt_number: 2, position: "Sağ Bek", photo_url: null, bio: null, sort_order: 2, is_active: true },
+  { id: "demo-3", name: "Ali Demir", shirt_number: 3, position: "Stoper", photo_url: null, bio: null, sort_order: 3, is_active: true },
+  { id: "demo-4", name: "Can Özkan", shirt_number: 4, position: "Stoper", photo_url: null, bio: null, sort_order: 4, is_active: true },
+  { id: "demo-5", name: "Emre Çelik", shirt_number: 5, position: "Sol Bek", photo_url: null, bio: null, sort_order: 5, is_active: true },
+  { id: "demo-6", name: "Burak Arslan", shirt_number: 6, position: "Ön Libero", photo_url: null, bio: null, sort_order: 6, is_active: true },
+  { id: "demo-7", name: "Serkan Aydın", shirt_number: 7, position: "Sağ Kanat", photo_url: null, bio: null, sort_order: 7, is_active: true },
+  { id: "demo-8", name: "Oğuzhan Koç", shirt_number: 8, position: "Orta Saha", photo_url: null, bio: "Kaptan.", sort_order: 8, is_active: true },
+  { id: "demo-9", name: "Fatih Şahin", shirt_number: 9, position: "Forvet", photo_url: null, bio: null, sort_order: 9, is_active: true },
+  { id: "demo-10", name: "Hakan Polat", shirt_number: 10, position: "Orta Saha", photo_url: null, bio: null, sort_order: 10, is_active: true },
+  { id: "demo-11", name: "Yusuf Acar", shirt_number: 11, position: "Sol Kanat", photo_url: null, bio: null, sort_order: 11, is_active: true },
+  { id: "demo-12", name: "Murat Yıldız", shirt_number: 12, position: "Kaleci", photo_url: null, bio: null, sort_order: 12, is_active: true },
+  { id: "demo-13", name: "Kerem Öztürk", shirt_number: 14, position: "Orta Saha", photo_url: null, bio: null, sort_order: 14, is_active: true },
+  { id: "demo-14", name: "Barış Kılıç", shirt_number: 17, position: "Forvet", photo_url: null, bio: null, sort_order: 17, is_active: true },
+];
 
 /** Demo: Gerçek taraftar yokken tasarım için memleket sayıları (Anadolu Temsilcisi bar) */
 const DEMO_MEMLEKET_COUNTS: MemleketCount[] = [
@@ -36,6 +63,40 @@ export async function getMemleketCounts(): Promise<MemleketCount[]> {
   return Array.from(byCity.entries())
     .map(([city_id, count]) => ({ city_id, city_name: cityNames.get(city_id) ?? "Bilinmeyen", count }))
     .sort((a, b) => b.count - a.count);
+}
+
+/** Maçlar listesi; veri yoksa demo döner. */
+export async function getMatches(limit = 20) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("matches")
+    .select("id, opponent_name, home_away, venue, match_date, goals_for, goals_against, status, competition")
+    .order("match_date", { ascending: false })
+    .limit(limit);
+  if (!data || data.length === 0) return DEMO_MATCHES;
+  return data;
+}
+
+/** Tek maç; id demo-* ise demo maç, değilse veritabanından döner. */
+export async function getMatchById(id: string): Promise<(Match & { id: string }) | null> {
+  if (id.startsWith("demo-")) {
+    return DEMO_MATCHES.find((m) => m.id === id) ?? null;
+  }
+  const supabase = await createClient();
+  const { data } = await supabase.from("matches").select("*").eq("id", id).single();
+  return data;
+}
+
+/** Kadro listesi; veri yoksa demo döner. */
+export async function getSquad() {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("squad")
+    .select("id, name, shirt_number, position, photo_url, bio")
+    .eq("is_active", true)
+    .order("sort_order");
+  if (!data || data.length === 0) return DEMO_SQUAD;
+  return data;
 }
 
 export { TARGET_PER_CITY };

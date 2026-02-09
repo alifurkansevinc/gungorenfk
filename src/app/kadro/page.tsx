@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { getSquad } from "@/lib/data";
 import Image from "next/image";
 
 export const metadata = {
@@ -7,19 +7,14 @@ export const metadata = {
 };
 
 export default async function KadroPage() {
-  const supabase = await createClient();
-  const { data: squad } = await supabase
-    .from("squad")
-    .select("id, name, shirt_number, position, photo_url, bio")
-    .eq("is_active", true)
-    .order("sort_order");
+  const squad = await getSquad();
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8">
       <h1 className="text-2xl font-bold text-siyah sm:text-3xl">Kadro</h1>
       <p className="mt-2 text-siyah/70">Takım kadromuz.</p>
       <div className="mt-8 grid gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-        {(!squad || squad.length === 0) ? (
+        {squad.length === 0 ? (
           <p className="col-span-full text-siyah/60">Henüz oyuncu eklenmedi.</p>
         ) : (
           squad.map((p) => (

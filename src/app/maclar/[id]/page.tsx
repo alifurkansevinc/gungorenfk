@@ -1,10 +1,9 @@
-import { createClient } from "@/lib/supabase/server";
+import { getMatchById } from "@/lib/data";
 import { notFound } from "next/navigation";
 
 export default async function MacDetayPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const supabase = await createClient();
-  const { data: match } = await supabase.from("matches").select("*").eq("id", id).single();
+  const match = await getMatchById(id);
   if (!match) notFound();
 
   return (
