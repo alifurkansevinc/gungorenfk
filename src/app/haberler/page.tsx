@@ -3,8 +3,8 @@ import Link from "next/link";
 import Image from "next/image";
 
 export const metadata = {
-  title: "Haberler | Güngören FK",
-  description: "Güngören FK haberleri.",
+  title: "Gelişmeler | Güngören FK",
+  description: "Güngören FK gelişmeler ve haberler.",
 };
 
 export default async function HaberlerPage() {
@@ -18,7 +18,7 @@ export default async function HaberlerPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-bold text-siyah sm:text-3xl">Haberler</h1>
+      <h1 className="text-2xl font-bold text-siyah sm:text-3xl">Gelişmeler</h1>
       <div className="mt-8 space-y-6">
         {(!news || news.length === 0) ? (
           <p className="text-siyah/60">Henüz haber yok.</p>

@@ -123,4 +123,16 @@ export async function getFeaturedProducts(limit = 4) {
   return data ?? [];
 }
 
+/** Slug ile tek ürün (mağaza detay sayfası). */
+export async function getProductBySlug(slug: string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("store_products")
+    .select("*")
+    .eq("slug", slug)
+    .eq("is_active", true)
+    .single();
+  return data;
+}
+
 export { TARGET_PER_CITY };

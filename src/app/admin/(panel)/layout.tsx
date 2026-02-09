@@ -20,8 +20,7 @@ export default async function AdminPanelLayout({
           <Link href="/admin/taraftarlar" className="text-sm text-siyah/80 hover:text-bordo">Taraftarlar</Link>
           <Link href="/admin/maclar" className="text-sm text-siyah/80 hover:text-bordo">Maçlar</Link>
           <Link href="/admin/kadro" className="text-sm text-siyah/80 hover:text-bordo">Kadro</Link>
-          <Link href="/admin/haberler" className="text-sm text-siyah/80 hover:text-bordo">Haberler</Link>
-          <Link href="/admin/galeriler" className="text-sm text-siyah/80 hover:text-bordo">Galeriler</Link>
+          <Link href="/admin/haberler" className="text-sm text-siyah/80 hover:text-bordo">Gelişmeler</Link>
           <Link href="/admin/magaza" className="text-sm text-siyah/80 hover:text-bordo">Mağaza</Link>
           <Link href="/" className="text-sm text-siyah/60 hover:text-siyah">Siteye Dön</Link>
         </div>
