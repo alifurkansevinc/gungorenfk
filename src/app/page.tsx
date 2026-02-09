@@ -12,85 +12,142 @@ export default async function Home() {
   ]);
   const nextMatch = matches.find((m) => m.status === "scheduled") ?? matches[0];
   const recentMatches = matches.filter((m) => m.status === "finished").slice(0, 3);
+  const displayProducts = products.length > 0 ? products : [
+    { id: "d1", name: "Resmi Forma", slug: "", price: "349", image_url: null },
+    { id: "d2", name: "Atkı", slug: "", price: "79", image_url: null },
+    { id: "d3", name: "Şapka", slug: "", price: "59", image_url: null },
+    { id: "d4", name: "Antrenman Forması", slug: "", price: "199", image_url: null },
+  ];
 
   return (
-    <div className="min-h-screen">
-      {/* Hero - tam genişlik arka plan görseli (Juventus gibi) */}
-      <section className="relative min-h-[70vh] flex items-end bg-siyah text-beyaz">
-        <Image src={DEMO_IMAGES.hero} alt="" fill className="object-cover opacity-60" unoptimized priority />
-        <div className="absolute inset-0 bg-gradient-to-t from-siyah via-siyah/60 to-transparent" />
-        <div className="relative z-10 w-full mx-auto max-w-7xl px-4 pb-16 pt-32 sm:px-6 lg:px-8">
-          <p className="text-sm font-medium uppercase tracking-[0.2em] text-beyaz/80">Güngören Belediye Spor Kulübü</p>
-          <h1 className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl md:text-7xl">Güngören FK</h1>
-          <p className="mt-4 max-w-lg text-lg text-white/90">Güngören&apos;in takımı. Gelişmeler, maçlar, kadro ve taraftar ailesi.</p>
-          <div className="mt-8 flex flex-wrap gap-4">
-            <Link href="/taraftar/kayit" className="inline-flex rounded bg-beyaz px-6 py-3 text-sm font-semibold text-bordo hover:bg-white/95 transition-colors">Taraftar Ol</Link>
-            <Link href="/maclar" className="inline-flex rounded border-2 border-beyaz px-6 py-3 text-sm font-semibold text-beyaz hover:bg-white/10 transition-colors">Maçlar</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* Öne çıkan - her kartta demo görsel (Juventus Top Content gibi) */}
-      <section className="border-b border-siyah/10 bg-beyaz py-12 sm:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <h2 className="text-xl font-bold tracking-tight text-siyah sm:text-2xl">Öne çıkan</h2>
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Link href={nextMatch ? `/maclar/${nextMatch.id}` : "/maclar"} className="group relative overflow-hidden rounded-lg aspect-[4/3]">
-              <Image src={DEMO_IMAGES.match} alt="" fill className="object-cover transition-transform duration-300 group-hover:scale-105" unoptimized />
-              <div className="absolute inset-0 bg-gradient-to-t from-siyah/90 to-transparent p-4 flex flex-col justify-end">
-                <span className="text-xs font-medium uppercase text-beyaz/80">Sonraki maç</span>
-                <span className="mt-1 font-semibold text-beyaz group-hover:underline">{nextMatch ? nextMatch.opponent_name : "Maçlar"}</span>
-                {nextMatch?.match_date && <span className="mt-0.5 text-sm text-beyaz/80">{new Date(nextMatch.match_date).toLocaleDateString("tr-TR")}</span>}
-              </div>
+    <div className="min-h-screen bg-[#fafafa]">
+      {/* Hero: tam ekran hissi, güçlü overlay */}
+      <section className="relative min-h-[85vh] flex items-center justify-center bg-siyah text-beyaz">
+        <Image
+          src={DEMO_IMAGES.hero}
+          alt=""
+          fill
+          className="object-cover"
+          priority
+          sizes="100vw"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-siyah/70 via-siyah/50 to-siyah/90" />
+        <div className="relative z-10 mx-auto max-w-5xl px-6 text-center">
+          <p className="text-xs font-semibold uppercase tracking-[0.35em] text-beyaz/70">Güngören Belediye Spor Kulübü</p>
+          <h1 className="mt-4 text-5xl font-extrabold tracking-tight drop-shadow-lg sm:text-6xl md:text-7xl lg:text-8xl">
+            Güngören FK
+          </h1>
+          <p className="mt-6 max-w-md mx-auto text-lg text-beyaz/90 font-light">
+            Güngören&apos;in takımı. Maçlar, gelişmeler ve taraftar ailesi.
+          </p>
+          <div className="mt-10 flex flex-wrap items-center justify-center gap-4">
+            <Link
+              href="/taraftar/kayit"
+              className="inline-flex items-center rounded-full bg-beyaz px-8 py-4 text-sm font-bold text-bordo shadow-xl transition hover:bg-white/95 hover:scale-[1.02]"
+            >
+              Taraftar Ol
             </Link>
-            <Link href="/haberler" className="group relative overflow-hidden rounded-lg aspect-[4/3]">
-              <Image src={DEMO_IMAGES.news} alt="" fill className="object-cover transition-transform duration-300 group-hover:scale-105" unoptimized />
-              <div className="absolute inset-0 bg-gradient-to-t from-siyah/90 to-transparent p-4 flex flex-col justify-end">
-                <span className="text-xs font-medium uppercase text-beyaz/80">Gelişmeler</span>
-                <span className="mt-1 font-semibold text-beyaz group-hover:underline">Tüm gelişmeler</span>
-              </div>
-            </Link>
-            <Link href="/kadro" className="group relative overflow-hidden rounded-lg aspect-[4/3]">
-              <Image src={DEMO_IMAGES.team} alt="" fill className="object-cover transition-transform duration-300 group-hover:scale-105" unoptimized />
-              <div className="absolute inset-0 bg-gradient-to-t from-siyah/90 to-transparent p-4 flex flex-col justify-end">
-                <span className="text-xs font-medium uppercase text-beyaz/80">Kadro</span>
-                <span className="mt-1 font-semibold text-beyaz group-hover:underline">Takım kadrosu</span>
-              </div>
-            </Link>
-            <Link href="/taraftar/kayit" className="group relative overflow-hidden rounded-lg aspect-[4/3]">
-              <Image src={DEMO_IMAGES.taraftar} alt="" fill className="object-cover transition-transform duration-300 group-hover:scale-105" unoptimized />
-              <div className="absolute inset-0 bg-gradient-to-t from-bordo/90 to-transparent p-4 flex flex-col justify-end">
-                <span className="text-xs font-medium uppercase text-beyaz/90">Taraftar</span>
-                <span className="mt-1 font-semibold text-beyaz group-hover:underline">Resmi taraftar ol</span>
-              </div>
+            <Link
+              href="/maclar"
+              className="inline-flex items-center rounded-full border-2 border-beyaz px-8 py-4 text-sm font-bold text-beyaz transition hover:bg-beyaz/10"
+            >
+              Maçlar
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Maçlar ve sonuçlar - üstte görsel band */}
-      <section className="border-b border-siyah/10 bg-siyah/5 py-12 sm:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold tracking-tight text-siyah sm:text-2xl">Maçlar ve sonuçlar</h2>
-            <Link href="/maclar" className="text-sm font-semibold text-bordo hover:underline">Tüm maçlar</Link>
-          </div>
-          <div className="mt-6 overflow-hidden rounded-xl">
-            <div className="relative h-40 sm:h-52">
-              <Image src={DEMO_IMAGES.stadium} alt="" fill className="object-cover" unoptimized />
-              <div className="absolute inset-0 bg-siyah/50 flex items-center justify-center">
-                <span className="text-beyaz font-semibold text-lg">Güngören Stadyumu</span>
+      {/* Öne çıkan: 1 büyük + 3 küçük kart, gölge ve yuvarlak köşe */}
+      <section className="py-16 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-siyah/50">Öne çıkan</p>
+          <div className="mt-4 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <Link
+              href={nextMatch ? `/maclar/${nextMatch.id}` : "/maclar"}
+              className="group relative overflow-hidden rounded-2xl bg-siyah shadow-xl lg:col-span-2 lg:row-span-2 min-h-[280px]"
+            >
+              <Image
+                src={DEMO_IMAGES.match}
+                alt=""
+                fill
+                className="object-cover transition-transform duration-500 group-hover:scale-105"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-siyah/95 via-siyah/40 to-transparent" />
+              <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8">
+                <span className="text-xs font-semibold uppercase tracking-wider text-bordo">Sonraki maç</span>
+                <span className="mt-2 text-xl font-bold text-beyaz sm:text-2xl">
+                  {nextMatch ? nextMatch.opponent_name : "Maçlar"}
+                </span>
+                {nextMatch?.match_date && (
+                  <span className="mt-1 text-sm text-beyaz/80">{new Date(nextMatch.match_date).toLocaleDateString("tr-TR")}</span>
+                )}
               </div>
+            </Link>
+            <Link href="/haberler" className="group relative overflow-hidden rounded-2xl bg-siyah shadow-lg min-h-[180px]">
+              <Image src={DEMO_IMAGES.news} alt="" fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="25vw" />
+              <div className="absolute inset-0 bg-gradient-to-t from-siyah/90 to-transparent" />
+              <div className="absolute inset-0 flex flex-col justify-end p-5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-beyaz/70">Gelişmeler</span>
+                <span className="mt-1 font-bold text-beyaz">Tümü →</span>
+              </div>
+            </Link>
+            <Link href="/kadro" className="group relative overflow-hidden rounded-2xl bg-siyah shadow-lg min-h-[180px]">
+              <Image src={DEMO_IMAGES.team} alt="" fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="25vw" />
+              <div className="absolute inset-0 bg-gradient-to-t from-siyah/90 to-transparent" />
+              <div className="absolute inset-0 flex flex-col justify-end p-5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-beyaz/70">Kadro</span>
+                <span className="mt-1 font-bold text-beyaz">Takım →</span>
+              </div>
+            </Link>
+            <Link href="/taraftar/kayit" className="group relative overflow-hidden rounded-2xl bg-bordo shadow-lg min-h-[180px]">
+              <Image src={DEMO_IMAGES.taraftar} alt="" fill className="object-cover opacity-40 transition-transform duration-500 group-hover:scale-105" sizes="25vw" />
+              <div className="absolute inset-0 bg-bordo/80" />
+              <div className="absolute inset-0 flex flex-col justify-end p-5">
+                <span className="text-xs font-semibold uppercase tracking-wider text-beyaz/90">Taraftar</span>
+                <span className="mt-1 font-bold text-beyaz">Resmi taraftar ol →</span>
+              </div>
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Maçlar: sade tablo, üstte ince görsel band */}
+      <section className="border-y border-siyah/10 bg-beyaz py-14 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-siyah/50">Fikstür</p>
+              <h2 className="mt-1 text-2xl font-bold text-siyah">Maçlar ve sonuçlar</h2>
+            </div>
+            <Link href="/maclar" className="text-sm font-bold text-bordo hover:underline">Tüm maçlar →</Link>
+          </div>
+          <div className="relative mt-8 h-44 overflow-hidden rounded-2xl sm:h-52">
+            <Image src={DEMO_IMAGES.stadium} alt="" fill className="object-cover" sizes="100vw" />
+            <div className="absolute inset-0 bg-siyah/60 flex items-center justify-center">
+              <span className="text-beyaz text-lg font-semibold tracking-wide">Güngören Stadyumu</span>
             </div>
           </div>
-          <div className="mt-6 space-y-3">
-            {recentMatches.length > 0 ? recentMatches.map((m) => (
-              <Link key={m.id} href={`/maclar/${m.id}`} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-siyah/10 bg-beyaz px-4 py-3 hover:border-bordo/30 transition-colors">
-                <span className="font-medium text-siyah">{m.opponent_name}</span>
-                <span className="text-sm text-siyah/70">{new Date(m.match_date).toLocaleDateString("tr-TR")} · {m.home_away === "home" ? "İç saha" : "Deplasman"}</span>
-                {m.goals_for != null && m.goals_against != null && <span className="font-bold text-bordo">Güngören FK {m.goals_for} - {m.goals_against}</span>}
-              </Link>
-            )) : <p className="text-siyah/60">Henüz maç sonucu yok.</p>}
+          <div className="mt-6 divide-y divide-siyah/10 overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm">
+            {recentMatches.length > 0 ? (
+              recentMatches.map((m) => (
+                <Link
+                  key={m.id}
+                  href={`/maclar/${m.id}`}
+                  className="flex flex-wrap items-center justify-between gap-3 px-5 py-4 transition hover:bg-siyah/[0.03]"
+                >
+                  <span className="font-semibold text-siyah">{m.opponent_name}</span>
+                  <span className="text-sm text-siyah/60">
+                    {new Date(m.match_date).toLocaleDateString("tr-TR")} · {m.home_away === "home" ? "İç saha" : "Deplasman"}
+                  </span>
+                  {m.goals_for != null && m.goals_against != null && (
+                    <span className="text-lg font-bold text-bordo">Güngören FK {m.goals_for} – {m.goals_against}</span>
+                  )}
+                </Link>
+              ))
+            ) : (
+              <p className="px-5 py-8 text-center text-siyah/50">Henüz maç sonucu yok.</p>
+            )}
           </div>
         </div>
       </section>
@@ -99,21 +156,36 @@ export default async function Home() {
 
       {/* Gelişmeler */}
       {news.length > 0 && (
-        <section className="border-b border-siyah/10 bg-beyaz py-12 sm:py-16">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold tracking-tight text-siyah sm:text-2xl">Gelişmeler</h2>
-              <Link href="/haberler" className="text-sm font-semibold text-bordo hover:underline">Tüm gelişmeler</Link>
+        <section className="py-14 sm:py-20">
+          <div className="mx-auto max-w-7xl px-6">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-siyah/50">İçerik</p>
+                <h2 className="mt-1 text-2xl font-bold text-siyah">Gelişmeler</h2>
+              </div>
+              <Link href="/haberler" className="text-sm font-bold text-bordo hover:underline">Tümü →</Link>
             </div>
-            <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
               {news.map((n) => (
-                <Link key={n.id} href={`/haberler/${n.slug}`} className="group block overflow-hidden rounded-lg border border-siyah/10 bg-beyaz transition-shadow hover:shadow-lg">
-                  <div className="relative aspect-video overflow-hidden">
-                    <Image src={n.image_url || DEMO_IMAGES.news} alt="" fill className="object-cover transition-transform group-hover:scale-105" unoptimized />
+                <Link
+                  key={n.id}
+                  href={`/haberler/${n.slug}`}
+                  className="group block overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm transition hover:shadow-lg hover:border-siyah/20"
+                >
+                  <div className="relative aspect-[16/10] overflow-hidden">
+                    <Image
+                      src={n.image_url || DEMO_IMAGES.news}
+                      alt=""
+                      fill
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
+                      sizes="(max-width: 768px) 100vw, 25vw"
+                    />
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-siyah group-hover:text-bordo transition-colors line-clamp-2">{n.title}</h3>
-                    {n.published_at && <p className="mt-1 text-xs text-siyah/60">{new Date(n.published_at).toLocaleDateString("tr-TR")}</p>}
+                  <div className="p-5">
+                    <h3 className="font-semibold text-siyah line-clamp-2 group-hover:text-bordo transition-colors">{n.title}</h3>
+                    {n.published_at && (
+                      <p className="mt-2 text-xs text-siyah/50">{new Date(n.published_at).toLocaleDateString("tr-TR")}</p>
+                    )}
                   </div>
                 </Link>
               ))}
@@ -122,22 +194,35 @@ export default async function Home() {
         </section>
       )}
 
-      {/* Mağaza - e-ticaret öne çıkan */}
-      <section className="border-b border-siyah/10 bg-siyah/5 py-12 sm:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold tracking-tight text-siyah sm:text-2xl">Mağaza</h2>
-            <Link href="/magaza" className="text-sm font-semibold text-bordo hover:underline">Mağazaya git</Link>
+      {/* Mağaza */}
+      <section className="border-t border-siyah/10 bg-beyaz py-14 sm:py-20">
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-siyah/50">Resmi ürünler</p>
+              <h2 className="mt-1 text-2xl font-bold text-siyah">Mağaza</h2>
+            </div>
+            <Link href="/magaza" className="text-sm font-bold text-bordo hover:underline">Mağazaya git →</Link>
           </div>
-          <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {(products.length > 0 ? products : [{ id: "d1", name: "Resmi Forma", slug: "", price: "349", image_url: null }, { id: "d2", name: "Atkı", slug: "", price: "79", image_url: null }, { id: "d3", name: "Şapka", slug: "", price: "59", image_url: null }, { id: "d4", name: "Antrenman Forması", slug: "", price: "199", image_url: null }]).map((p) => (
-              <Link key={p.id} href={p.slug ? `/magaza/${p.slug}` : "/magaza"} className="group block overflow-hidden rounded-lg border border-siyah/10 bg-beyaz transition-shadow hover:shadow-lg">
-                <div className="relative aspect-square overflow-hidden">
-                  <Image src={p.image_url || DEMO_IMAGES.product} alt={p.name} fill className="object-cover transition-transform group-hover:scale-105" unoptimized />
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {displayProducts.map((p) => (
+              <Link
+                key={p.id}
+                href={p.slug ? `/magaza/${p.slug}` : "/magaza"}
+                className="group block overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm transition hover:shadow-lg hover:border-siyah/20"
+              >
+                <div className="relative aspect-square overflow-hidden bg-siyah/5">
+                  <Image
+                    src={p.image_url || DEMO_IMAGES.product}
+                    alt={p.name}
+                    fill
+                    className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    sizes="(max-width: 768px) 100vw, 25vw"
+                  />
                 </div>
-                <div className="p-4">
+                <div className="p-5">
                   <h3 className="font-semibold text-siyah group-hover:text-bordo transition-colors">{p.name}</h3>
-                  <p className="mt-1 font-bold text-bordo">{Number(p.price).toFixed(2)} ₺</p>
+                  <p className="mt-2 font-bold text-bordo">{Number(p.price).toFixed(2)} ₺</p>
                 </div>
               </Link>
             ))}
@@ -145,11 +230,20 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="bg-bordo text-beyaz py-12 sm:py-16">
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-xl font-bold sm:text-2xl">Resmi taraftar ol</h2>
-          <p className="mt-2 max-w-xl mx-auto text-white/90">Ailemize katıl, rozetini kazan.</p>
-          <Link href="/taraftar/kayit" className="mt-6 inline-block rounded bg-beyaz px-6 py-3 font-semibold text-bordo hover:bg-white/95 transition-colors">Hemen kayıt ol</Link>
+      {/* CTA */}
+      <section className="relative overflow-hidden bg-bordo py-16 sm:py-20 text-beyaz">
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,_white_1px,_transparent_1px)] bg-[size:24px_24px]" />
+        </div>
+        <div className="relative mx-auto max-w-2xl px-6 text-center">
+          <h2 className="text-2xl font-bold sm:text-3xl">Resmi taraftar ol</h2>
+          <p className="mt-3 text-beyaz/90">Ailemize katıl, rozetini kazan. Maçlara gelerek ve mağazadan alışveriş yaparak kademe atla.</p>
+          <Link
+            href="/taraftar/kayit"
+            className="mt-8 inline-flex rounded-full bg-beyaz px-8 py-4 text-sm font-bold text-bordo shadow-lg transition hover:bg-white/95 hover:scale-[1.02]"
+          >
+            Hemen kayıt ol
+          </Link>
         </div>
       </section>
     </div>
