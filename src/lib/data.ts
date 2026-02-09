@@ -99,4 +99,28 @@ export async function getSquad() {
   return data;
 }
 
+/** Son haberler (anasayfa için). */
+export async function getLatestNews(limit = 4) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("news")
+    .select("id, title, slug, excerpt, image_url, published_at")
+    .not("published_at", "is", null)
+    .order("published_at", { ascending: false })
+    .limit(limit);
+  return data ?? [];
+}
+
+/** Mağaza öne çıkan ürünler (anasayfa için). */
+export async function getFeaturedProducts(limit = 4) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("store_products")
+    .select("id, name, slug, price, image_url")
+    .eq("is_active", true)
+    .order("sort_order")
+    .limit(limit);
+  return data ?? [];
+}
+
 export { TARGET_PER_CITY };

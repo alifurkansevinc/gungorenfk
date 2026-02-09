@@ -5,9 +5,9 @@ export async function AnadoluTemsilcisi() {
 
   return (
     <section className="bg-siyah text-beyaz py-12 sm:py-16">
-      <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <h2 className="text-2xl font-bold sm:text-3xl">Anadolu Temsilcisi</h2>
-        <p className="mt-2 text-white/80">
+      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <h2 className="text-xl font-bold tracking-tight sm:text-2xl">Anadolu Temsilcisi</h2>
+        <p className="mt-2 text-sm text-white/80 sm:text-base">
           1000 Taraftar 1 Bayrak — Memleketinden 1000 taraftar üye olursa Güngören Stadyumu&apos;nda bayrağın dalgalanır.
         </p>
         <div className="mt-8 space-y-6">
