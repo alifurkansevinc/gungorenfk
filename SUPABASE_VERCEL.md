@@ -2,7 +2,7 @@
 
 ## Veritabanı şeması (ilk kurulumda bir kez)
 
-Supabase projesini oluşturduktan sonra **SQL Editor**’de `supabase/migrations/001_initial_schema.sql` dosyasının içeriğini çalıştırın. Bu işlem 81 il, İstanbul ilçeleri, Güngören mahalleleri, taraftar/maç/kadro/haber/galeri/mağaza tablolarını ve 5 rozet kademesini oluşturur.
+Supabase projesini oluşturduktan sonra **SQL Editor**’de `supabase/migrations/001_initial_schema.sql` dosyasının içeriğini çalıştırın. Bu işlem 81 il, İstanbul ilçeleri, Güngören mahalleleri, taraftar/maç/kadro/haber/galeri/mağaza tablolarını ve 5 rozet kademesini oluşturur. Ardından **demo veriler** için `supabase/seed_demo_data.sql` dosyasını SQL Editor'de çalıştırın; maçlar, kadro, haberler, galeri ve mağaza örnek verilerle dolar.
 
 ## Sizin yapmanız gerekenler
 
