@@ -23,11 +23,13 @@ export function PersonGallery({
   const scroll = (dir: "left" | "right") => {
     const el = scrollRef.current;
     if (!el) return;
-    const step = 120;
+    const step = 140;
     el.scrollBy({ left: dir === "left" ? -step : step, behavior: "smooth" });
   };
 
   if (items.length === 0) return null;
+
+  const active = items[activeIndex]!;
 
   return (
     <div className="relative">
@@ -35,7 +37,7 @@ export function PersonGallery({
         <button
           type="button"
           onClick={() => scroll("left")}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-siyah/20 bg-beyaz text-siyah/70 shadow-sm transition-colors hover:bg-siyah/5 hover:text-siyah"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-beyaz/20 bg-siyah text-beyaz/80 shadow-sm transition-colors hover:bg-beyaz/10 hover:text-beyaz"
           aria-label="Önceki"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -45,7 +47,7 @@ export function PersonGallery({
         <button
           type="button"
           onClick={() => scroll("right")}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-bordo/30 bg-bordo text-beyaz shadow-sm transition-all hover:shadow-[0_0_20px_rgba(139,21,56,0.4)] hover:border-bordo"
+          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-bordo/50 bg-bordo text-beyaz shadow-sm transition-all hover:shadow-[0_0_20px_rgba(139,21,56,0.4)] hover:border-bordo"
           aria-label="Sonraki"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -56,10 +58,10 @@ export function PersonGallery({
 
       <div
         ref={scrollRef}
-        className="overflow-x-auto overflow-y-hidden scroll-smooth snap-x snap-mandatory pb-2 pt-12"
+        className="overflow-x-auto overflow-y-hidden scroll-smooth snap-x snap-mandatory pt-12 pb-1"
         style={{ scrollbarWidth: "thin" }}
       >
-        <div className="flex gap-3 px-1">
+        <div className="flex gap-2 px-1">
           {items.map((person, i) => {
             const isActive = i === activeIndex;
             const src = person.photo_url || placeholderImage;
@@ -69,12 +71,12 @@ export function PersonGallery({
                 type="button"
                 onClick={() => setActiveIndex(i)}
                 className={`
-                  flex w-[100px] flex-shrink-0 snap-center flex-col overflow-hidden rounded-xl border-2 bg-beyaz text-left
-                  transition-all duration-300
-                  ${isActive ? "border-bordo shadow-[0_0_24px_rgba(139,21,56,0.2)]" : "border-siyah/10 hover:border-siyah/20"}
+                  flex flex-shrink-0 snap-center flex-col overflow-hidden rounded-xl border-2 bg-beyaz text-left
+                  transition-all duration-300 ease-out
+                  ${isActive ? "w-[160px] border-bordo shadow-[0_0_24px_rgba(139,21,56,0.25)] sm:w-[200px]" : "w-[70px] border-siyah/20 hover:border-siyah/40 sm:w-[80px]"}
                 `}
               >
-                <div className="relative aspect-[2/3] w-full overflow-hidden">
+                <div className="relative w-full overflow-hidden" style={{ aspectRatio: "1/2" }}>
                   <Image
                     src={src}
                     alt={person.name}
@@ -85,16 +87,20 @@ export function PersonGallery({
                     unoptimized
                   />
                 </div>
-                {isActive && (
-                  <div className="p-2.5">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-bordo">{person.roleLabel}</p>
-                    <p className="mt-0.5 font-display text-sm font-semibold text-siyah">{person.name}</p>
-                  </div>
-                )}
               </button>
             );
           })}
         </div>
+      </div>
+
+      {/* Görev + isim: tam genişlik, resim kutularının altında, minimal */}
+      <div className="mt-3 w-full border-t border-beyaz/10 py-3 sm:mt-4 sm:py-4">
+        <p className="text-xs font-semibold uppercase tracking-wider text-bordo sm:text-sm">
+          {active.roleLabel}
+        </p>
+        <p className="mt-1 font-display text-lg font-semibold text-beyaz sm:text-xl">
+          {active.name}
+        </p>
       </div>
     </div>
   );
