@@ -15,7 +15,6 @@ type Props = { cities: City[] };
 export function KayitFormu({ cities }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState(false);
   const [districts, setDistricts] = useState<District[]>([]);
   const [neighbourhoods, setNeighbourhoods] = useState<Neighbourhood[]>([]);
   const [residenceCityId, setResidenceCityId] = useState<string>("");
@@ -84,6 +83,7 @@ export function KayitFormu({ cities }: Props) {
         setLoading(false);
         return;
       }
+      // Session cookie aynı istekte sunucuya gitmediği için: form verisini sakla, tamamla sayfasına yönlendir. O sayfa yüklenirken cookie gider, profil orada oluşur.
       const profilePayload = {
         first_name,
         last_name,
@@ -94,38 +94,18 @@ export function KayitFormu({ cities }: Props) {
         birth_year,
         email,
       };
-      // Session cookie sunucuya hemen gitmeyebiliyor; önce bekle, gerekirse bir kez daha dene
-      const tryCreateProfile = async (): Promise<{ error?: string }> => {
-        await new Promise((r) => setTimeout(r, 600));
-        return createFanProfileAfterSignup(profilePayload);
-      };
-      let profileResult = await tryCreateProfile();
-      if (profileResult.error && profileResult.error.includes("Oturum bulunamadı")) {
-        await new Promise((r) => setTimeout(r, 1000));
-        profileResult = await createFanProfileAfterSignup(profilePayload);
-      }
-      if (profileResult.error) {
-        setError(profileResult.error);
+      try {
+        sessionStorage.setItem("gungoren_pending_fan_profile", JSON.stringify(profilePayload));
+      } catch {
+        setError("Tarayıcı depolama hatası. Lütfen tekrar dene.");
         setLoading(false);
         return;
       }
-      setSuccess(true);
+      window.location.href = "/taraftar/kayit/complete";
     } catch (err) {
       setError(err instanceof Error ? err.message : "Bir hata oluştu.");
     }
     setLoading(false);
-  }
-
-  if (success) {
-    return (
-      <div className="mt-8 rounded-xl border-2 border-bordo bg-bordo/5 p-8 text-center">
-        <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-bordo text-4xl text-beyaz">🏅</div>
-        <h2 className="text-xl font-bold text-siyah">Güngören BFK Fanı Rozeti</h2>
-        <p className="mt-2 text-siyah/80">Kaydın tamamlandı. Artık resmi taraftarımızsın!</p>
-        <p className="mt-4 text-sm text-siyah/70">Maçlara gelerek ve mağazadan alışveriş yaparak rozetini büyütebilirsin (Beyaz → Bronz → Gümüş → Altın → Platinium).</p>
-        <a href="/taraftar" className="mt-6 inline-block rounded-lg bg-bordo px-6 py-3 font-medium text-beyaz hover:bg-bordo-dark transition-colors">Taraftar Paneline Git</a>
-      </div>
-    );
   }
 
   return (
