@@ -84,43 +84,51 @@ export default async function KadroPage() {
 
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
         {captains.length > 0 && (
-          <FadeInSection className="mb-10">
-            <h2 className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-bordo mb-4">
-              Kaptanlar
-            </h2>
-            <PlayerRow>
-              {captains.map((p) => (
-                <PlayerCard
-                  key={p.id}
-                  name={p.name}
-                  shirt_number={p.shirt_number}
-                  position={p.position}
-                  photo_url={p.photo_url}
-                  is_captain={true}
-                />
-              ))}
-            </PlayerRow>
-          </FadeInSection>
+          <>
+            <FadeInSection className="pb-8">
+              <h2 className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-bordo mb-4">
+                Kaptanlar
+              </h2>
+              <PlayerRow>
+                {captains.map((p) => (
+                  <PlayerCard
+                    key={p.id}
+                    name={p.name}
+                    shirt_number={p.shirt_number}
+                    position={p.position}
+                    photo_url={p.photo_url}
+                    is_captain={true}
+                  />
+                ))}
+              </PlayerRow>
+            </FadeInSection>
+            <div className="border-t border-siyah/15 py-6" aria-hidden />
+          </>
         )}
 
-        {byCategory.map((cat) => (
-          <FadeInSection key={cat.slug} className="mb-10">
-            <h2 className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-bordo mb-4">
-              {cat.label}
-            </h2>
-            <PlayerRow>
-              {cat.players.map((p) => (
-                <PlayerCard
-                  key={p.id}
-                  name={p.name}
-                  shirt_number={p.shirt_number}
-                  position={p.position}
-                  photo_url={p.photo_url}
-                  is_captain={false}
-                />
-              ))}
-            </PlayerRow>
-          </FadeInSection>
+        {byCategory.map((cat, idx) => (
+          <div key={cat.slug}>
+            <FadeInSection className="pb-8">
+              <h2 className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-bordo mb-4">
+                {cat.label}
+              </h2>
+              <PlayerRow>
+                {cat.players.map((p) => (
+                  <PlayerCard
+                    key={p.id}
+                    name={p.name}
+                    shirt_number={p.shirt_number}
+                    position={p.position}
+                    photo_url={p.photo_url}
+                    is_captain={false}
+                  />
+                ))}
+              </PlayerRow>
+            </FadeInSection>
+            {idx < byCategory.length - 1 && (
+              <div className="border-t border-siyah/15 py-6" aria-hidden />
+            )}
+          </div>
         ))}
 
         {squad.length === 0 && (
