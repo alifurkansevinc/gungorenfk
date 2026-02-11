@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { updateFavoritePlayer } from "@/app/actions/fan";
-import type { SquadMember } from "@/types/db";
+
+type SquadItem = { id: string; name: string; shirt_number: number | null; position: string | null };
 
 type Props = {
   currentFavoriteId: string | null;
-  squad: (SquadMember & { id: string })[];
+  squad: SquadItem[];
 };
 
 export function FavoriOyuncuSec({ currentFavoriteId, squad }: Props) {
