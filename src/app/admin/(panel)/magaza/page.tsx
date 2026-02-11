@@ -21,7 +21,8 @@ export default async function AdminMagazaPage() {
         </Link>
       </div>
       <div className="mt-8 overflow-hidden rounded-xl border border-siyah/10">
-        <table className="w-full text-left">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] text-left">
           <thead className="bg-siyah/5">
             <tr>
               <th className="px-4 py-3 text-xs font-semibold uppercase text-siyah/70">Sıra</th>
@@ -52,6 +53,7 @@ export default async function AdminMagazaPage() {
             )}
           </tbody>
         </table>
+        </div>
       </div>
     </div>
   );

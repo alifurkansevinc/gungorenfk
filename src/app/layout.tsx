@@ -21,6 +21,14 @@ export const metadata: Metadata = {
   description: "Güngören Belediye Spor Kulübü resmi internet sitesi. Haberler, maçlar, kadro ve taraftar.",
 };
 
+/** Mobil öncelikli: viewport ve tema rengi (status bar vb.) */
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: "#0A0A0A",
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{

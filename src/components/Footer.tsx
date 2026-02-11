@@ -23,6 +23,7 @@ const columns = [
       { href: "/", label: "Anasayfa" },
       { href: "/kulup", label: "Kulüp" },
       { href: "/kulup/yonetim-kurulu", label: "Yönetim Kurulu" },
+      { href: "/kulup/teknik-heyet", label: "Teknik Heyet" },
     ],
   },
 ];

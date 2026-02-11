@@ -8,8 +8,8 @@ export async function TaraftarBarStrip() {
 
   return (
     <section aria-label="Taraftar sayacı" className="border-y border-bordo/30 bg-siyah py-4 sm:py-5">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-4 px-4 sm:px-6 lg:px-8">
-        <div className="flex flex-1 flex-wrap items-center gap-4 min-w-0">
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 sm:flex-row sm:flex-wrap sm:items-center sm:px-6 lg:px-8">
+        <div className="flex flex-1 flex-wrap items-center gap-3 sm:gap-4 min-w-0">
           <span className="font-display text-sm font-semibold uppercase tracking-wider text-beyaz/80 whitespace-nowrap">
             Taraftar ailesi
           </span>
@@ -26,7 +26,7 @@ export async function TaraftarBarStrip() {
         </div>
         <Link
           href="/#taraftar-bar"
-          className="shrink-0 rounded-sm border border-beyaz/30 bg-beyaz/10 px-4 py-2 text-sm font-semibold text-beyaz transition-colors hover:bg-bordo"
+          className="min-touch shrink-0 self-start rounded-sm border border-beyaz/30 bg-beyaz/10 px-4 py-3 text-sm font-semibold text-beyaz transition-colors hover:bg-bordo"
         >
           1000 Taraftar 1 Bayrak →
         </Link>

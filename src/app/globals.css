@@ -26,12 +26,28 @@
   --font-mono: ui-monospace, monospace;
 }
 
+html {
+  overflow-x: hidden;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* Mobil: ana butonlar ve menü linkleri dokunmatik için yeterli yükseklik (py-3+ kullan) */
+@media (pointer: coarse) {
+  button:not([disabled]).min-touch,
+  a[href].min-touch {
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
 }
 
 .font-display {

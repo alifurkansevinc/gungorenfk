@@ -69,8 +69,28 @@ export type SquadMember = {
   name: string;
   shirt_number: number | null;
   position: string | null;
+  position_category: string | null;
   photo_url: string | null;
   bio: string | null;
+  sort_order: number;
+  is_active: boolean;
+  is_captain: boolean;
+};
+
+export type BoardMember = {
+  id: string;
+  name: string;
+  role_slug: string;
+  photo_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+};
+
+export type TechnicalStaffMember = {
+  id: string;
+  name: string;
+  role_slug: string;
+  photo_url: string | null;
   sort_order: number;
   is_active: boolean;
 };

@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { MemleketCount, Match, SquadMember } from "@/types/db";
+import type { MemleketCount, Match, SquadMember, BoardMember, TechnicalStaffMember } from "@/types/db";
 import type { FanLevel } from "@/types/db";
 
 const TARGET_PER_CITY = 1000;
@@ -17,20 +17,50 @@ export const DEMO_MATCHES: (Match & { id: string })[] = [
 
 /** Demo kadro (veri yokken tasarım için) */
 export const DEMO_SQUAD: (SquadMember & { id: string })[] = [
-  { id: "demo-1", name: "Ahmet Yılmaz", shirt_number: 1, position: "Kaleci", photo_url: null, bio: "Deneyimli kaleci.", sort_order: 1, is_active: true },
-  { id: "demo-2", name: "Mehmet Kaya", shirt_number: 2, position: "Sağ Bek", photo_url: null, bio: null, sort_order: 2, is_active: true },
-  { id: "demo-3", name: "Ali Demir", shirt_number: 3, position: "Stoper", photo_url: null, bio: null, sort_order: 3, is_active: true },
-  { id: "demo-4", name: "Can Özkan", shirt_number: 4, position: "Stoper", photo_url: null, bio: null, sort_order: 4, is_active: true },
-  { id: "demo-5", name: "Emre Çelik", shirt_number: 5, position: "Sol Bek", photo_url: null, bio: null, sort_order: 5, is_active: true },
-  { id: "demo-6", name: "Burak Arslan", shirt_number: 6, position: "Ön Libero", photo_url: null, bio: null, sort_order: 6, is_active: true },
-  { id: "demo-7", name: "Serkan Aydın", shirt_number: 7, position: "Sağ Kanat", photo_url: null, bio: null, sort_order: 7, is_active: true },
-  { id: "demo-8", name: "Oğuzhan Koç", shirt_number: 8, position: "Orta Saha", photo_url: null, bio: "Kaptan.", sort_order: 8, is_active: true },
-  { id: "demo-9", name: "Fatih Şahin", shirt_number: 9, position: "Forvet", photo_url: null, bio: null, sort_order: 9, is_active: true },
-  { id: "demo-10", name: "Hakan Polat", shirt_number: 10, position: "Orta Saha", photo_url: null, bio: null, sort_order: 10, is_active: true },
-  { id: "demo-11", name: "Yusuf Acar", shirt_number: 11, position: "Sol Kanat", photo_url: null, bio: null, sort_order: 11, is_active: true },
-  { id: "demo-12", name: "Murat Yıldız", shirt_number: 12, position: "Kaleci", photo_url: null, bio: null, sort_order: 12, is_active: true },
-  { id: "demo-13", name: "Kerem Öztürk", shirt_number: 14, position: "Orta Saha", photo_url: null, bio: null, sort_order: 14, is_active: true },
-  { id: "demo-14", name: "Barış Kılıç", shirt_number: 17, position: "Forvet", photo_url: null, bio: null, sort_order: 17, is_active: true },
+  { id: "demo-1", name: "Ahmet Yılmaz", shirt_number: 1, position: "Kaleci", position_category: "kl", photo_url: null, bio: "Deneyimli kaleci.", sort_order: 1, is_active: true, is_captain: false },
+  { id: "demo-2", name: "Mehmet Kaya", shirt_number: 2, position: "Sağ Bek", position_category: "bek", photo_url: null, bio: null, sort_order: 2, is_active: true, is_captain: false },
+  { id: "demo-3", name: "Ali Demir", shirt_number: 3, position: "Stoper", position_category: "stoper", photo_url: null, bio: null, sort_order: 3, is_active: true, is_captain: false },
+  { id: "demo-4", name: "Can Özkan", shirt_number: 4, position: "Stoper", position_category: "stoper", photo_url: null, bio: null, sort_order: 4, is_active: true, is_captain: false },
+  { id: "demo-5", name: "Emre Çelik", shirt_number: 5, position: "Sol Bek", position_category: "bek", photo_url: null, bio: null, sort_order: 5, is_active: true, is_captain: false },
+  { id: "demo-6", name: "Burak Arslan", shirt_number: 6, position: "Ön Libero", position_category: "ortasaha", photo_url: null, bio: null, sort_order: 6, is_active: true, is_captain: false },
+  { id: "demo-7", name: "Serkan Aydın", shirt_number: 7, position: "Sağ Kanat", position_category: "kanat", photo_url: null, bio: null, sort_order: 7, is_active: true, is_captain: false },
+  { id: "demo-8", name: "Oğuzhan Koç", shirt_number: 8, position: "Orta Saha", position_category: "ortasaha", photo_url: null, bio: "Kaptan.", sort_order: 8, is_active: true, is_captain: true },
+  { id: "demo-9", name: "Fatih Şahin", shirt_number: 9, position: "Forvet", position_category: "forvet", photo_url: null, bio: null, sort_order: 9, is_active: true, is_captain: false },
+  { id: "demo-10", name: "Hakan Polat", shirt_number: 10, position: "Orta Saha", position_category: "ortasaha", photo_url: null, bio: null, sort_order: 10, is_active: true, is_captain: false },
+  { id: "demo-11", name: "Yusuf Acar", shirt_number: 11, position: "Sol Kanat", position_category: "kanat", photo_url: null, bio: null, sort_order: 11, is_active: true, is_captain: false },
+  { id: "demo-12", name: "Murat Yıldız", shirt_number: 12, position: "Kaleci", position_category: "kl", photo_url: null, bio: null, sort_order: 12, is_active: true, is_captain: false },
+  { id: "demo-13", name: "Kerem Öztürk", shirt_number: 14, position: "Orta Saha", position_category: "ortasaha", photo_url: null, bio: null, sort_order: 14, is_active: true, is_captain: false },
+  { id: "demo-14", name: "Barış Kılıç", shirt_number: 17, position: "Forvet", position_category: "forvet", photo_url: null, bio: null, sort_order: 17, is_active: true, is_captain: false },
+];
+
+/** Demo yönetim kurulu (veri yokken) */
+export const DEMO_BOARD: BoardMember[] = [
+  { id: "b-1", name: "Ahmet Yılmaz", role_slug: "baskan", photo_url: null, sort_order: 1, is_active: true },
+  { id: "b-2", name: "Mehmet Kaya", role_slug: "baskan_vekili", photo_url: null, sort_order: 2, is_active: true },
+  { id: "b-3", name: "Ali Demir", role_slug: "as_baskan", photo_url: null, sort_order: 3, is_active: true },
+  { id: "b-4", name: "Ayşe Özkan", role_slug: "as_baskan", photo_url: null, sort_order: 4, is_active: true },
+  { id: "b-5", name: "Fatma Çelik", role_slug: "yk_uyesi", photo_url: null, sort_order: 5, is_active: true },
+  { id: "b-6", name: "Mustafa Arslan", role_slug: "yk_uyesi", photo_url: null, sort_order: 6, is_active: true },
+  { id: "b-7", name: "Zeynep Aydın", role_slug: "yk_uyesi", photo_url: null, sort_order: 7, is_active: true },
+  { id: "b-8", name: "Kemal Yıldız", role_slug: "yuksek_istisare_heyeti", photo_url: null, sort_order: 8, is_active: true },
+  { id: "b-9", name: "Selma Koç", role_slug: "yuksek_istisare_heyeti", photo_url: null, sort_order: 9, is_active: true },
+  { id: "b-10", name: "Cem Öztürk", role_slug: "yuksek_istisare_heyeti", photo_url: null, sort_order: 10, is_active: true },
+  { id: "b-11", name: "Deniz Şahin", role_slug: "yuksek_istisare_heyeti", photo_url: null, sort_order: 11, is_active: true },
+  { id: "b-12", name: "Emre Danışman", role_slug: "danisman", photo_url: null, sort_order: 12, is_active: true },
+  { id: "b-13", name: "Elif Danışman", role_slug: "danisman", photo_url: null, sort_order: 13, is_active: true },
+];
+
+/** Demo teknik heyet (veri yokken) */
+export const DEMO_TECHNICAL_STAFF: TechnicalStaffMember[] = [
+  { id: "t-1", name: "Ahmet Hoca", role_slug: "teknik_direktor", photo_url: null, sort_order: 1, is_active: true },
+  { id: "t-2", name: "Mehmet Yardımcı", role_slug: "yardimci_hoca", photo_url: null, sort_order: 2, is_active: true },
+  { id: "t-3", name: "Ali Kaleci Antrenörü", role_slug: "kaleci_antrenoru", photo_url: null, sort_order: 3, is_active: true },
+  { id: "t-4", name: "Can Altyapı", role_slug: "altyapi_td", photo_url: null, sort_order: 4, is_active: true },
+  { id: "t-5", name: "Barış Gelişim", role_slug: "gelisim_direktoru", photo_url: null, sort_order: 5, is_active: true },
+  { id: "t-6", name: "Cem Futbol", role_slug: "futbol_direktoru", photo_url: null, sort_order: 6, is_active: true },
+  { id: "t-7", name: "Deniz Kulüp", role_slug: "kulup_muduru", photo_url: null, sort_order: 7, is_active: true },
+  { id: "t-8", name: "Ece Lojistik", role_slug: "lojistik_muduru", photo_url: null, sort_order: 8, is_active: true },
+  { id: "t-9", name: "Fulya Fizyoterapist", role_slug: "fizyoterapist", photo_url: null, sort_order: 9, is_active: true },
 ];
 
 /** Demo: Gerçek taraftar yokken tasarım için memleket sayıları (Anadolu Temsilcisi bar) */
@@ -116,11 +146,40 @@ export async function getSquad() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("squad")
-    .select("id, name, shirt_number, position, photo_url, bio")
+    .select("id, name, shirt_number, position, position_category, photo_url, bio, sort_order, is_captain")
     .eq("is_active", true)
     .order("sort_order");
   if (!data || data.length === 0) return DEMO_SQUAD;
-  return data;
+  return data.map((r) => ({
+    ...r,
+    position_category: r.position_category ?? null,
+    is_captain: r.is_captain ?? false,
+    is_active: true,
+  })) as SquadMember[];
+}
+
+/** Yönetim kurulu; veri yoksa demo döner. */
+export async function getBoardMembers(): Promise<BoardMember[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("board_members")
+    .select("id, name, role_slug, photo_url, sort_order, is_active")
+    .eq("is_active", true)
+    .order("sort_order");
+  if (!data || data.length === 0) return DEMO_BOARD;
+  return data as BoardMember[];
+}
+
+/** Teknik heyet; veri yoksa demo döner. Öncelik sırası: teknik_direktor → fizyoterapist. */
+export async function getTechnicalStaff(): Promise<TechnicalStaffMember[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("technical_staff")
+    .select("id, name, role_slug, photo_url, sort_order, is_active")
+    .eq("is_active", true)
+    .order("sort_order");
+  if (!data || data.length === 0) return DEMO_TECHNICAL_STAFF;
+  return data as TechnicalStaffMember[];
 }
 
 /** Son haberler (anasayfa için). */

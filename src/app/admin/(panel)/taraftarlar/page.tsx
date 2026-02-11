@@ -16,7 +16,7 @@ export default async function AdminTaraftarlarPage() {
       <h1 className="text-2xl font-bold text-siyah">Taraftarlar</h1>
       <p className="mt-1 text-siyah/70">Kayıtlı taraftarlar ve memleket dağılımı (Anadolu Temsilcisi bar verisi).</p>
       <div className="mt-6 overflow-x-auto">
-        <table className="w-full border border-black/10 text-sm">
+        <table className="w-full min-w-[560px] border border-black/10 text-sm">
           <thead>
             <tr className="bg-siyah/5">
               <th className="border-b p-2 text-left">Ad Soyad</th>

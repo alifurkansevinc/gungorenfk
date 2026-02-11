@@ -53,7 +53,7 @@ export default async function MaclarPage() {
           <h2 className="text-sm font-semibold uppercase tracking-wider text-siyah/60 mb-4">Fikstür ve sonuçlar</h2>
           <div className="overflow-hidden rounded-xl border border-siyah/10 bg-beyaz">
             <div className="overflow-x-auto">
-              <table className="w-full text-left">
+              <table className="w-full min-w-[520px] text-left">
                 <thead>
                   <tr className="border-b border-siyah/10 bg-siyah/5">
                     <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-siyah/70">Tarih</th>

@@ -7,6 +7,7 @@ import { useState } from "react";
 const navLinks = [
   { href: "/kulup", label: "Kulüp" },
   { href: "/kulup/yonetim-kurulu", label: "Yönetim Kurulu" },
+  { href: "/kulup/teknik-heyet", label: "Teknik Heyet" },
   { href: "/maclar", label: "Maçlar" },
   { href: "/kadro", label: "Kadro" },
   { href: "/haberler", label: "Gelişmeler" },
@@ -80,7 +81,7 @@ export function Header() {
           </Link>
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded text-beyaz md:hidden"
+            className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-beyaz md:hidden"
             onClick={() => setMobileOpen((o) => !o)}
             aria-label="Menü"
           >
