@@ -32,7 +32,7 @@ export default async function YonetimKuruluPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
-      <section className="relative border-b border-siyah/10 bg-siyah py-14 sm:py-20 text-beyaz overflow-hidden">
+      <section className="relative border-b border-siyah/10 bg-siyah py-8 sm:py-10 text-beyaz overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <Image src={DEMO_IMAGES.team} alt="" fill className="object-cover" unoptimized />
         </div>
@@ -41,60 +41,54 @@ export default async function YonetimKuruluPage() {
           <Link href="/kulup" className="text-sm font-medium text-beyaz/70 hover:text-beyaz transition-colors">
             ← Kulüp
           </Link>
-          <p className="font-display mt-4 text-xs font-semibold uppercase tracking-[0.25em] text-bordo">
+          <p className="font-display mt-3 text-xs font-semibold uppercase tracking-[0.25em] text-bordo">
             Kulüp
           </p>
-          <h1 className="font-display mt-2 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+          <h1 className="font-display mt-1 text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
             Yönetim Kurulu
           </h1>
-          <p className="mt-3 text-beyaz/80 max-w-2xl">
+          <p className="mt-2 text-sm text-beyaz/80 max-w-2xl">
             Güngören Belediye Spor Kulübü yönetim kurulu, yüksek istişare heyeti ve danışmanlar.
           </p>
         </div>
       </section>
 
-      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-        {groups.map((group, groupIndex) => (
-          <FadeInSection key={group.slug} className="mb-14 sm:mb-20">
-            <h2 className="font-display text-sm font-semibold uppercase tracking-[0.2em] text-bordo mb-6">
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+        {groups.map((group) => (
+          <FadeInSection key={group.slug} className="mb-10 sm:mb-14">
+            <h2 className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-bordo mb-4">
               {group.label}
             </h2>
             <div
               className={
                 group.slug === "baskan"
-                  ? "grid gap-4 sm:grid-cols-1"
+                  ? "grid gap-4 sm:grid-cols-1 max-w-md"
                   : group.slug === "baskan_vekili"
-                    ? "grid gap-4 sm:grid-cols-1 max-w-xl"
-                    : "grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+                    ? "grid gap-4 sm:grid-cols-1 max-w-sm"
+                    : "grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
               }
             >
-              {group.list.map((person, i) => (
+              {group.list.map((person) => (
                 <div
                   key={person.id}
                   className={`
-                    group relative overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz
-                    transition-all duration-300 hover:shadow-xl hover:border-bordo/30
-                    ${group.slug === "baskan" ? "p-8 sm:p-10 ring-2 ring-bordo/20" : "p-6"}
+                    group relative overflow-hidden rounded-xl border border-siyah/10 bg-beyaz
+                    transition-all duration-300 hover:shadow-lg hover:shadow-bordo/10 hover:border-bordo/25
+                    ${group.slug === "baskan" ? "p-5 sm:p-6 ring-2 ring-bordo/20" : "p-4"}
                   `}
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-bordo/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div className="flex h-16 w-16 shrink-0 sm:h-20 sm:w-20 items-center justify-center rounded-full bg-bordo/15 text-bordo font-display font-bold text-2xl sm:text-3xl ring-2 ring-bordo/20">
+                  <div className="relative flex items-center gap-3">
+                    <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-bordo/10 ring-2 ring-bordo/20 sm:h-14 sm:w-14">
                       {person.photo_url ? (
-                        <Image src={person.photo_url} alt="" width={80} height={80} className="rounded-full object-cover" unoptimized />
+                        <Image src={person.photo_url} alt="" fill className="object-cover transition-transform duration-300 group-hover:scale-105" unoptimized />
                       ) : (
-                        person.name.charAt(0)
+                        <Image src={DEMO_IMAGES.portrait} alt="" fill className="object-cover opacity-90 transition-transform duration-300 group-hover:scale-105" unoptimized />
                       )}
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="font-display font-semibold text-siyah text-lg sm:text-xl">{person.name}</h3>
-                      <p className="mt-0.5 text-sm font-medium text-bordo">
-                        {group.slug === "yuksek_istisare_heyeti" || group.slug === "danisman"
-                          ? group.label
-                          : group.list.length === 1
-                            ? group.label
-                            : group.label}
-                      </p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-display font-semibold text-siyah text-sm sm:text-base truncate">{person.name}</h3>
+                      <p className="mt-0.5 text-xs font-medium text-bordo">{group.label}</p>
                     </div>
                   </div>
                 </div>

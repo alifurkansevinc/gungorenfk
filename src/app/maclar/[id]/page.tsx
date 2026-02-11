@@ -12,7 +12,7 @@ export default async function MacDetayPage({ params }: { params: Promise<{ id: s
   return (
     <div className="min-h-screen">
       {/* Hero görsel */}
-      <section className="relative h-[45vh] min-h-[280px] flex items-end bg-siyah">
+      <section className="relative h-[26vh] min-h-[200px] flex items-end bg-siyah">
         <Image src={DEMO_IMAGES.match} alt="" fill className="object-cover opacity-80" unoptimized priority />
         <div className="absolute inset-0 bg-gradient-to-t from-siyah via-siyah/60 to-transparent" />
         <div className="relative z-10 w-full mx-auto max-w-7xl px-4 pb-10 pt-16 sm:px-6 lg:px-8">

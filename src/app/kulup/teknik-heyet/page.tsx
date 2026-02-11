@@ -44,7 +44,7 @@ export default async function TeknikHeyetPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
-      <section className="relative border-b border-siyah/10 bg-siyah py-14 sm:py-20 text-beyaz overflow-hidden">
+      <section className="relative border-b border-siyah/10 bg-siyah py-8 sm:py-10 text-beyaz overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <Image src={DEMO_IMAGES.team} alt="" fill className="object-cover" unoptimized />
         </div>
@@ -53,42 +53,42 @@ export default async function TeknikHeyetPage() {
           <Link href="/kulup" className="text-sm font-medium text-beyaz/70 hover:text-beyaz transition-colors">
             ← Kulüp
           </Link>
-          <p className="font-display mt-4 text-xs font-semibold uppercase tracking-[0.25em] text-bordo">
+          <p className="font-display mt-3 text-xs font-semibold uppercase tracking-[0.25em] text-bordo">
             Kulüp
           </p>
-          <h1 className="font-display mt-2 text-3xl font-bold tracking-tight sm:text-4xl md:text-5xl">
+          <h1 className="font-display mt-1 text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
             Teknik Heyet
           </h1>
-          <p className="mt-3 text-beyaz/80 max-w-2xl">
+          <p className="mt-2 text-sm text-beyaz/80 max-w-2xl">
             Teknik direktör, antrenörler, futbol direktörü ve kulüp yönetimi.
           </p>
         </div>
       </section>
 
-      <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
         {groups.map((group) => (
-          <FadeInSection key={group.slug} className="mb-10 sm:mb-14">
-            <h2 className="font-display text-sm font-semibold uppercase tracking-[0.2em] text-bordo mb-4">
+          <FadeInSection key={group.slug} className="mb-8 sm:mb-10">
+            <h2 className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-bordo mb-3">
               {group.label}
             </h2>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {group.list.map((person) => (
                 <div
                   key={person.id}
-                  className="group relative overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz p-6 transition-all duration-300 hover:shadow-xl hover:border-bordo/30"
+                  className="group relative overflow-hidden rounded-xl border border-siyah/10 bg-beyaz p-4 transition-all duration-300 hover:shadow-lg hover:shadow-bordo/10 hover:border-bordo/25"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-bordo/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="relative flex flex-col sm:flex-row sm:items-center gap-4">
-                    <div className="flex h-14 w-14 shrink-0 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-bordo/15 text-bordo font-display font-bold text-xl ring-2 ring-bordo/20">
+                  <div className="relative flex items-center gap-3">
+                    <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-bordo/10 ring-2 ring-bordo/20 sm:h-12 sm:w-12">
                       {person.photo_url ? (
-                        <Image src={person.photo_url} alt="" width={64} height={64} className="rounded-full object-cover" unoptimized />
+                        <Image src={person.photo_url} alt="" fill className="object-cover transition-transform duration-300 group-hover:scale-105" unoptimized />
                       ) : (
-                        person.name.charAt(0)
+                        <Image src={DEMO_IMAGES.portrait} alt="" fill className="object-cover opacity-90 transition-transform duration-300 group-hover:scale-105" unoptimized />
                       )}
                     </div>
-                    <div className="min-w-0">
-                      <h3 className="font-display font-semibold text-siyah">{person.name}</h3>
-                      <p className="mt-0.5 text-sm font-medium text-bordo">{group.label}</p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-display font-semibold text-siyah text-sm truncate">{person.name}</h3>
+                      <p className="mt-0.5 text-xs font-medium text-bordo">{group.label}</p>
                     </div>
                   </div>
                 </div>

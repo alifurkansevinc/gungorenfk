@@ -17,7 +17,7 @@ export default async function MaclarPage() {
   return (
     <div className="min-h-screen">
       {/* Hero - tam genişlik görsel */}
-      <section className="relative h-[50vh] min-h-[320px] flex items-end bg-siyah">
+      <section className="relative h-[26vh] min-h-[200px] flex items-end bg-siyah">
         <Image src={DEMO_IMAGES.stadium} alt="" fill className="object-cover opacity-80" unoptimized priority />
         <div className="absolute inset-0 bg-gradient-to-t from-siyah via-siyah/50 to-transparent" />
         <div className="relative z-10 w-full mx-auto max-w-7xl px-4 pb-12 pt-20 sm:px-6 lg:px-8">
