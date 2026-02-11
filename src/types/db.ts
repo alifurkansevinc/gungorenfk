@@ -4,6 +4,10 @@ export type FanLevel = {
   slug: string;
   min_points: number;
   sort_order: number;
+  description: string | null;
+  target_store_spend: number | null;
+  target_tickets: number | null;
+  target_donation: number | null;
 };
 
 export type City = {
@@ -38,6 +42,9 @@ export type FanProfile = {
   fan_level_id: number;
   points: number;
   favorite_player_id: string | null;
+  store_spend_total: number;
+  match_tickets_count: number;
+  donation_total: number;
   created_at: string;
   updated_at: string;
 };

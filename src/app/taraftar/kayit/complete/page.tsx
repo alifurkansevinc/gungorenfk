@@ -81,7 +81,7 @@ export default function TaraftarKayitCompletePage() {
           <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-full bg-bordo text-4xl text-beyaz">🏅</div>
           <h2 className="text-xl font-bold text-siyah">Güngören BFK Fanı Rozeti</h2>
           <p className="mt-2 text-siyah/80">Kaydın tamamlandı. Artık resmi taraftarımızsın!</p>
-          <p className="mt-4 text-sm text-siyah/70">Maçlara gelerek ve mağazadan alışveriş yaparak rozetini büyütebilirsin (Beyaz → Bronz → Gümüş → Altın → Platinium).</p>
+          <p className="mt-4 text-sm text-siyah/70">Maçlara gelerek, mağazadan alışveriş yaparak ve bağışla rozetini büyütebilirsin (As Oyuncu → Maestro → Kapitano → General → Efsane).</p>
           <Link href="/taraftar" className="mt-6 inline-block rounded-lg bg-bordo px-6 py-3 font-medium text-beyaz hover:bg-bordo-dark transition-colors">
             Taraftar Paneline Git
           </Link>

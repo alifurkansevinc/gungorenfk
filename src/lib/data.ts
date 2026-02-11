@@ -101,11 +101,14 @@ export async function getMatchById(id: string): Promise<(Match & { id: string })
   return data;
 }
 
-/** Tüm rozet kademeleri (ilerleme çubuğu için). */
+/** Tüm rozet kademeleri (açıklama ve hedefler dahil). */
 export async function getFanLevels(): Promise<FanLevel[]> {
   const supabase = await createClient();
-  const { data } = await supabase.from("fan_levels").select("id, name, slug, min_points, sort_order").order("sort_order");
-  return data ?? [];
+  const { data } = await supabase
+    .from("fan_levels")
+    .select("id, name, slug, min_points, sort_order, description, target_store_spend, target_tickets, target_donation")
+    .order("sort_order");
+  return (data ?? []) as FanLevel[];
 }
 
 /** Kadro listesi; veri yoksa demo döner. */
