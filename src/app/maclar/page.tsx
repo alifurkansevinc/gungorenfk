@@ -4,7 +4,7 @@ import { getMatches } from "@/lib/data";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 
 export const metadata = {
-  title: "Maçlar | Güngören FK",
+  title: "Sıralama | Güngören FK",
   description: "Güngören FK maç programı ve sonuçları.",
 };
 
@@ -17,12 +17,11 @@ export default async function MaclarPage() {
   return (
     <div className="min-h-screen">
       {/* Hero - tam genişlik görsel */}
-      <section className="relative h-[26vh] min-h-[200px] flex items-end bg-siyah">
+      <section className="relative h-[14vh] min-h-[100px] flex items-end bg-siyah">
         <Image src={DEMO_IMAGES.stadium} alt="" fill className="object-cover opacity-80" unoptimized priority />
         <div className="absolute inset-0 bg-gradient-to-t from-siyah via-siyah/50 to-transparent" />
-        <div className="relative z-10 w-full mx-auto max-w-7xl px-4 pb-12 pt-20 sm:px-6 lg:px-8">
-          <h1 className="text-3xl font-bold text-beyaz sm:text-4xl md:text-5xl">Maçlar</h1>
-          <p className="mt-2 text-beyaz/90">Fikstür ve sonuçlar</p>
+        <div className="relative z-10 w-full mx-auto max-w-7xl px-4 pb-4 pt-12 sm:px-6 lg:px-8">
+          <h1 className="text-2xl font-bold text-beyaz sm:text-3xl">Sıralama</h1>
         </div>
       </section>
 

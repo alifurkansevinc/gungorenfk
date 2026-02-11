@@ -36,24 +36,18 @@ export default async function YonetimKuruluPage() {
 
   return (
     <div className="min-h-screen bg-siyah">
-      <section className="relative border-b border-beyaz/10 bg-siyah py-8 sm:py-10 text-beyaz overflow-hidden">
+      <section className="relative border-b border-beyaz/10 bg-siyah py-5 sm:py-6 text-beyaz overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <Image src={DEMO_IMAGES.team} alt="" fill className="object-cover" unoptimized />
         </div>
         <div className="absolute inset-0 bg-gradient-to-b from-siyah/80 to-siyah" />
         <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6">
           <Link href="/kulup" className="text-sm font-medium text-beyaz/70 hover:text-beyaz transition-colors">
-            ← Kulüp
+            ← Kulübümüz
           </Link>
-          <p className="font-display mt-3 text-xs font-semibold uppercase tracking-[0.25em] text-bordo">
-            Kulüp
-          </p>
-          <h1 className="font-display mt-1 text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
+          <h1 className="font-display mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
             Yönetim Kurulu
           </h1>
-          <p className="mt-2 text-sm text-beyaz/80 max-w-2xl">
-            Güngören Belediye Spor Kulübü yönetim kurulu, yüksek istişare heyeti ve danışmanlar.
-          </p>
         </div>
       </section>
 

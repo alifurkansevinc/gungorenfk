@@ -16,16 +16,13 @@ export default async function MagazaPage() {
     <div className="min-h-screen bg-[#f5f5f5]">
       {/* Üst band — e-ticaret tarzı */}
       <div className="border-b border-siyah/10 bg-beyaz">
-        <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
           <nav className="text-sm text-siyah/70">
             <Link href="/" className="hover:text-bordo transition-colors">Anasayfa</Link>
             <span className="mx-2">/</span>
             <span className="text-siyah font-medium">Mağaza</span>
           </nav>
-          <h1 className="font-display mt-4 text-2xl font-bold text-siyah sm:text-3xl">Mağaza</h1>
-          <p className="mt-2 text-siyah/70 max-w-2xl">
-            Resmi ürünler. Fiyatlar bilgi amaçlıdır; sipariş için kulüp ile iletişime geçin.
-          </p>
+          <h1 className="font-display mt-3 text-2xl font-bold text-siyah sm:text-3xl">Mağaza</h1>
         </div>
       </div>
 

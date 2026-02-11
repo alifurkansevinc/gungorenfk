@@ -4,7 +4,7 @@ const columns = [
   {
     title: "Takım",
     links: [
-      { href: "/maclar", label: "Maçlar" },
+      { href: "/maclar", label: "Sıralama" },
       { href: "/kadro", label: "Kadro" },
       { href: "/haberler", label: "Gelişmeler" },
     ],
@@ -21,7 +21,7 @@ const columns = [
     title: "Kulüp",
     links: [
       { href: "/", label: "Anasayfa" },
-      { href: "/kulup", label: "Kulüp" },
+      { href: "/kulup", label: "Kulübümüz" },
       { href: "/kulup/yonetim-kurulu", label: "Yönetim Kurulu" },
       { href: "/kulup/teknik-heyet", label: "Teknik Heyet" },
     ],

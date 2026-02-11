@@ -2,26 +2,40 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 
-const navLinks = [
-  { href: "/kulup", label: "Kulüp" },
-  { href: "/kulup/yonetim-kurulu", label: "Yönetim Kurulu" },
-  { href: "/kulup/teknik-heyet", label: "Teknik Heyet" },
-  { href: "/maclar", label: "Maçlar" },
-  { href: "/kadro", label: "Kadro" },
-  { href: "/haberler", label: "Gelişmeler" },
+const NAV_BASE = [
+  { href: "/maclar", label: "Sıralama" },
   { href: "/magaza", label: "Mağaza" },
-  { href: "/benim-kosem", label: "Benim Köşem" },
-];
+  { href: "/kadro", label: "Kadro" },
+  { href: "/kulup/teknik-heyet", label: "Teknik Heyet" },
+  { href: "/kulup/yonetim-kurulu", label: "Yönetim Kurulu" },
+  { href: "/haberler", label: "Gelişmeler" },
+  { href: "/kulup", label: "Kulübümüz" },
+  { href: "/taraftar/kayit", label: "Taraftar" },
+] as const;
 
 export function Header() {
   const [logoError, setLogoError] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [signedIn, setSignedIn] = useState(false);
+
+  useEffect(() => {
+    const supabase = createClient();
+    supabase.auth.getSession().then(({ data: { session } }) => setSignedIn(!!session?.user));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, session) =>
+      setSignedIn(!!session?.user)
+    );
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const navLinks = signedIn
+    ? [...NAV_BASE, { href: "/benim-kosem", label: "Benim Köşem" }]
+    : [...NAV_BASE];
 
   return (
     <header className="sticky top-0 z-50 bg-siyah">
-      {/* Üst ince şerit — Juventus tarzı secondary bar */}
       <div className="border-b border-beyaz/10">
         <div className="mx-auto flex h-10 max-w-7xl items-center justify-end px-4 sm:px-6 lg:px-8">
           <span className="text-xs font-medium uppercase tracking-wider text-beyaz/50">
@@ -30,55 +44,56 @@ export function Header() {
         </div>
       </div>
 
-      {/* Ana navigasyon — koyu arka plan, beyaz metin */}
-      <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <Link
           href="/"
-          className="flex items-center gap-3"
+          className="flex shrink-0 items-center gap-3"
           onClick={() => setMobileOpen(false)}
         >
-          <div className="relative h-10 w-10 flex-shrink-0 overflow-hidden rounded-full border-2 border-beyaz/20 bg-bordo">
+          <div className="relative h-9 w-9 flex-shrink-0 overflow-hidden rounded-full border-2 border-beyaz/20 bg-bordo">
             {!logoError ? (
               <Image
                 src="/logo.png"
                 alt="Güngören FK"
-                width={40}
-                height={40}
+                width={36}
+                height={36}
                 className="object-contain"
                 unoptimized
                 onError={() => setLogoError(true)}
               />
             ) : null}
-            <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-beyaz">
+            <span className="absolute inset-0 flex items-center justify-center text-base font-bold text-beyaz">
               G
             </span>
           </div>
-          <span className="font-display text-xl font-bold tracking-tight text-beyaz">
+          <span className="font-display text-lg font-bold tracking-tight text-beyaz sm:text-xl">
             Güngören FK
           </span>
         </Link>
 
-        {/* Desktop nav — Juventus: ortada/sağda, büyük harf hissi, sade */}
-        <nav className="hidden items-center gap-1 md:flex">
+        <nav className="hidden flex-shrink-0 items-center gap-0 md:flex">
           {navLinks.map(({ href, label }) => (
             <Link
-              key={href}
+              key={href + label}
               href={href}
-              className="px-4 py-3 text-sm font-semibold uppercase tracking-wider text-beyaz/90 transition-colors hover:bg-beyaz/10 hover:text-beyaz"
+              className="whitespace-nowrap px-2.5 py-2 text-xs font-semibold uppercase tracking-wider text-beyaz/90 transition-colors hover:bg-beyaz/10 hover:text-beyaz sm:px-3 sm:text-sm"
+              onClick={() => setMobileOpen(false)}
             >
               {label}
             </Link>
           ))}
         </nav>
 
-        {/* Sağ: CTA + mobil menü butonu */}
-        <div className="flex items-center gap-2">
-          <Link
-            href="/taraftar/kayit"
-            className="hidden rounded-sm bg-bordo px-5 py-2.5 text-sm font-bold uppercase tracking-wider text-beyaz transition-colors hover:bg-bordo-dark md:inline-block"
-          >
-            Taraftar Ol
-          </Link>
+        <div className="flex shrink-0 items-center gap-2">
+          {!signedIn && (
+            <Link
+              href="/taraftar/kayit"
+              className="hidden rounded-sm bg-bordo px-4 py-2 text-xs font-bold uppercase tracking-wider text-beyaz transition-colors hover:bg-bordo-dark sm:px-5 sm:py-2.5 sm:text-sm md:inline-block"
+              onClick={() => setMobileOpen(false)}
+            >
+              Taraftar Ol
+            </Link>
+          )}
           <button
             type="button"
             className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-beyaz md:hidden"
@@ -98,13 +113,12 @@ export function Header() {
         </div>
       </div>
 
-      {/* Mobil menü — tam genişlik, koyu */}
       {mobileOpen && (
         <div className="border-t border-beyaz/10 bg-siyah px-4 py-4 md:hidden">
           <nav className="flex flex-col gap-0">
             {navLinks.map(({ href, label }) => (
               <Link
-                key={href}
+                key={href + label}
                 href={href}
                 className="border-b border-beyaz/5 py-4 text-sm font-semibold uppercase tracking-wider text-beyaz hover:bg-beyaz/10"
                 onClick={() => setMobileOpen(false)}
@@ -112,13 +126,15 @@ export function Header() {
                 {label}
               </Link>
             ))}
-            <Link
-              href="/taraftar/kayit"
-              className="mt-2 rounded-sm bg-bordo py-4 text-center text-sm font-bold uppercase tracking-wider text-beyaz"
-              onClick={() => setMobileOpen(false)}
-            >
-              Taraftar Ol
-            </Link>
+            {!signedIn && (
+              <Link
+                href="/taraftar/kayit"
+                className="mt-2 rounded-sm bg-bordo py-4 text-center text-sm font-bold uppercase tracking-wider text-beyaz"
+                onClick={() => setMobileOpen(false)}
+              >
+                Taraftar Ol
+              </Link>
+            )}
           </nav>
         </div>
       )}

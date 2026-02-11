@@ -5,17 +5,11 @@ export default function KulupPage() {
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
       {/* Hero */}
-      <section className="bg-siyah py-16 sm:py-24 text-beyaz">
+      <section className="bg-siyah py-6 sm:py-8 text-beyaz">
         <div className="mx-auto max-w-3xl px-6 text-center">
-          <p className="font-display text-xs font-semibold uppercase tracking-[0.25em] text-bordo">
-            Kulüp
-          </p>
-          <h1 className="font-display mt-3 text-4xl font-bold tracking-tight sm:text-5xl">
-            Güngören Belediye Spor Kulübü
+          <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
+            Kulübümüz
           </h1>
-          <p className="mt-4 text-beyaz/80">
-            Güngören&apos;in resmi futbol kulübü. Tarihçemiz, değerlerimiz ve yönetimimiz.
-          </p>
         </div>
       </section>
 

@@ -73,12 +73,11 @@ export default async function KadroPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
-      <section className="relative h-[26vh] min-h-[200px] flex items-end bg-siyah">
+      <section className="relative h-[14vh] min-h-[100px] flex items-end bg-siyah">
         <Image src={DEMO_IMAGES.team} alt="" fill className="object-cover opacity-80" unoptimized priority />
         <div className="absolute inset-0 bg-gradient-to-t from-siyah via-siyah/60 to-transparent" />
-        <div className="relative z-10 w-full mx-auto max-w-6xl px-4 pb-8 pt-16 sm:px-6 lg:px-8">
-          <h1 className="font-display text-2xl font-bold text-beyaz sm:text-3xl md:text-4xl">Kadro</h1>
-          <p className="mt-1 text-sm text-beyaz/90">Takım kadromuz</p>
+        <div className="relative z-10 w-full mx-auto max-w-6xl px-4 pb-4 pt-12 sm:px-6 lg:px-8">
+          <h1 className="font-display text-2xl font-bold text-beyaz sm:text-3xl">Kadro</h1>
         </div>
       </section>
 

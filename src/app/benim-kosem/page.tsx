@@ -66,14 +66,13 @@ export default async function BenimKosemPage() {
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
       <div className="border-b border-siyah/10 bg-siyah text-beyaz">
-        <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
           <nav className="text-sm text-beyaz/60">
             <Link href="/" className="hover:text-beyaz">Anasayfa</Link>
             <span className="mx-2">/</span>
             <span className="text-beyaz">Benim Köşem</span>
           </nav>
-          <h1 className="font-display mt-3 text-2xl font-bold sm:text-3xl">Benim Köşem</h1>
-          <p className="mt-1 text-beyaz/80">Hoş geldin, {profile.first_name}.</p>
+          <h1 className="font-display mt-2 text-2xl font-bold sm:text-3xl">Benim Köşem</h1>
         </div>
       </div>
 

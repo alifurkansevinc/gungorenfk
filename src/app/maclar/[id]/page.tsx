@@ -12,15 +12,14 @@ export default async function MacDetayPage({ params }: { params: Promise<{ id: s
   return (
     <div className="min-h-screen">
       {/* Hero görsel */}
-      <section className="relative h-[26vh] min-h-[200px] flex items-end bg-siyah">
+      <section className="relative h-[14vh] min-h-[100px] flex items-end bg-siyah">
         <Image src={DEMO_IMAGES.match} alt="" fill className="object-cover opacity-80" unoptimized priority />
         <div className="absolute inset-0 bg-gradient-to-t from-siyah via-siyah/60 to-transparent" />
-        <div className="relative z-10 w-full mx-auto max-w-7xl px-4 pb-10 pt-16 sm:px-6 lg:px-8">
-          <p className="text-sm text-beyaz/80">{match.competition || "Maç"}</p>
-          <h1 className="mt-1 text-2xl font-bold text-beyaz sm:text-3xl md:text-4xl">
+        <div className="relative z-10 w-full mx-auto max-w-7xl px-4 pb-4 pt-12 sm:px-6 lg:px-8">
+          <h1 className="text-xl font-bold text-beyaz sm:text-2xl md:text-3xl">
             {match.home_away === "home" ? "Güngören FK" : match.opponent_name} - {match.home_away === "away" ? "Güngören FK" : match.opponent_name}
           </h1>
-          <p className="mt-2 text-beyaz/90">{new Date(match.match_date).toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
+          <p className="mt-1 text-sm text-beyaz/90">{new Date(match.match_date).toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}</p>
         </div>
       </section>
 
