@@ -135,7 +135,7 @@ export async function getLatestNews(limit = 4) {
   return data ?? [];
 }
 
-/** Mağaza ürünleri (anasayfa veya mağaza sayfası listeleme). */
+/** Mağaza ürünleri (anasayfa veya mağaza sayfası). DB boşsa demo ürünler döner. */
 export async function getFeaturedProducts(limit = 4) {
   const supabase = await createClient();
   const { data } = await supabase
@@ -144,10 +144,19 @@ export async function getFeaturedProducts(limit = 4) {
     .eq("is_active", true)
     .order("sort_order")
     .limit(limit);
-  return data ?? [];
+  if (data && data.length > 0) return data;
+  const { DEMO_PRODUCTS } = await import("@/lib/demo-products");
+  return DEMO_PRODUCTS.slice(0, limit).map((p) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    description: p.description,
+    price: p.price,
+    image_url: p.image_url,
+  }));
 }
 
-/** Slug ile tek ürün (mağaza detay sayfası). */
+/** Slug ile tek ürün (mağaza detay). DB’de yoksa demo ürünlerden döner. */
 export async function getProductBySlug(slug: string) {
   const supabase = await createClient();
   const { data } = await supabase
@@ -156,7 +165,20 @@ export async function getProductBySlug(slug: string) {
     .eq("slug", slug)
     .eq("is_active", true)
     .single();
-  return data;
+  if (data) return data;
+  const { getDemoProductBySlug } = await import("@/lib/demo-products");
+  const demo = getDemoProductBySlug(slug);
+  if (!demo) return null;
+  return {
+    id: demo.id,
+    name: demo.name,
+    slug: demo.slug,
+    description: demo.description,
+    price: demo.price,
+    image_url: demo.image_url,
+    sort_order: demo.sort_order,
+    is_active: true,
+  };
 }
 
 export { TARGET_PER_CITY };

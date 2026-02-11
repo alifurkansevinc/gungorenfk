@@ -11,12 +11,6 @@ export const metadata = {
 
 export default async function MagazaPage() {
   const products = await getFeaturedProducts(50);
-  const displayProducts = products && products.length > 0 ? products : [
-    { id: "d1", name: "Resmi Forma", slug: "resmi-forma", description: "Güngören FK resmi forma.", price: "349", image_url: null },
-    { id: "d2", name: "Atkı", slug: "atki", description: "Resmi atkı.", price: "79", image_url: null },
-    { id: "d3", name: "Şapka", slug: "sapka", description: "Kulüp şapkası.", price: "59", image_url: null },
-    { id: "d4", name: "Antrenman Forması", slug: "antrenman-formasi", description: "Antrenman forması.", price: "199", image_url: null },
-  ];
 
   return (
     <div className="min-h-screen bg-[#f5f5f5]">
@@ -38,7 +32,7 @@ export default async function MagazaPage() {
       {/* Ürün grid — Apeirona / e-ticaret kart mantığı */}
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {displayProducts.map((p) => (
+          {products.map((p) => (
             <Link
               key={p.id}
               href={p.slug ? `/magaza/${p.slug}` : "/magaza"}
