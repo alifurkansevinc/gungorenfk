@@ -61,7 +61,8 @@ export function PersonGallery({
         className="overflow-x-auto overflow-y-hidden scroll-smooth snap-x snap-mandatory pt-12 pb-1"
         style={{ scrollbarWidth: "thin" }}
       >
-        <div className="flex items-start gap-2 px-1">
+        {/* Tüm kartlar aynı yükseklikte: büyük resimle aynı boy, ince olanlar dar */}
+        <div className="flex h-[300px] gap-2 px-1 sm:h-[380px]">
           {items.map((person, i) => {
             const isActive = i === activeIndex;
             const src = person.photo_url || placeholderImage;
@@ -71,22 +72,20 @@ export function PersonGallery({
                 type="button"
                 onClick={() => setActiveIndex(i)}
                 className={`
-                  flex flex-shrink-0 snap-center flex-col overflow-hidden rounded-xl border-2 border-siyah/20 bg-siyah text-left
+                  relative flex h-full flex-shrink-0 snap-center overflow-hidden rounded-xl border-2 border-siyah/20 bg-siyah text-left
                   transition-all duration-300 ease-out
                   ${isActive ? "w-[160px] border-bordo shadow-[0_0_24px_rgba(139,21,56,0.25)] sm:w-[200px]" : "w-[70px] hover:border-siyah/40 sm:w-[80px]"}
                 `}
               >
-                <div className="relative h-full w-full overflow-hidden" style={{ aspectRatio: "1/2" }}>
-                  <Image
-                    src={src}
-                    alt={person.name}
-                    fill
-                    className={`object-cover transition-all duration-300 ${
-                      isActive ? "grayscale-0 scale-[1.02]" : "grayscale"
-                    }`}
-                    unoptimized
-                  />
-                </div>
+                <Image
+                  src={src}
+                  alt={person.name}
+                  fill
+                  className={`object-cover transition-all duration-300 ${
+                    isActive ? "grayscale-0 scale-[1.02]" : "grayscale"
+                  }`}
+                  unoptimized
+                />
               </button>
             );
           })}
