@@ -13,7 +13,7 @@ const columns = [
     title: "Taraftar",
     links: [
       { href: "/taraftar/kayit", label: "Taraftar Ol" },
-      { href: "/taraftar", label: "Taraftar Paneli" },
+      { href: "/benim-kosem", label: "Benim Köşem" },
       { href: "/magaza", label: "Mağaza" },
     ],
   },

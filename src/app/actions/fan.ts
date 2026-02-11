@@ -38,3 +38,16 @@ export async function createFanProfileAfterSignup(input: FanProfileInput) {
   }
   return { ok: true };
 }
+
+/** Taraftar favori oyuncu güncelle (sadece kendi profili). */
+export async function updateFavoritePlayer(favoritePlayerId: string | null) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "Oturum bulunamadı." };
+  const { error } = await supabase
+    .from("fan_profiles")
+    .update({ favorite_player_id: favoritePlayerId, updated_at: new Date().toISOString() })
+    .eq("user_id", user.id);
+  if (error) return { error: error.message };
+  return { ok: true };
+}

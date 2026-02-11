@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import type { MemleketCount, Match, SquadMember } from "@/types/db";
+import type { FanLevel } from "@/types/db";
 
 const TARGET_PER_CITY = 1000;
 /** Anasayfa toplam taraftar barı hedefi */
@@ -100,6 +101,13 @@ export async function getMatchById(id: string): Promise<(Match & { id: string })
   return data;
 }
 
+/** Tüm rozet kademeleri (ilerleme çubuğu için). */
+export async function getFanLevels(): Promise<FanLevel[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("fan_levels").select("id, name, slug, min_points, sort_order").order("sort_order");
+  return data ?? [];
+}
+
 /** Kadro listesi; veri yoksa demo döner. */
 export async function getSquad() {
   const supabase = await createClient();
@@ -124,12 +132,12 @@ export async function getLatestNews(limit = 4) {
   return data ?? [];
 }
 
-/** Mağaza öne çıkan ürünler (anasayfa için). */
+/** Mağaza ürünleri (anasayfa veya mağaza sayfası listeleme). */
 export async function getFeaturedProducts(limit = 4) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("store_products")
-    .select("id, name, slug, price, image_url")
+    .select("id, name, slug, description, price, image_url")
     .eq("is_active", true)
     .order("sort_order")
     .limit(limit);

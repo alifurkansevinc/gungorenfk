@@ -11,7 +11,7 @@ const navLinks = [
   { href: "/kadro", label: "Kadro" },
   { href: "/haberler", label: "Gelişmeler" },
   { href: "/magaza", label: "Mağaza" },
-  { href: "/taraftar", label: "Taraftar" },
+  { href: "/benim-kosem", label: "Benim Köşem" },
 ];
 
 export function Header() {

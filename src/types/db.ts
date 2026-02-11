@@ -37,6 +37,7 @@ export type FanProfile = {
   email: string;
   fan_level_id: number;
   points: number;
+  favorite_player_id: string | null;
   created_at: string;
   updated_at: string;
 };
