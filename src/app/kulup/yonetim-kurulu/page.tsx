@@ -2,25 +2,27 @@ import Link from "next/link";
 import Image from "next/image";
 import { getBoardMembers } from "@/lib/data";
 import { BOARD_ROLE_LABELS } from "@/lib/board-labels";
-import { FadeInSection } from "@/components/FadeInSection";
-import { PersonCard } from "@/components/PersonCard";
-import { PersonCardSlider } from "@/components/PersonCardSlider";
+import { PersonGallery } from "@/components/PersonGallery";
+import type { PersonGalleryItem } from "@/components/PersonGallery";
 import type { BoardMember } from "@/types/db";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 
 const ROLE_ORDER = ["baskan", "baskan_vekili", "as_baskan", "yk_uyesi", "yuksek_istisare_heyeti", "danisman"] as const;
 
-function groupByRole(members: BoardMember[]) {
-  const map = new Map<string, BoardMember[]>();
-  for (const r of ROLE_ORDER) map.set(r, []);
-  for (const m of members) {
-    const list = map.get(m.role_slug);
-    if (list) list.push(m);
-    else map.set(m.role_slug, [m]);
-  }
-  return ROLE_ORDER.map((slug) => ({ slug, label: BOARD_ROLE_LABELS[slug] ?? slug, list: map.get(slug) ?? [] })).filter(
-    (g) => g.list.length > 0
-  );
+function toGalleryItems(members: BoardMember[]): PersonGalleryItem[] {
+  const orderMap = new Map<string, number>(ROLE_ORDER.map((s, i) => [s, i]));
+  const sorted = [...members].sort((a, b) => {
+    const ai = orderMap.get(a.role_slug) ?? 99;
+    const bi = orderMap.get(b.role_slug) ?? 99;
+    if (ai !== bi) return ai - bi;
+    return a.sort_order - b.sort_order;
+  });
+  return sorted.map((m) => ({
+    id: m.id,
+    name: m.name,
+    roleLabel: BOARD_ROLE_LABELS[m.role_slug] ?? m.role_slug,
+    photo_url: m.photo_url,
+  }));
 }
 
 export const metadata = {
@@ -30,7 +32,7 @@ export const metadata = {
 
 export default async function YonetimKuruluPage() {
   const members = await getBoardMembers();
-  const groups = groupByRole(members);
+  const items = toGalleryItems(members);
 
   return (
     <div className="min-h-screen bg-siyah">
@@ -56,25 +58,7 @@ export default async function YonetimKuruluPage() {
       </section>
 
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-        {groups.map((group) => (
-          <FadeInSection key={group.slug} className="mb-12 sm:mb-16">
-            <h2 className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-bordo mb-5">
-              {group.label}
-            </h2>
-            <PersonCardSlider>
-              {group.list.map((person, i) => (
-                <PersonCard
-                  key={person.id}
-                  name={person.name}
-                  roleLabel={group.label}
-                  photo_url={person.photo_url}
-                  placeholderImage={DEMO_IMAGES.portrait}
-                  featured={i === 0}
-                />
-              ))}
-            </PersonCardSlider>
-          </FadeInSection>
-        ))}
+        <PersonGallery items={items} placeholderImage={DEMO_IMAGES.portrait} />
       </div>
     </div>
   );
