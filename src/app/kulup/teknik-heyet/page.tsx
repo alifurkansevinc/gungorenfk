@@ -3,6 +3,8 @@ import Image from "next/image";
 import { getTechnicalStaff } from "@/lib/data";
 import { TECHNICAL_STAFF_ROLE_LABELS } from "@/lib/board-labels";
 import { FadeInSection } from "@/components/FadeInSection";
+import { PersonCard } from "@/components/PersonCard";
+import { PersonCardSlider } from "@/components/PersonCardSlider";
 import type { TechnicalStaffMember } from "@/types/db";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 
@@ -43,8 +45,8 @@ export default async function TeknikHeyetPage() {
   const groups = groupByRole(members);
 
   return (
-    <div className="min-h-screen bg-[#f8f8f8]">
-      <section className="relative border-b border-siyah/10 bg-siyah py-8 sm:py-10 text-beyaz overflow-hidden">
+    <div className="min-h-screen bg-siyah">
+      <section className="relative border-b border-beyaz/10 bg-siyah py-8 sm:py-10 text-beyaz overflow-hidden">
         <div className="absolute inset-0 opacity-20">
           <Image src={DEMO_IMAGES.team} alt="" fill className="object-cover" unoptimized />
         </div>
@@ -65,35 +67,24 @@ export default async function TeknikHeyetPage() {
         </div>
       </section>
 
-      <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
         {groups.map((group) => (
-          <FadeInSection key={group.slug} className="mb-8 sm:mb-10">
-            <h2 className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-bordo mb-3">
+          <FadeInSection key={group.slug} className="mb-12 sm:mb-16">
+            <h2 className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-bordo mb-5">
               {group.label}
             </h2>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {group.list.map((person) => (
-                <div
+            <PersonCardSlider>
+              {group.list.map((person, i) => (
+                <PersonCard
                   key={person.id}
-                  className="group relative overflow-hidden rounded-xl border border-siyah/10 bg-beyaz p-4 transition-all duration-300 hover:shadow-lg hover:shadow-bordo/10 hover:border-bordo/25"
-                >
-                  <div className="absolute inset-0 bg-gradient-to-br from-bordo/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="relative flex items-center gap-3">
-                    <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-full bg-bordo/10 ring-2 ring-bordo/20 sm:h-12 sm:w-12">
-                      {person.photo_url ? (
-                        <Image src={person.photo_url} alt="" fill className="object-cover transition-transform duration-300 group-hover:scale-105" unoptimized />
-                      ) : (
-                        <Image src={DEMO_IMAGES.portrait} alt="" fill className="object-cover opacity-90 transition-transform duration-300 group-hover:scale-105" unoptimized />
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <h3 className="font-display font-semibold text-siyah text-sm truncate">{person.name}</h3>
-                      <p className="mt-0.5 text-xs font-medium text-bordo">{group.label}</p>
-                    </div>
-                  </div>
-                </div>
+                  name={person.name}
+                  roleLabel={group.label}
+                  photo_url={person.photo_url}
+                  placeholderImage={DEMO_IMAGES.portrait}
+                  featured={i === 0}
+                />
               ))}
-            </div>
+            </PersonCardSlider>
           </FadeInSection>
         ))}
       </div>
