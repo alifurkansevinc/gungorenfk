@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service";
 import type { MemleketCount, Match, SquadMember, BoardMember, TechnicalStaffMember, LeagueStandingRow } from "@/types/db";
 import type { FanLevel } from "@/types/db";
 
@@ -75,38 +76,43 @@ const DEMO_MEMLEKET_COUNTS: MemleketCount[] = [
   { city_id: 55, city_name: "Samsun", count: 41 },
 ];
 
-/** Anasayfa: Toplam kayıtlı taraftar sayısı. Veri yoksa demo toplam. */
+/** Anasayfa: Toplam kayıtlı taraftar sayısı. Service role ile okunur (RLS anonimde fan_profiles okumayı engeller). */
 export async function getTotalFanCount(): Promise<{ total: number; target: number }> {
-  const supabase = await createClient();
-  const { count, error } = await supabase.from("fan_profiles").select("id", { count: "exact", head: true });
-  if (error || count === null) {
-    const demoTotal = DEMO_MEMLEKET_COUNTS.reduce((s, c) => s + c.count, 0);
-    return { total: demoTotal, target: TARGET_TOTAL_FANS };
+  try {
+    const supabase = createServiceRoleClient();
+    const { count, error } = await supabase.from("fan_profiles").select("id", { count: "exact", head: true });
+    if (!error && count !== null) return { total: count, target: TARGET_TOTAL_FANS };
+  } catch {
+    /* SUPABASE_SERVICE_ROLE_KEY yoksa veya hata olursa demo */
   }
-  return { total: count, target: TARGET_TOTAL_FANS };
+  const demoTotal = DEMO_MEMLEKET_COUNTS.reduce((s, c) => s + c.count, 0);
+  return { total: demoTotal, target: TARGET_TOTAL_FANS };
 }
 
-/** Anasayfa: Memleket bazında kayıtlı taraftar sayıları (0–1000 progress bar için). Veri yoksa demo gösterilir. */
+/** Anasayfa: Memleket bazında kayıtlı taraftar sayıları (1000 Taraftar 1 Bayrak bar). Service role ile okunur. */
 export async function getMemleketCounts(): Promise<MemleketCount[]> {
-  const supabase = await createClient();
-  const [profilesRes, citiesRes] = await Promise.all([
-    supabase.from("fan_profiles").select("memleket_city_id"),
-    supabase.from("cities").select("id, name"),
-  ]);
+  try {
+    const supabase = createServiceRoleClient();
+    const [profilesRes, citiesRes] = await Promise.all([
+      supabase.from("fan_profiles").select("memleket_city_id"),
+      supabase.from("cities").select("id, name"),
+    ]);
+    if (profilesRes.error || citiesRes.error) return DEMO_MEMLEKET_COUNTS;
+    const data = profilesRes.data ?? [];
+    if (data.length === 0) return DEMO_MEMLEKET_COUNTS;
 
-  if (profilesRes.error || citiesRes.error) return DEMO_MEMLEKET_COUNTS;
-  const data = profilesRes.data ?? [];
-  if (data.length === 0) return DEMO_MEMLEKET_COUNTS;
-
-  const cityNames = new Map((citiesRes.data ?? []).map((c) => [c.id, c.name]));
-  const byCity = new Map<number, number>();
-  for (const p of data) {
-    const id = p.memleket_city_id;
-    byCity.set(id, (byCity.get(id) ?? 0) + 1);
+    const cityNames = new Map((citiesRes.data ?? []).map((c) => [c.id, c.name]));
+    const byCity = new Map<number, number>();
+    for (const p of data) {
+      const id = p.memleket_city_id;
+      byCity.set(id, (byCity.get(id) ?? 0) + 1);
+    }
+    return Array.from(byCity.entries())
+      .map(([city_id, count]) => ({ city_id, city_name: cityNames.get(city_id) ?? "Bilinmeyen", count }))
+      .sort((a, b) => b.count - a.count);
+  } catch {
+    return DEMO_MEMLEKET_COUNTS;
   }
-  return Array.from(byCity.entries())
-    .map(([city_id, count]) => ({ city_id, city_name: cityNames.get(city_id) ?? "Bilinmeyen", count }))
-    .sort((a, b) => b.count - a.count);
 }
 
 /** Maçlar listesi; veri yoksa demo döner. */
