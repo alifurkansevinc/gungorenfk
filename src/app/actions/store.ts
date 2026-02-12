@@ -1,10 +1,10 @@
 "use server";
 
-import { createClient } from "@/lib/supabase/server";
 import { revalidatePath } from "next/cache";
+import { getAdminSupabase } from "@/app/admin/actions";
 
 export async function createProduct(formData: FormData) {
-  const supabase = await createClient();
+  const supabase = await getAdminSupabase();
   const name = formData.get("name") as string;
   const slug = (formData.get("slug") as string) || name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
   const description = (formData.get("description") as string) || null;
@@ -29,7 +29,7 @@ export async function createProduct(formData: FormData) {
 }
 
 export async function updateProduct(id: string, formData: FormData) {
-  const supabase = await createClient();
+  const supabase = await getAdminSupabase();
   const name = formData.get("name") as string;
   const slug = (formData.get("slug") as string) || name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
   const description = (formData.get("description") as string) || null;
@@ -60,7 +60,7 @@ export async function updateProduct(id: string, formData: FormData) {
 }
 
 export async function deleteProduct(id: string) {
-  const supabase = await createClient();
+  const supabase = await getAdminSupabase();
   const { error } = await supabase.from("store_products").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/magaza");
