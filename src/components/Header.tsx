@@ -6,14 +6,13 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const NAV_BASE = [
-  { href: "/maclar", label: "Sıralama" },
+  { href: "/maclar", label: "Sıralama & Maçlar" },
   { href: "/magaza", label: "Mağaza" },
   { href: "/kadro", label: "Kadro" },
   { href: "/kulup/teknik-heyet", label: "Teknik Heyet" },
   { href: "/kulup/yonetim-kurulu", label: "Yönetim Kurulu" },
   { href: "/haberler", label: "Gelişmeler" },
   { href: "/kulup", label: "Kulübümüz" },
-  { href: "/taraftar/kayit", label: "Taraftar" },
 ] as const;
 
 export function Header() {
@@ -37,7 +36,16 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 bg-siyah">
       <div className="border-b border-beyaz/10">
-        <div className="mx-auto flex h-10 max-w-7xl items-center justify-end px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-9 max-w-7xl items-center justify-end gap-4 px-4 sm:px-6 lg:px-8">
+          {!signedIn && (
+            <Link
+              href="/taraftar/kayit"
+              className="text-xs font-semibold uppercase tracking-wider text-bordo hover:text-beyaz transition-colors"
+              onClick={() => setMobileOpen(false)}
+            >
+              Taraftar Ol
+            </Link>
+          )}
           <span className="text-xs font-medium uppercase tracking-wider text-beyaz/50">
             Resmi İnternet Sitesi
           </span>
@@ -85,15 +93,6 @@ export function Header() {
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
-          {!signedIn && (
-            <Link
-              href="/taraftar/kayit"
-              className="hidden rounded-sm bg-bordo px-4 py-2 text-xs font-bold uppercase tracking-wider text-beyaz transition-colors hover:bg-bordo-dark sm:px-5 sm:py-2.5 sm:text-sm md:inline-block"
-              onClick={() => setMobileOpen(false)}
-            >
-              Taraftar Ol
-            </Link>
-          )}
           <button
             type="button"
             className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded text-beyaz md:hidden"

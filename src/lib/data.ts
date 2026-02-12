@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
-import type { MemleketCount, Match, SquadMember, BoardMember, TechnicalStaffMember } from "@/types/db";
+import type { MemleketCount, Match, SquadMember, BoardMember, TechnicalStaffMember, LeagueStandingRow } from "@/types/db";
 import type { FanLevel } from "@/types/db";
 
 const TARGET_PER_CITY = 1000;
@@ -237,6 +237,43 @@ export async function getProductBySlug(slug: string) {
     image_url: demo.image_url,
     sort_order: demo.sort_order,
     is_active: true,
+  };
+}
+
+/** Puan durumu (Mackolik sync). Veri yoksa demo. */
+const DEMO_STANDINGS: LeagueStandingRow[] = [
+  { id: "s1", league_name: "İstanbul - 1. Amatör Lig - 5. Grup", season: "2025/2026", position: 1, team_name: "Güngören Bld", played: 18, goal_diff: 59, wins: 17, draws: 0, losses: 1, goals_for: 71, goals_against: 12, points: 51, updated_at: new Date().toISOString() },
+  { id: "s2", league_name: "İstanbul - 1. Amatör Lig - 5. Grup", season: "2025/2026", position: 2, team_name: "Çankırı Maruf", played: 18, goal_diff: 17, wins: 11, draws: 2, losses: 5, goals_for: 40, goals_against: 23, points: 35, updated_at: new Date().toISOString() },
+  { id: "s3", league_name: "İstanbul - 1. Amatör Lig - 5. Grup", season: "2025/2026", position: 3, team_name: "Yeşilova Esnaf", played: 18, goal_diff: 24, wins: 11, draws: 2, losses: 5, goals_for: 46, goals_against: 22, points: 35, updated_at: new Date().toISOString() },
+  { id: "s4", league_name: "İstanbul - 1. Amatör Lig - 5. Grup", season: "2025/2026", position: 4, team_name: "Emirefendi", played: 18, goal_diff: 19, wins: 11, draws: 2, losses: 5, goals_for: 44, goals_against: 25, points: 35, updated_at: new Date().toISOString() },
+  { id: "s5", league_name: "İstanbul - 1. Amatör Lig - 5. Grup", season: "2025/2026", position: 5, team_name: "Taşlıtarlaspor", played: 18, goal_diff: -4, wins: 8, draws: 2, losses: 8, goals_for: 20, goals_against: 24, points: 26, updated_at: new Date().toISOString() },
+  { id: "s6", league_name: "İstanbul - 1. Amatör Lig - 5. Grup", season: "2025/2026", position: 6, team_name: "Kuruçeşmespor", played: 18, goal_diff: 3, wins: 8, draws: 2, losses: 8, goals_for: 30, goals_against: 27, points: 26, updated_at: new Date().toISOString() },
+  { id: "s7", league_name: "İstanbul - 1. Amatör Lig - 5. Grup", season: "2025/2026", position: 7, team_name: "Ç. Zümrüt 80", played: 18, goal_diff: -13, wins: 6, draws: 1, losses: 11, goals_for: 32, goals_against: 45, points: 19, updated_at: new Date().toISOString() },
+  { id: "s8", league_name: "İstanbul - 1. Amatör Lig - 5. Grup", season: "2025/2026", position: 8, team_name: "M.Kemalpaşaspor", played: 18, goal_diff: -15, wins: 5, draws: 2, losses: 11, goals_for: 25, goals_against: 40, points: 17, updated_at: new Date().toISOString() },
+  { id: "s9", league_name: "İstanbul - 1. Amatör Lig - 5. Grup", season: "2025/2026", position: 9, team_name: "Altınyıldız", played: 18, goal_diff: -31, wins: 4, draws: 1, losses: 13, goals_for: 26, goals_against: 57, points: 13, updated_at: new Date().toISOString() },
+  { id: "s10", league_name: "İstanbul - 1. Amatör Lig - 5. Grup", season: "2025/2026", position: 10, team_name: "Mimarsinanspor", played: 18, goal_diff: -59, wins: 1, draws: 2, losses: 15, goals_for: 16, goals_against: 75, points: 5, updated_at: new Date().toISOString() },
+];
+
+export async function getLeagueStandings(leagueSeason?: { league_name: string; season: string }): Promise<{ rows: LeagueStandingRow[]; league_name: string; season: string; updated_at: string | null }> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("league_standings")
+    .select("id, league_name, season, position, team_name, played, goal_diff, wins, draws, losses, goals_for, goals_against, points, updated_at")
+    .order("position");
+  if (data && data.length > 0) {
+    const first = data[0] as LeagueStandingRow;
+    return {
+      rows: data as LeagueStandingRow[],
+      league_name: first.league_name,
+      season: first.season,
+      updated_at: first.updated_at ?? null,
+    };
+  }
+  return {
+    rows: DEMO_STANDINGS,
+    league_name: DEMO_STANDINGS[0]!.league_name,
+    season: DEMO_STANDINGS[0]!.season,
+    updated_at: null,
   };
 }
 

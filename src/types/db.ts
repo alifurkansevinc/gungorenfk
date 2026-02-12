@@ -124,3 +124,21 @@ export type MemleketCount = {
   city_name: string;
   count: number;
 };
+
+/** Puan durumu satırı (Mackolik sync) */
+export type LeagueStandingRow = {
+  id: string;
+  league_name: string;
+  season: string;
+  position: number;
+  team_name: string;
+  played: number;
+  goal_diff: number;
+  wins: number;
+  draws: number;
+  losses: number;
+  goals_for: number;
+  goals_against: number;
+  points: number;
+  updated_at: string;
+};

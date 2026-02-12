@@ -4,7 +4,7 @@ const columns = [
   {
     title: "Takım",
     links: [
-      { href: "/maclar", label: "Sıralama" },
+      { href: "/maclar", label: "Sıralama & Maçlar" },
       { href: "/kadro", label: "Kadro" },
       { href: "/haberler", label: "Gelişmeler" },
     ],
