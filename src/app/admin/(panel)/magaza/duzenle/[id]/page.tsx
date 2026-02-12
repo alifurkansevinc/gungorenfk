@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAdminSupabase } from "../../../actions";
+import { getAdminSupabase } from "@/app/admin/actions";
 import { UrunFormu } from "../../UrunFormu";
 
 export default async function AdminMagazaDuzenlePage({ params }: { params: Promise<{ id: string }> }) {
