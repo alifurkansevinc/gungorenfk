@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
-import type { Match } from "@/types/db";
 import type { LeagueStandingRow } from "@/types/db";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 
@@ -26,8 +25,20 @@ function getOurPosition(rows: LeagueStandingRow[]): number | null {
   return null;
 }
 
+type BasicMatchForGallery = {
+  id: string;
+  opponent_name: string;
+  home_away: "home" | "away";
+  venue: string | null;
+  match_date: string;
+  competition: string | null;
+  goals_for: number | null;
+  goals_against: number | null;
+  status: string;
+};
+
 type NextMatchGalleryProps = {
-  scheduledMatches: Match[];
+  scheduledMatches: BasicMatchForGallery[];
   standingsRows: LeagueStandingRow[];
 };
 
