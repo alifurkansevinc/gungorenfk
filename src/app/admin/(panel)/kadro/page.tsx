@@ -1,7 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
+import { getAdminSupabase } from "../../actions";
 
 export default async function AdminKadroPage() {
-  const supabase = await createClient();
+  const supabase = await getAdminSupabase();
   const { data: squad } = await supabase.from("squad").select("id, name, shirt_number, position").order("sort_order");
 
   return (

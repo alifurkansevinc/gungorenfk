@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 
 const BYPASS_COOKIE_NAME = "admin_bypass";
@@ -56,4 +57,14 @@ export async function hasValidBypass(): Promise<boolean> {
   const store = await cookies();
   const cookie = store.get(BYPASS_COOKIE_NAME);
   return cookie?.value === secret;
+}
+
+/**
+ * Admin sayfalarında kullan: bypass ise service role (RLS yok), değilse session client.
+ * Böylece bypass ile girişte de taraftar/maç/kadro vb. veriler görünür.
+ */
+export async function getAdminSupabase() {
+  const bypass = await hasValidBypass();
+  if (bypass) return createServiceRoleClient();
+  return createClient();
 }

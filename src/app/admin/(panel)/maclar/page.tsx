@@ -1,8 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
+import { getAdminSupabase } from "../../actions";
 import Link from "next/link";
 
 export default async function AdminMaclarPage() {
-  const supabase = await createClient();
+  const supabase = await getAdminSupabase();
   const { data: matches } = await supabase.from("matches").select("id, opponent_name, match_date, goals_for, goals_against, status").order("match_date", { ascending: false });
 
   return (

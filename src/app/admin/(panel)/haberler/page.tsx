@@ -1,7 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
+import { getAdminSupabase } from "../../actions";
 
 export default async function AdminHaberlerPage() {
-  const supabase = await createClient();
+  const supabase = await getAdminSupabase();
   const { data: news } = await supabase.from("news").select("id, title, slug, published_at").order("created_at", { ascending: false });
 
   return (

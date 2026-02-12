@@ -1,7 +1,7 @@
-import { createClient } from "@/lib/supabase/server";
+import { getAdminSupabase } from "../../actions";
 
 export default async function AdminGalerilerPage() {
-  const supabase = await createClient();
+  const supabase = await getAdminSupabase();
   const { data: galleries } = await supabase.from("galleries").select("id, title, slug, event_date").order("event_date", { ascending: false });
 
   return (

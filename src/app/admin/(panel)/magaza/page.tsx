@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { createClient } from "@/lib/supabase/server";
+import { getAdminSupabase } from "../../actions";
 import { UrunSilButton } from "./UrunSilButton";
 
 export default async function AdminMagazaPage() {
-  const supabase = await createClient();
+  const supabase = await getAdminSupabase();
   const { data: products } = await supabase
     .from("store_products")
     .select("id, name, slug, price, image_url, is_active, sort_order")

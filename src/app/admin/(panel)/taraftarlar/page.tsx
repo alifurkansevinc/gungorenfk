@@ -1,8 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { getAdminSupabase } from "../../actions";
 
 export default async function AdminTaraftarlarPage() {
-  const supabase = await createClient();
+  const supabase = await getAdminSupabase();
   const { data: profiles } = await supabase
     .from("fan_profiles")
     .select("id, first_name, last_name, email, memleket_city_id, residence_city_id, points, created_at, fan_levels(name)")

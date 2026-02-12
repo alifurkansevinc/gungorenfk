@@ -1,8 +1,8 @@
-import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
+import { getAdminSupabase } from "../actions";
 
 export default async function AdminDashboardPage() {
-  const supabase = await createClient();
+  const supabase = await getAdminSupabase();
   const [
     { count: fansCount },
     { count: matchesCount },
