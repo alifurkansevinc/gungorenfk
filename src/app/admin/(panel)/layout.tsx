@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import Link from "next/link";
-import { hasValidBypass } from "../../actions";
+import { hasValidBypass } from "../actions";
 
 export default async function AdminPanelLayout({
   children,
