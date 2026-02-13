@@ -37,14 +37,31 @@ export function Header() {
     <header className="sticky top-0 z-50 bg-siyah">
       <div className="border-b border-beyaz/10">
         <div className="mx-auto flex h-9 max-w-7xl items-center justify-end gap-4 px-4 sm:px-6 lg:px-8">
-          {!signedIn && (
+          {signedIn ? (
             <Link
-              href="/taraftar/kayit"
+              href="/benim-kosem"
               className="text-xs font-semibold uppercase tracking-wider text-bordo hover:text-beyaz transition-colors"
               onClick={() => setMobileOpen(false)}
             >
-              Taraftar Ol
+              Benim Köşem
             </Link>
+          ) : (
+            <>
+              <Link
+                href="/taraftar/giris"
+                className="text-xs font-semibold uppercase tracking-wider text-beyaz/90 hover:text-beyaz transition-colors"
+                onClick={() => setMobileOpen(false)}
+              >
+                Giriş Yap
+              </Link>
+              <Link
+                href="/taraftar/kayit"
+                className="text-xs font-semibold uppercase tracking-wider text-bordo hover:text-beyaz transition-colors"
+                onClick={() => setMobileOpen(false)}
+              >
+                Taraftar Ol
+              </Link>
+            </>
           )}
           <span className="text-xs font-medium uppercase tracking-wider text-beyaz/50">
             Resmi İnternet Sitesi
@@ -125,14 +142,31 @@ export function Header() {
                 {label}
               </Link>
             ))}
-            {!signedIn && (
+            {signedIn ? (
               <Link
-                href="/taraftar/kayit"
+                href="/benim-kosem"
                 className="mt-2 rounded-sm bg-bordo py-4 text-center text-sm font-bold uppercase tracking-wider text-beyaz"
                 onClick={() => setMobileOpen(false)}
               >
-                Taraftar Ol
+                Benim Köşem
               </Link>
+            ) : (
+              <>
+                <Link
+                  href="/taraftar/giris"
+                  className="border-b border-beyaz/5 py-4 text-sm font-semibold uppercase tracking-wider text-beyaz hover:bg-beyaz/10"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Giriş Yap
+                </Link>
+                <Link
+                  href="/taraftar/kayit"
+                  className="mt-2 rounded-sm bg-bordo py-4 text-center text-sm font-bold uppercase tracking-wider text-beyaz"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Taraftar Ol
+                </Link>
+              </>
             )}
           </nav>
         </div>

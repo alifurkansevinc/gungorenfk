@@ -12,6 +12,7 @@ const columns = [
   {
     title: "Taraftar",
     links: [
+      { href: "/taraftar/giris", label: "Giriş Yap" },
       { href: "/taraftar/kayit", label: "Taraftar Ol" },
       { href: "/benim-kosem", label: "Benim Köşem" },
       { href: "/magaza", label: "Mağaza" },
