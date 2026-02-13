@@ -1,5 +1,6 @@
 import { getAdminSupabase } from "../../actions";
 import { Ticket } from "lucide-react";
+import { BiletOlusturForm } from "./BiletOlusturForm";
 
 export default async function AdminBiletlerPage() {
   const supabase = await getAdminSupabase();
@@ -22,8 +23,10 @@ export default async function AdminBiletlerPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Biletler</h1>
-        <p className="mt-1 text-gray-500">Satılan maç biletleri ve kullanım durumu.</p>
+        <p className="mt-1 text-gray-500">Bilet oluşturun, satılan biletleri ve kullanım durumunu görüntüleyin.</p>
       </div>
+
+      <BiletOlusturForm />
 
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="overflow-x-auto">
@@ -64,11 +67,13 @@ export default async function AdminBiletlerPage() {
                     <td className="p-4">
                       {t.user_id ? (
                         <span className="text-gray-900">Üye</span>
-                      ) : (
+                      ) : t.guest_name || t.guest_email ? (
                         <div>
                           <p className="text-sm font-medium text-gray-900">{t.guest_name || "—"}</p>
                           {t.guest_email && <p className="text-xs text-gray-500">{t.guest_email}</p>}
                         </div>
+                      ) : (
+                        <span className="text-gray-500 italic">Stok</span>
                       )}
                     </td>
                     <td className="p-4 font-mono text-sm text-bordo">{t.qr_code}</td>
