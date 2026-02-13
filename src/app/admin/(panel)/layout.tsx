@@ -22,6 +22,7 @@ export default async function AdminPanelLayout({
             <Link href="/admin/teknik-heyet" className="text-sm text-siyah/80 hover:text-bordo">Teknik Heyet</Link>
             <Link href="/admin/rozet" className="text-sm text-siyah/80 hover:text-bordo">Rozet Kuralları</Link>
             <Link href="/admin/magaza" className="text-sm text-siyah/80 hover:text-bordo">Mağaza</Link>
+            <Link href="/admin/ayarlar" className="text-sm text-siyah/80 hover:text-bordo">Ayarlar</Link>
             <span className="text-xs text-siyah/50">(bypass)</span>
             <Link href="/" className="text-sm text-siyah/60 hover:text-siyah">Siteye Dön</Link>
           </div>
@@ -50,6 +51,7 @@ export default async function AdminPanelLayout({
           <Link href="/admin/teknik-heyet" className="text-sm text-siyah/80 hover:text-bordo">Teknik Heyet</Link>
           <Link href="/admin/rozet" className="text-sm text-siyah/80 hover:text-bordo">Rozet Kuralları</Link>
           <Link href="/admin/magaza" className="text-sm text-siyah/80 hover:text-bordo">Mağaza</Link>
+          <Link href="/admin/ayarlar" className="text-sm text-siyah/80 hover:text-bordo">Ayarlar</Link>
           <Link href="/" className="text-sm text-siyah/60 hover:text-siyah">Siteye Dön</Link>
         </div>
       </nav>

@@ -3,6 +3,7 @@ import Image from "next/image";
 import { getProductBySlug, getFeaturedProducts } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { DEMO_IMAGES } from "@/lib/demo-images";
+import { AddToCartButton } from "@/components/AddToCartButton";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -59,7 +60,7 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
           <div>
             <h1 className="font-display text-2xl font-bold text-siyah sm:text-3xl lg:text-4xl">{product.name}</h1>
             <p className="mt-4 text-3xl font-bold text-bordo">{price} ₺</p>
-            <p className="mt-2 text-sm text-siyah/60">KDV dahil. Ödeme sitede alınmaz; sipariş kulüp üzerinden.</p>
+            <p className="mt-2 text-sm text-siyah/60">KDV dahil. iyzico ile güvenli ödeme.</p>
 
             {product.description && (
               <div className="mt-6">
@@ -68,26 +69,12 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
               </div>
             )}
 
-            <div className="mt-8 rounded-2xl border-2 border-bordo/30 bg-bordo/5 p-6">
-              <p className="font-semibold text-siyah">Sipariş ve bilgi</p>
-              <p className="mt-2 text-sm text-siyah/70">
-                Ödeme bu sitede alınmaz. Sipariş vermek veya stok bilgisi için kulüp ile iletişime geçin. Mağaza fiyatları bilgi amaçlıdır.
-              </p>
-              <div className="mt-4 flex flex-wrap gap-3">
-                <Link
-                  href="/magaza"
-                  className="inline-flex items-center justify-center rounded-xl bg-bordo px-6 py-3.5 text-sm font-bold text-beyaz shadow-md transition-all hover:bg-bordo-dark hover:shadow-lg"
-                >
-                  Mağazaya dön
-                </Link>
-                <Link
-                  href="/"
-                  className="inline-flex items-center justify-center rounded-xl border-2 border-siyah/20 px-6 py-3.5 text-sm font-bold text-siyah transition-colors hover:bg-siyah/5"
-                >
-                  Anasayfa
-                </Link>
-              </div>
-            </div>
+            <AddToCartButton
+              productId={product.id}
+              name={product.name}
+              price={Number(product.price)}
+              slug={product.slug}
+            />
           </div>
         </div>
 

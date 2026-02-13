@@ -224,3 +224,22 @@ export async function updateFanLevel(id: string, formData: FormData) {
   revalidatePath("/");
   return { ok: true };
 }
+
+// ——— Site ayarları (kargo) ———
+export async function updateShippingSettings(formData: FormData) {
+  const s = await supabase();
+  const freeShippingThreshold = parseFloat((formData.get("freeShippingThreshold") as string) || "500");
+  const standardShippingCost = parseFloat((formData.get("standardShippingCost") as string) || "29.9");
+  const estimatedDeliveryDays = (formData.get("estimatedDeliveryDays") as string)?.trim() || "2-3";
+  const { error } = await s.from("site_settings").upsert(
+    {
+      key: "shipping",
+      value: { freeShippingThreshold, standardShippingCost, estimatedDeliveryDays },
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "key" }
+  );
+  if (error) return { error: error.message };
+  revalidatePath("/admin/ayarlar");
+  return { ok: true };
+}
