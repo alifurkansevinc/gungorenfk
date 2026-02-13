@@ -264,8 +264,8 @@ export default function AdminSiparislerPage() {
                           {st.label}
                         </span>
                       </td>
-                      <td className="p-4" ref={dropdownId === order.id ? dropdownRef : null}>
-                        <div className="relative flex items-center gap-1">
+                      <td className="p-4">
+                        <div className="relative flex items-center gap-1" ref={dropdownId === order.id ? dropdownRef : null}>
                           <button
                             type="button"
                             onClick={() => {
