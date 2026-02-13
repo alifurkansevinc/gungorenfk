@@ -5,6 +5,28 @@ import { initializeCheckoutForm, type PaymentRequest, type CartItemForIyzico } f
 const DEFAULT_SHIPPING_COST = 29.9;
 const DEFAULT_FREE_THRESHOLD = 500;
 
+function generatePickupCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+function addBusinessDays(date: Date, days: number): Date {
+  const d = new Date(date);
+  let added = 0;
+  while (added < days) {
+    d.setDate(d.getDate() + 1);
+    const day = d.getDay();
+    if (day !== 0 && day !== 6) added++;
+  }
+  return d;
+}
+
+function formatDateForDB(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
 function generateOrderNumber(): string {
   const d = new Date();
   const y = d.getFullYear().toString().slice(-2);
@@ -17,7 +39,7 @@ function generateOrderNumber(): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, email, items, shippingAddress } = body as {
+    const { userId, email, items, shippingAddress, deliveryMethod: rawDeliveryMethod } = body as {
       userId?: string | null;
       email: string;
       items: Array<{ id: string; productId?: string; name: string; price: number; quantity: number; category?: string }>;
@@ -33,12 +55,15 @@ export async function POST(req: NextRequest) {
         zipCode?: string;
         postalCode?: string;
       };
+      deliveryMethod?: "shipping" | "store_pickup";
     };
+
+    const deliveryMethod = rawDeliveryMethod === "store_pickup" ? "store_pickup" : "shipping";
 
     if (!items?.length) {
       return NextResponse.json({ success: false, error: "Sepetinizde ürün yok." }, { status: 400 });
     }
-    if (!shippingAddress?.city || !shippingAddress?.address && !shippingAddress?.addressLine) {
+    if (deliveryMethod === "shipping" && (!shippingAddress?.city || (!shippingAddress?.address && !shippingAddress?.addressLine))) {
       return NextResponse.json({ success: false, error: "Teslimat adresi gereklidir." }, { status: 400 });
     }
 
@@ -49,45 +74,67 @@ export async function POST(req: NextRequest) {
     const standardShipping = Number(settings.standardShippingCost) ?? DEFAULT_SHIPPING_COST;
 
     const subtotal = items.reduce((sum: number, i: { price: number; quantity: number }) => sum + i.price * i.quantity, 0);
-    const shippingCost = subtotal >= freeThreshold ? 0 : standardShipping;
+    const shippingCost = deliveryMethod === "store_pickup" ? 0 : (subtotal >= freeThreshold ? 0 : standardShipping);
     const total = subtotal + shippingCost;
 
+    const now = new Date();
+    const pickupDate = deliveryMethod === "store_pickup" ? formatDateForDB(addBusinessDays(now, 3)) : null;
+    let pickupCode: string | null = null;
+    if (deliveryMethod === "store_pickup") {
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const code = generatePickupCode();
+        const { data: existing } = await supabase.from("orders").select("id").eq("pickup_code", code).maybeSingle();
+        if (!existing) {
+          pickupCode = code;
+          break;
+        }
+      }
+      if (!pickupCode) pickupCode = generatePickupCode() + Date.now().toString(36).slice(-2);
+    }
+
     const orderNumber = generateOrderNumber();
-    const fullName = shippingAddress.fullName || "Müşteri";
+    const fullName = shippingAddress?.fullName || "Müşteri";
     const nameParts = fullName.trim().split(" ");
     const firstName = nameParts[0] || "Müşteri";
     const lastName = nameParts.slice(1).join(" ") || "Müşteri";
-    const address = shippingAddress.address || shippingAddress.addressLine || "";
-    const zipCode = shippingAddress.zipCode || shippingAddress.postalCode || "34000";
-    const phone = (shippingAddress.phone || "").replace(/\s/g, "");
-    const shipCity = shippingAddress.city || "İstanbul";
-    const district = shippingAddress.district || "";
-    const neighborhood = shippingAddress.neighborhood || "";
+    const address = deliveryMethod === "store_pickup"
+      ? "Güngören Store - Mağazadan teslim alacak"
+      : (shippingAddress?.address || shippingAddress?.addressLine || "");
+    const zipCode = shippingAddress?.zipCode || shippingAddress?.postalCode || "34000";
+    const phone = (shippingAddress?.phone || "").replace(/\s/g, "") || "0000000000";
+    const shipCity = deliveryMethod === "store_pickup" ? "İstanbul" : (shippingAddress?.city || "İstanbul");
+    const district = shippingAddress?.district || "";
+    const neighborhood = shippingAddress?.neighborhood || "";
 
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
         order_number: orderNumber,
         user_id: userId || null,
-        guest_email: !userId ? (email || shippingAddress.email) : null,
+        guest_email: !userId ? (email || shippingAddress?.email) : null,
         guest_name: !userId ? fullName : null,
         guest_phone: !userId ? phone : null,
-        shipping_address: {
-          fullName,
-          email: email || shippingAddress.email,
-          phone,
-          city: shipCity,
-          district,
-          neighborhood,
-          address,
-          zipCode,
-        },
+        shipping_address: deliveryMethod === "store_pickup"
+          ? { fullName, email: email || shippingAddress?.email, phone, city: shipCity, address: "Mağazadan teslim", zipCode }
+          : {
+              fullName,
+              email: email || shippingAddress?.email,
+              phone,
+              city: shipCity,
+              district,
+              neighborhood,
+              address,
+              zipCode,
+            },
         subtotal,
         shipping_cost: shippingCost,
         total,
         status: "PENDING",
         payment_status: "PENDING",
         payment_method: "iyzico",
+        delivery_method: deliveryMethod,
+        pickup_date: pickupDate,
+        pickup_code: pickupCode,
       })
       .select("id")
       .single();

@@ -34,9 +34,11 @@ export default function OdemePage() {
   const iyzicoFormRef = useRef<HTMLDivElement>(null);
   const [shippingSettings, setShippingSettings] = useState<ShippingSettings>(defaultShipping);
 
+  const [deliveryMethod, setDeliveryMethod] = useState<"shipping" | "store_pickup">("shipping");
+
   const freeThreshold = shippingSettings.freeShippingThreshold;
   const standardCost = shippingSettings.standardShippingCost;
-  const shippingCost = totalPrice >= freeThreshold ? 0 : standardCost;
+  const shippingCost = deliveryMethod === "store_pickup" ? 0 : (totalPrice >= freeThreshold ? 0 : standardCost);
   const total = totalPrice + shippingCost;
 
   const [customerInfo, setCustomerInfo] = useState({ fullName: "", email: "", phone: "" });
@@ -121,6 +123,7 @@ export default function OdemePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: customerInfo.email,
+          deliveryMethod,
           items: items.map((i) => ({
             id: i.id,
             productId: i.productId,
@@ -363,23 +366,46 @@ export default function OdemePage() {
             {/* Adım 3: Kargo */}
             {currentStep === 3 && (
               <div className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm sm:p-8">
-                <h2 className="font-display text-xl font-bold text-siyah">Kargo seçenekleri</h2>
-                <div className="mt-6 rounded-xl border-2 border-bordo/30 bg-bordo/5 p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold text-siyah">Standart kargo</p>
-                      <p className="text-sm text-siyah/60">{shippingSettings.estimatedDeliveryDays} iş gününde kargoya verilir</p>
+                <h2 className="font-display text-xl font-bold text-siyah">Teslimat seçeneği</h2>
+                <div className="mt-6 space-y-3">
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryMethod("shipping")}
+                    className={`w-full rounded-xl border-2 p-6 text-left transition-all ${
+                      deliveryMethod === "shipping" ? "border-bordo bg-bordo/5" : "border-siyah/10 hover:border-siyah/20"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-siyah">Kargo ile teslim</p>
+                        <p className="text-sm text-siyah/60">{shippingSettings.estimatedDeliveryDays} iş gününde kargoya verilir</p>
+                      </div>
+                      <p className="font-bold text-siyah">
+                        {totalPrice >= freeThreshold ? (
+                          <span className="text-green-700">Ücretsiz</span>
+                        ) : (
+                          `${standardCost.toFixed(2)} ₺`
+                        )}
+                      </p>
                     </div>
-                    <p className="font-bold text-siyah">
-                      {totalPrice >= freeThreshold ? (
-                        <span className="text-green-700">Ücretsiz</span>
-                      ) : (
-                        `${standardCost.toFixed(2)} ₺`
-                      )}
-                    </p>
-                  </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDeliveryMethod("store_pickup")}
+                    className={`w-full rounded-xl border-2 p-6 text-left transition-all ${
+                      deliveryMethod === "store_pickup" ? "border-bordo bg-bordo/5" : "border-siyah/10 hover:border-siyah/20"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-siyah">Güngören Store&apos;dan teslim al</p>
+                        <p className="text-sm text-siyah/60">Siparişten 3 iş günü sonra mağazadan teslim, QR kod ile</p>
+                      </div>
+                      <p className="font-bold text-green-700">Ücretsiz</p>
+                    </div>
+                  </button>
                 </div>
-                {totalPrice < freeThreshold && (
+                {deliveryMethod === "shipping" && totalPrice < freeThreshold && (
                   <p className="mt-4 text-center text-sm text-siyah/60">
                     {(freeThreshold - totalPrice).toFixed(2)} ₺ daha ekleyin, ücretsiz kargo kazanın!
                   </p>
