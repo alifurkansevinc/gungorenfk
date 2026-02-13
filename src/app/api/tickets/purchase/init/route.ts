@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     }
 
     const guestEmail = user ? null : (body.email as string)?.trim() || null;
-    const guestName = user ? null : (body.name as string)?.trim() || "Bilet alıcı";
+    const guestName = (user ? null : (body.name as string)?.trim() || "Bilet alıcı") ?? "Bilet alıcı";
 
     const { data: ticket, error: insertError } = await supabase
       .from("match_tickets")
@@ -71,8 +71,8 @@ export async function POST(req: NextRequest) {
       shippingCost: 0,
       buyer: {
         id: user?.id || `guest_${ticket.id}`,
-        name: guestName.split(" ")[0] || "Bilet",
-        surname: guestName.split(" ").slice(1).join(" ") || "Alıcı",
+        name: guestName.split(" ")[0]?.trim() || "Bilet",
+        surname: guestName.split(" ").slice(1).join(" ").trim() || "Alıcı",
         email: user?.email || guestEmail || "bilet@gungorenfk.com",
         phone: "0000000000",
         registrationAddress: "Maç bileti",
