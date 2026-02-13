@@ -1,11 +1,12 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useEffect } from "react";
 import { useCart } from "@/context/CartContext";
 
-export default function OdemeBasariliPage() {
+function OdemeBasariliContent() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams.get("orderNumber") || "";
   const { clearCart } = useCart();
@@ -33,5 +34,13 @@ export default function OdemeBasariliPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function OdemeBasariliPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-xl px-4 py-16 sm:px-6 text-center text-siyah/60">Yükleniyor...</div>}>
+      <OdemeBasariliContent />
+    </Suspense>
   );
 }

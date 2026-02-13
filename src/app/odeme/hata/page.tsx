@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
@@ -9,7 +10,7 @@ const MESSAGES: Record<string, string> = {
   payment_failed: "Ödeme işlemi başarısız oldu.",
 };
 
-export default function OdemeHataPage() {
+function OdemeHataContent() {
   const searchParams = useSearchParams();
   const errorCode = searchParams.get("error") || "";
   const message = MESSAGES[errorCode] || errorCode || "Bir hata oluştu.";
@@ -35,5 +36,13 @@ export default function OdemeHataPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function OdemeHataPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-xl px-4 py-16 sm:px-6 text-center text-siyah/60">Yükleniyor...</div>}>
+      <OdemeHataContent />
+    </Suspense>
   );
 }
