@@ -52,11 +52,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-gray-100">
       {/* Sidebar - Desktop */}
       <aside
-        className={`fixed top-0 left-0 bottom-0 z-40 bg-siyah text-beyaz transition-all duration-300 hidden lg:block ${
+        className={`fixed top-0 left-0 bottom-0 z-40 flex flex-col bg-siyah text-beyaz transition-all duration-300 hidden lg:flex ${
           sidebarOpen ? "w-64" : "w-20"
         }`}
       >
-        <div className="flex h-16 items-center justify-between border-b border-beyaz/10 px-4">
+        <div className="flex h-16 shrink-0 items-center justify-between border-b border-beyaz/10 px-4">
           {sidebarOpen && (
             <Link href="/admin" className="font-display text-lg font-bold tracking-tight text-beyaz">
               Güngören FK
@@ -71,7 +71,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <Menu className="h-5 w-5" />
           </button>
         </div>
-        <nav className="space-y-1 p-4">
+        <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-4 [scrollbar-width:thin]">
           {menuItems.map((item) => {
             const isActive =
               pathname === item.href ||
@@ -80,24 +80,24 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center gap-3 rounded-xl px-4 py-3 transition-all ${
+                className={`flex items-center gap-3 rounded-xl px-4 py-2.5 transition-all ${
                   isActive
                     ? "bg-bordo text-beyaz"
                     : "text-beyaz/70 hover:bg-beyaz/10 hover:text-beyaz"
                 }`}
               >
                 <item.icon className="h-5 w-5 shrink-0" />
-                {sidebarOpen && <span className="text-sm font-medium">{item.label}</span>}
+                {sidebarOpen && <span className="truncate text-sm font-medium">{item.label}</span>}
               </Link>
             );
           })}
         </nav>
-        <div className="absolute bottom-0 left-0 right-0 border-t border-beyaz/10 p-4">
+        <div className="shrink-0 border-t border-beyaz/10 p-4">
           <Link
             href="/"
-            className="flex items-center gap-3 rounded-xl px-4 py-3 text-beyaz/70 transition-all hover:bg-beyaz/10 hover:text-beyaz"
+            className="flex items-center gap-3 rounded-xl px-4 py-2.5 text-beyaz/70 transition-all hover:bg-beyaz/10 hover:text-beyaz"
           >
-            <LogOut className="h-5 w-5" />
+            <LogOut className="h-5 w-5 shrink-0" />
             {sidebarOpen && <span className="text-sm">Siteye Dön</span>}
           </Link>
         </div>
@@ -111,8 +111,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             onClick={() => setMobileMenuOpen(false)}
             aria-hidden
           />
-          <aside className="fixed top-0 left-0 bottom-0 z-50 w-64 bg-siyah text-beyaz lg:hidden">
-            <div className="flex h-16 items-center justify-between border-b border-beyaz/10 px-4">
+          <aside className="fixed top-0 left-0 bottom-0 z-50 flex w-64 flex-col bg-siyah text-beyaz lg:hidden">
+            <div className="flex h-16 shrink-0 items-center justify-between border-b border-beyaz/10 px-4">
               <span className="font-display text-lg font-bold text-beyaz">Güngören FK</span>
               <button
                 type="button"
@@ -123,24 +123,24 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 <X className="h-5 w-5" />
               </button>
             </div>
-            <nav className="space-y-1 p-4">
+            <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-4">
               {menuItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`flex items-center gap-3 rounded-xl px-4 py-3 ${
+                  className={`flex items-center gap-3 rounded-xl px-4 py-2.5 ${
                     pathname === item.href || (item.href !== "/admin" && pathname.startsWith(item.href))
                       ? "bg-bordo text-beyaz"
                       : "text-beyaz/70 hover:bg-beyaz/10 hover:text-beyaz"
                   }`}
                 >
-                  <item.icon className="h-5 w-5" />
+                  <item.icon className="h-5 w-5 shrink-0" />
                   <span className="text-sm font-medium">{item.label}</span>
                 </Link>
               ))}
             </nav>
-            <div className="border-t border-beyaz/10 p-4">
+            <div className="shrink-0 border-t border-beyaz/10 p-4">
               <Link
                 href="/"
                 className="flex items-center gap-3 rounded-xl px-4 py-3 text-beyaz/70 hover:bg-beyaz/10 hover:text-beyaz"

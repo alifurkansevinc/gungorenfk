@@ -71,44 +71,41 @@ export function Header() {
         </div>
       </div>
 
-      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-14 max-w-7xl items-center justify-between gap-2 px-3 sm:px-4 lg:px-6">
         <Link
           href="/"
-          className="flex shrink-0 items-center gap-3"
+          className="flex shrink-0 items-center gap-2"
           onClick={() => setMobileOpen(false)}
         >
-          <div className="relative h-9 w-9 flex-shrink-0 overflow-hidden rounded-full border-2 border-beyaz/20 bg-bordo">
-            {!logoError ? (
-              <Image
-                src="/logo.png"
-                alt="Güngören FK"
-                width={36}
-                height={36}
-                className="object-contain"
-                unoptimized
-                onError={() => setLogoError(true)}
-              />
-            ) : null}
-            <span className="absolute inset-0 flex items-center justify-center text-base font-bold text-beyaz">
-              G
-            </span>
-          </div>
-          <span className="font-display text-lg font-bold tracking-tight text-beyaz sm:text-xl">
-            Güngören FK
-          </span>
+          {!logoError ? (
+            <Image
+              src="/logogbfk.png"
+              alt="Güngören FK"
+              width={120}
+              height={48}
+              className="h-10 w-auto object-contain sm:h-12"
+              unoptimized
+              onError={() => setLogoError(true)}
+              priority
+            />
+          ) : (
+            <span className="font-display text-lg font-bold text-beyaz">Güngören FK</span>
+          )}
         </Link>
 
-        <nav className="hidden flex-shrink-0 items-center gap-0 md:flex">
-          {navLinks.map(({ href, label }) => (
-            <Link
-              key={href + label}
-              href={href}
-              className="whitespace-nowrap px-2.5 py-2 text-xs font-semibold uppercase tracking-wider text-beyaz/90 transition-colors hover:bg-beyaz/10 hover:text-beyaz sm:px-3 sm:text-sm"
-              onClick={() => setMobileOpen(false)}
-            >
-              {label}
-            </Link>
-          ))}
+        <nav className="hidden min-w-0 flex-1 items-center justify-end md:flex">
+          <div className="flex items-center gap-0 overflow-x-auto overflow-y-hidden py-1 [-ms-overflow-style:none] [scrollbar-width:thin]">
+            {navLinks.map(({ href, label }) => (
+              <Link
+                key={href + label}
+                href={href}
+                className="shrink-0 whitespace-nowrap px-2 py-2 text-[11px] font-semibold uppercase tracking-wider text-beyaz/90 transition-colors hover:bg-beyaz/10 hover:text-beyaz sm:px-2.5 sm:text-xs"
+                onClick={() => setMobileOpen(false)}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
         </nav>
 
         <div className="flex shrink-0 items-center gap-2">
