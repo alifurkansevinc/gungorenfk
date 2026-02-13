@@ -205,7 +205,7 @@ export async function getFeaturedProducts(limit = 4) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("store_products")
-    .select("id, name, slug, description, price, image_url")
+    .select("id, name, slug, description, price, image_url, sku")
     .eq("is_active", true)
     .order("sort_order")
     .limit(limit);
@@ -218,19 +218,28 @@ export async function getFeaturedProducts(limit = 4) {
     description: p.description,
     price: p.price,
     image_url: p.image_url,
+    sku: (p as { sku?: string }).sku ?? p.slug,
   }));
 }
 
 /** Slug ile tek ürün (mağaza detay). DB’de yoksa demo ürünlerden döner. */
 export async function getProductBySlug(slug: string) {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data: product } = await supabase
     .from("store_products")
     .select("*")
     .eq("slug", slug)
     .eq("is_active", true)
     .single();
-  if (data) return data;
+  if (product) {
+    const { data: images } = await supabase
+      .from("store_product_images")
+      .select("id, image_url, sort_order")
+      .eq("product_id", product.id)
+      .order("sort_order");
+    const imageList = (images ?? []).map((i) => i.image_url);
+    return { ...product, images: imageList.length > 0 ? imageList : (product.image_url ? [product.image_url] : []) };
+  }
   const { getDemoProductBySlug } = await import("@/lib/demo-products");
   const demo = getDemoProductBySlug(slug);
   if (!demo) return null;
@@ -243,6 +252,8 @@ export async function getProductBySlug(slug: string) {
     image_url: demo.image_url,
     sort_order: demo.sort_order,
     is_active: true,
+    sku: (demo as { sku?: string }).sku ?? demo.slug,
+    images: demo.image_url ? [demo.image_url] : [],
   };
 }
 

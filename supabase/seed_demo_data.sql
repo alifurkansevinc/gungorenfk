@@ -54,11 +54,11 @@ SELECT g.id, 'https://placehold.co/800x600/8B1538/FFFFFF?text=Güngören+FK', 'M
 UNION ALL SELECT g.id, 'https://placehold.co/800x600/0A0A0A/FFFFFF?text=Kadro', 'Kadro', 2 FROM galleries g WHERE g.slug = 'esenler-erokspor-maci'
 UNION ALL SELECT g.id, 'https://placehold.co/800x600/8B1538/FFFFFF?text=Sezon+Açılışı', 'Sezon açılışı', 1 FROM galleries g WHERE g.slug = 'sezon-acilisi';
 
--- Mağaza ürünleri (ödeme yok; sadece fiyat bilgisi)
-INSERT INTO store_products (name, slug, description, price, sort_order, is_active) VALUES
-('Resmi Forma', 'resmi-forma', 'Bordo-beyaz resmi maç forması.', 349.00, 1, true),
-('Antrenman Forması', 'antrenman-formasi', 'Siyah antrenman forması.', 199.00, 2, true),
-('Atkı', 'atki', 'Kulüp atkısı.', 79.00, 3, true),
-('Şapka', 'sapka', 'Güngören FK şapka.', 59.00, 4, true),
-('Çocuk Forması', 'cocuk-formasi', 'Çocuk beden resmi forma.', 249.00, 5, true),
-('Kaleci Eldiveni', 'kaleci-eldiveni', 'Resmi kaleci eldiveni.', 149.00, 6, true);
+-- Mağaza ürünleri (sku zorunlu)
+INSERT INTO store_products (name, slug, sku, description, price, sort_order, is_active) VALUES
+('Resmi Forma', 'resmi-forma', 'RF-001', 'Bordo-beyaz resmi maç forması.', 349.00, 1, true),
+('Antrenman Forması', 'antrenman-formasi', 'AF-002', 'Siyah antrenman forması.', 199.00, 2, true),
+('Atkı', 'atki', 'ATK-003', 'Kulüp atkısı.', 79.00, 3, true),
+('Şapka', 'sapka', 'SAP-004', 'Güngören FK şapka.', 59.00, 4, true),
+('Çocuk Forması', 'cocuk-formasi', 'CF-005', 'Çocuk beden resmi forma.', 249.00, 5, true),
+('Kaleci Eldiveni', 'kaleci-eldiveni', 'KE-006', 'Resmi kaleci eldiveni.', 149.00, 6, true);

@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
+import { Sparkles } from "lucide-react";
 
 type PickupInfo = {
   deliveryMethod: string;
@@ -14,6 +15,7 @@ type PickupInfo = {
 function OdemeBasariliContent() {
   const searchParams = useSearchParams();
   const orderNumber = searchParams.get("orderNumber") || "";
+  const levelUp = searchParams.get("levelUp") === "1";
   const { clearCart } = useCart();
   const [pickupInfo, setPickupInfo] = useState<PickupInfo>(null);
 
@@ -71,6 +73,16 @@ function OdemeBasariliContent() {
           <p className="mt-4 text-sm text-siyah/70">
             En kısa sürede kargoya verilecektir. Sorularınız için kulüp ile iletişime geçebilirsiniz.
           </p>
+        )}
+
+        {levelUp && (
+          <div className="mt-6 rounded-xl border-2 border-bordo/30 bg-bordo/10 p-4">
+            <Sparkles className="mx-auto h-10 w-10 text-bordo" />
+            <p className="mt-2 font-bold text-bordo">Tebrikler! Seviye atladınız!</p>
+            <p className="mt-1 text-sm text-siyah/80">
+              Mağaza bareminiz doldu; taraftar rozetiniz bir üst seviyeye geçti. Benim Köşem’den görebilirsiniz.
+            </p>
+          </div>
         )}
 
         <Link

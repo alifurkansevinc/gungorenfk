@@ -4,27 +4,41 @@ import { useState } from "react";
 import Link from "next/link";
 import { createProduct, updateProduct } from "@/app/actions/store";
 import { useRouter } from "next/navigation";
+import { Plus, Trash2 } from "lucide-react";
 
 type Product = {
   id: string;
   name: string;
   slug: string;
+  sku?: string;
   description: string | null;
   price: string | number;
   image_url: string | null;
   sort_order: number;
   is_active: boolean;
+  images?: string[];
 } | null;
 
 export function UrunFormu({ product }: { product?: Product }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [imageUrls, setImageUrls] = useState<string[]>(
+    product?.images?.length ? product.images : product?.image_url ? [product.image_url] : [""]
+  );
+
+  function addImage() {
+    setImageUrls((prev) => [...prev, ""]);
+  }
+  function removeImage(i: number) {
+    setImageUrls((prev) => prev.filter((_, idx) => idx !== i));
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
     const form = e.currentTarget;
     const formData = new FormData(form);
+    imageUrls.filter(Boolean).forEach((url, i) => formData.set(`image_url_${i}`, url));
 
     const res = product
       ? await updateProduct(product.id, formData)
@@ -52,6 +66,17 @@ export function UrunFormu({ product }: { product?: Product }) {
       <div>
         <label className={labelClass}>Ürün adı *</label>
         <input name="name" defaultValue={product?.name} required className={inputClass} />
+      </div>
+      <div>
+        <label className={labelClass}>Ürün stok kodu (SKU) *</label>
+        <input
+          name="sku"
+          defaultValue={product?.sku ?? product?.slug ?? ""}
+          placeholder="RF-2024-001"
+          required
+          className={inputClass}
+        />
+        <p className="mt-1 text-xs text-gray-500">Benzersiz stok kodu. Büyük harfe çevrilir.</p>
       </div>
       <div>
         <label className={labelClass}>Slug (URL)</label>
@@ -84,15 +109,34 @@ export function UrunFormu({ product }: { product?: Product }) {
         />
       </div>
       <div>
-        <label className={labelClass}>Görsel URL</label>
-        <input
-          name="image_url"
-          type="url"
-          defaultValue={product?.image_url ?? ""}
-          placeholder="https://..."
-          className={inputClass}
-        />
-        <p className="mt-1 text-xs text-gray-500">Supabase Storage veya harici görsel. İleride dosya yükleme eklenebilir.</p>
+        <div className="flex items-center justify-between">
+          <label className={labelClass}>Görseller (URL)</label>
+          <button type="button" onClick={addImage} className="flex items-center gap-1 text-sm font-medium text-bordo hover:underline">
+            <Plus className="h-4 w-4" /> Ekle
+          </button>
+        </div>
+        <div className="mt-2 space-y-2">
+          {imageUrls.map((url, i) => (
+            <div key={i} className="flex gap-2">
+              <input
+                type="url"
+                value={url}
+                onChange={(e) => setImageUrls((prev) => prev.map((u, j) => (j === i ? e.target.value : u)))}
+                placeholder="https://..."
+                className={inputClass}
+              />
+              <button
+                type="button"
+                onClick={() => removeImage(i)}
+                className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-red-50 hover:text-red-600"
+                aria-label="Kaldır"
+              >
+                <Trash2 className="h-5 w-5" />
+              </button>
+            </div>
+          ))}
+        </div>
+        <p className="mt-1 text-xs text-gray-500">Birden fazla görsel ekleyebilirsiniz. Sıra önemli.</p>
       </div>
       <div>
         <label className={labelClass}>Sıra</label>

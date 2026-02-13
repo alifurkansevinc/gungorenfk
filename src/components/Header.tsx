@@ -8,6 +8,8 @@ import { createClient } from "@/lib/supabase/client";
 const NAV_BASE = [
   { href: "/maclar", label: "Sıralama & Maçlar" },
   { href: "/magaza", label: "Mağaza" },
+  { href: "/bagis", label: "Bağış Yap" },
+  { href: "/biletler", label: "Maç Biletleri" },
   { href: "/kadro", label: "Kadro" },
   { href: "/kulup/teknik-heyet", label: "Teknik Heyet" },
   { href: "/kulup/yonetim-kurulu", label: "Yönetim Kurulu" },

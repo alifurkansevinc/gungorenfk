@@ -4,6 +4,7 @@ import { getProductBySlug, getFeaturedProducts } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { AddToCartButton } from "@/components/AddToCartButton";
+import { ProductImageGallery } from "@/components/ProductImageGallery";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -17,7 +18,10 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
-  const imageUrl = product.image_url || DEMO_IMAGES.product;
+  const images = Array.isArray((product as { images?: string[] }).images) && (product as { images?: string[] }).images?.length
+    ? (product as { images: string[] }).images
+    : [product.image_url || DEMO_IMAGES.product];
+  const mainImage = images[0];
   const price = Number(product.price).toFixed(2);
   const allProducts = await getFeaturedProducts(20);
   const related = allProducts.filter((p) => p.slug !== slug).slice(0, 4);
@@ -40,20 +44,12 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
       {/* Ana içerik — ürün profil sayfası (GS Store / spor kulübü mağazası tarzı) */}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-8 lg:gap-12 lg:grid-cols-2">
-          {/* Görsel alanı */}
+          {/* Görsel alanı — çoklu görsel */}
           <div className="space-y-4">
-            <div className="relative aspect-square overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-lg">
-              <Image
-                src={imageUrl}
-                alt={product.name}
-                fill
-                className="object-cover"
-                priority
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                unoptimized
-              />
-            </div>
-            <p className="text-center text-xs text-siyah/50">Görsel temsilidir. Ürün admin panelinden güncellenir.</p>
+            <ProductImageGallery images={images} productName={product.name} />
+            {(product as { sku?: string }).sku && (
+              <p className="text-center text-xs text-siyah/50">Stok kodu: {(product as { sku: string }).sku}</p>
+            )}
           </div>
 
           {/* Bilgi alanı */}

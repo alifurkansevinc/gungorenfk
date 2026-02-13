@@ -9,6 +9,13 @@ export default async function AdminMagazaDuzenlePage({ params }: { params: Promi
   const supabase = await getAdminSupabase();
   const { data: product } = await supabase.from("store_products").select("*").eq("id", id).single();
   if (!product) notFound();
+  const { data: images } = await supabase
+    .from("store_product_images")
+    .select("image_url, sort_order")
+    .eq("product_id", id)
+    .order("sort_order");
+  const imageUrls = (images ?? []).map((i) => i.image_url);
+  const productWithImages = { ...product, images: imageUrls.length > 0 ? imageUrls : (product.image_url ? [product.image_url] : []) };
 
   return (
     <div className="space-y-6">
@@ -24,7 +31,7 @@ export default async function AdminMagazaDuzenlePage({ params }: { params: Promi
         <p className="mt-1 text-gray-500">{product.name}</p>
       </div>
       <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
-        <UrunFormu product={product} />
+        <UrunFormu product={productWithImages} />
       </div>
     </div>
   );
