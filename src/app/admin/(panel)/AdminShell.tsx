@@ -21,6 +21,8 @@ import {
   Menu,
   X,
   ExternalLink,
+  Heart,
+  Ticket,
 } from "lucide-react";
 
 const menuItems = [
@@ -28,6 +30,8 @@ const menuItems = [
   { href: "/admin/siparisler", label: "Siparişler", icon: ShoppingCart },
   { href: "/admin/magaza", label: "Mağaza", icon: Store },
   { href: "/admin/teslim-al", label: "Teslim al", icon: Package },
+  { href: "/admin/bagislar", label: "Bağışlar", icon: Heart },
+  { href: "/admin/biletler", label: "Biletler", icon: Ticket },
   { href: "/admin/ayarlar", label: "Ayarlar", icon: Settings },
   { href: "/admin/taraftarlar", label: "Taraftarlar", icon: Users },
   { href: "/admin/maclar", label: "Maçlar", icon: Calendar },
