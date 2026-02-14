@@ -7,8 +7,8 @@ alwaysApply: true
 
 Bu projede (Güngören FK):
 
-1. **Kod değişiklikleri tamamlandığında** veya **build başarılı olduktan sonra** (uncommitted değişiklik varsa):
-   - Kullanıcıya "Push yapayım mı?" diye **sorma**.
+1. **Kod değişiklikleri tamamlandığında hemen** veya **build başarılı olduktan sonra** (uncommitted değişiklik varsa):
+   - Kullanıcıya "Push yapayım mı?" diye **sorma**; doğrudan push yap.
    - `git add -A`, anlamlı bir commit mesajı ile `git commit`, ardından `git push` çalıştır.
 2. **Build sonrası**: `npm run build` (veya eşdeğeri) başarıyla bittiyse ve working tree’de değişiklik varsa, aynı oturumda mutlaka commit + push yap.
 3. Commit mesajı: Yapılan değişiklikleri kısaca Türkçe özetleyen bir satır (örn. "Header yükseklikleri azaltıldı, kadro slider eklendi").
