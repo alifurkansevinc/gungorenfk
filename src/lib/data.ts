@@ -120,10 +120,34 @@ export async function getMatches(limit = 20) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("matches")
-    .select("id, opponent_name, home_away, venue, match_date, goals_for, goals_against, status, competition")
+    .select("id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, goals_for, goals_against, status, competition")
     .order("match_date", { ascending: false })
     .limit(limit);
   if (!data || data.length === 0) return DEMO_MATCHES;
+  return data;
+}
+
+/** Önümüzdeki maç (ilk planlanmış, tarihe göre); admin panelinden belirlenir. */
+export async function getNextMatch(): Promise<{
+  id: string;
+  opponent_name: string;
+  home_away: string;
+  venue: string | null;
+  match_date: string;
+  match_time: string | null;
+  opponent_logo_url: string | null;
+  competition: string | null;
+} | null> {
+  const today = new Date().toISOString().slice(0, 10);
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("matches")
+    .select("id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, competition")
+    .eq("status", "scheduled")
+    .gte("match_date", today)
+    .order("match_date", { ascending: true })
+    .limit(1)
+    .maybeSingle();
   return data;
 }
 

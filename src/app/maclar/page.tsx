@@ -1,8 +1,8 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getMatches, getLeagueStandings } from "@/lib/data";
+import { getMatches, getLeagueStandings, getNextMatch } from "@/lib/data";
 import { DEMO_IMAGES } from "@/lib/demo-images";
-import { NextMatchGallery } from "@/components/NextMatchGallery";
+import { NextMatchCard } from "@/components/NextMatchCard";
 
 export const metadata = {
   title: "Sıralama & Maçlar | Güngören FK",
@@ -10,9 +10,10 @@ export const metadata = {
 };
 
 export default async function MaclarPage() {
-  const [matches, standings] = await Promise.all([
+  const [matches, standings, nextMatch] = await Promise.all([
     getMatches(24),
     getLeagueStandings(),
+    getNextMatch(),
   ]);
   const finished = matches.filter((m) => m.status === "finished");
   const scheduled = matches.filter((m) => m.status === "scheduled");
@@ -29,8 +30,8 @@ export default async function MaclarPage() {
       </section>
 
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        {/* Sonraki maç(lar) - yan yana kartlar, altta maç bilgileri (yönetim kurulu tarzı) */}
-        <NextMatchGallery scheduledMatches={scheduled} standingsRows={standings.rows} />
+        {/* Önümüzdeki maç — admin panelinden belirlenir; tek büyük kart */}
+        <NextMatchCard match={nextMatch} />
 
         {/* Puan durumu (Mackolik kaynaklı) - sonraki maçın altında */}
         {standings.rows.length > 0 && (

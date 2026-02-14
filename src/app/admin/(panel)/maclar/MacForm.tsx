@@ -19,6 +19,8 @@ type MatchRow = {
   home_away: "home" | "away";
   venue: string | null;
   match_date: string;
+  match_time: string | null;
+  opponent_logo_url: string | null;
   competition: string | null;
   season: string | null;
   goals_for: number | null;
@@ -58,8 +60,8 @@ export function MacForm({ match }: { match?: MatchRow | null }) {
       <div>
         <label className="block text-sm font-medium text-siyah">Ev / Deplasman *</label>
         <select name="home_away" defaultValue={match?.home_away ?? "home"} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2">
-          <option value="home">Ev</option>
-          <option value="away">Deplasman</option>
+          <option value="home">Ev (Güngören FK ev sahibi)</option>
+          <option value="away">Deplasman (Güngören FK deplasman)</option>
         </select>
       </div>
       <div>
@@ -67,8 +69,17 @@ export function MacForm({ match }: { match?: MatchRow | null }) {
         <input name="match_date" type="date" defaultValue={dateValue} required className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
       </div>
       <div>
-        <label className="block text-sm font-medium text-siyah">Stadyum / Salon</label>
-        <input name="venue" defaultValue={match?.venue ?? ""} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
+        <label className="block text-sm font-medium text-siyah">Maç saati</label>
+        <input name="match_time" type="text" defaultValue={match?.match_time ?? ""} placeholder="14:00" className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-siyah">Stadyum / Salon (yer)</label>
+        <input name="venue" defaultValue={match?.venue ?? ""} placeholder="Güngören Stadyumu" className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-siyah">Rakip takım logosu (URL)</label>
+        <input name="opponent_logo_url" type="url" defaultValue={match?.opponent_logo_url ?? ""} placeholder="https://..." className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
+        <p className="mt-1 text-xs text-siyah/60">Önümüzdeki maç kartında rakip logosu gösterilir.</p>
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
