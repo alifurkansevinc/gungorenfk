@@ -52,16 +52,6 @@ export default async function BenimKosemPage() {
   const storeSpend = Number((profile as { store_spend_total?: number }).store_spend_total ?? 0);
   const donationTotal = Number((profile as { donation_total?: number }).donation_total ?? 0);
 
-  const nextTargetStore = nextLevel?.target_store_spend != null ? Number(nextLevel.target_store_spend) : 500;
-  const nextTargetTickets = nextLevel?.target_tickets ?? 5;
-  const nextTargetDonation = nextLevel?.target_donation != null ? Number(nextLevel.target_donation) : 100;
-  const barStore = nextTargetStore > 0 ? Math.min(100, (storeSpend / nextTargetStore) * 100) : 0;
-  const barTickets = nextTargetTickets > 0 ? Math.min(100, (ticketsCount / nextTargetTickets) * 100) : 0;
-  const barDonation = nextTargetDonation > 0 ? Math.min(100, (donationTotal / nextTargetDonation) * 100) : 0;
-  const overallBar = nextLevel ? (barStore + barTickets + barDonation) / 3 : 100;
-
-  const hakKazandiklarim = getHakKazandiklarim(currentLevel.slug);
-
   const { data: myTickets } = await supabase
     .from("match_tickets")
     .select("id, qr_code, match_id, matches(opponent_name, match_date, match_time, venue, home_away)")
@@ -86,6 +76,16 @@ export default async function BenimKosemPage() {
       home_away: m?.home_away,
     };
   });
+
+  const nextTargetStore = nextLevel?.target_store_spend != null ? Number(nextLevel.target_store_spend) : 500;
+  const nextTargetTickets = nextLevel?.target_tickets ?? 5;
+  const nextTargetDonation = nextLevel?.target_donation != null ? Number(nextLevel.target_donation) : 100;
+  const barStore = nextTargetStore > 0 ? Math.min(100, (storeSpend / nextTargetStore) * 100) : 0;
+  const barTickets = nextTargetTickets > 0 ? Math.min(100, (ticketsCount / nextTargetTickets) * 100) : 0;
+  const barDonation = nextTargetDonation > 0 ? Math.min(100, (donationTotal / nextTargetDonation) * 100) : 0;
+  const overallBar = nextLevel ? (barStore + barTickets + barDonation) / 3 : 100;
+
+  const hakKazandiklarim = getHakKazandiklarim(currentLevel.slug);
 
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
