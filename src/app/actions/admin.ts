@@ -269,6 +269,67 @@ export async function deleteTechnicalStaff(id: string) {
 }
 
 // ——— Galeriler ———
+export async function createGallery(formData: FormData) {
+  const s = await supabase();
+  const title = (formData.get("title") as string)?.trim();
+  if (!title) return { error: "Galeri başlığı zorunludur." };
+  const slug = (formData.get("slug") as string)?.trim() || title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  const event_date = (formData.get("event_date") as string) || null;
+  const { data, error } = await s.from("galleries").insert({ title, slug, event_date: event_date || null }).select("id").single();
+  if (error) return { error: error.message };
+  revalidatePath("/admin/galeriler");
+  revalidatePath("/galeri");
+  return { ok: true, id: data?.id };
+}
+
+export async function updateGallery(id: string, formData: FormData) {
+  const s = await supabase();
+  const title = (formData.get("title") as string)?.trim();
+  if (!title) return { error: "Galeri başlığı zorunludur." };
+  const slug = (formData.get("slug") as string)?.trim() || title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  const event_date = (formData.get("event_date") as string) || null;
+  const { error } = await s.from("galleries").update({ title, slug, event_date: event_date || null }).eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/galeriler");
+  revalidatePath("/galeri");
+  revalidatePath(`/galeri/${slug}`);
+  return { ok: true };
+}
+
+export async function addGalleryPhoto(galleryId: string, formData: FormData) {
+  const s = await supabase();
+  const image_url = (formData.get("image_url") as string)?.trim();
+  if (!image_url) return { error: "Fotoğraf URL zorunludur." };
+  const caption = (formData.get("caption") as string)?.trim() || null;
+  const { data: max } = await s.from("gallery_photos").select("sort_order").eq("gallery_id", galleryId).order("sort_order", { ascending: false }).limit(1).single();
+  const sort_order = (max?.sort_order ?? -1) + 1;
+  const { error } = await s.from("gallery_photos").insert({ gallery_id: galleryId, image_url, caption, sort_order });
+  if (error) return { error: error.message };
+  revalidatePath("/admin/galeriler");
+  revalidatePath("/galeri");
+  return { ok: true };
+}
+
+export async function updateGalleryPhoto(photoId: string, formData: FormData) {
+  const s = await supabase();
+  const caption = (formData.get("caption") as string)?.trim() || null;
+  const sort_order = parseInt((formData.get("sort_order") as string) ?? "0", 10);
+  const { error } = await s.from("gallery_photos").update({ caption, sort_order }).eq("id", photoId);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/galeriler");
+  revalidatePath("/galeri");
+  return { ok: true };
+}
+
+export async function deleteGalleryPhoto(photoId: string) {
+  const s = await supabase();
+  const { error } = await s.from("gallery_photos").delete().eq("id", photoId);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/galeriler");
+  revalidatePath("/galeri");
+  return { ok: true };
+}
+
 export async function deleteGallery(id: string) {
   const s = await supabase();
   const { error } = await s.from("galleries").delete().eq("id", id);
