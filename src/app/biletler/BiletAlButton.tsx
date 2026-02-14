@@ -36,14 +36,17 @@ export function BiletAlButton({ matchId, matchName }: { matchId: string; matchNa
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className="group inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-bordo px-8 py-4 font-bold text-beyaz shadow-lg shadow-bordo/25 transition-all duration-300 hover:scale-[1.02] hover:bg-bordo-dark hover:shadow-xl hover:shadow-bordo/30 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-70"
+      className="group relative inline-flex shrink-0 items-center justify-center gap-3 overflow-hidden rounded-2xl bg-gradient-to-r from-bordo to-bordo-dark px-10 py-4 font-bold text-beyaz shadow-xl shadow-bordo/30 transition-all duration-300 hover:scale-[1.03] hover:shadow-2xl hover:shadow-bordo/40 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-80"
     >
+      <span className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       {loading ? (
-        <Loader2 className="h-5 w-5 animate-spin" />
+        <Loader2 className="h-6 w-6 shrink-0 animate-spin" aria-hidden />
       ) : (
-        <Ticket className="h-5 w-5 shrink-0" />
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-beyaz/20">
+          <Ticket className="h-5 w-5" aria-hidden />
+        </span>
       )}
-      <span>
+      <span className="relative text-lg">
         {loading ? "Hazırlanıyor..." : "Ücretsiz Bilet Al"}
       </span>
     </button>
