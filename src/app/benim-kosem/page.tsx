@@ -71,8 +71,10 @@ export default async function BenimKosemPage() {
     .order("created_at", { ascending: false })
     .limit(20);
 
+  type MatchRow = { opponent_name: string; match_date: string; match_time: string | null; venue: string | null; home_away: string };
   const ticketsWithMatch = (myTickets ?? []).map((t) => {
-    const m = (t as { matches?: { opponent_name: string; match_date: string; match_time: string | null; venue: string | null; home_away: string } | null }).matches;
+    const raw = t as unknown as { matches?: MatchRow | MatchRow[] | null };
+    const m = Array.isArray(raw.matches) ? raw.matches[0] : raw.matches;
     return {
       id: t.id,
       qr_code: t.qr_code,
