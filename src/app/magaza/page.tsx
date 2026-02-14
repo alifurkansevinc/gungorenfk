@@ -35,7 +35,7 @@ export default async function MagazaPage() {
               href={p.slug ? `/magaza/${p.slug}` : "/magaza"}
               className="group flex flex-col overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-bordo/20"
             >
-              <div className="relative aspect-square overflow-hidden bg-siyah/5">
+              <div className="relative aspect-[3/4] overflow-hidden bg-siyah/5">
                 <Image
                   src={p.image_url || DEMO_IMAGES.product}
                   alt={p.name}

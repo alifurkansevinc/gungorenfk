@@ -85,7 +85,7 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
                   href={`/magaza/${p.slug}`}
                   className="group overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5"
                 >
-                  <div className="relative aspect-square overflow-hidden">
+                  <div className="relative aspect-[3/4] overflow-hidden">
                     <Image
                       src={p.image_url || DEMO_IMAGES.product}
                       alt={p.name}

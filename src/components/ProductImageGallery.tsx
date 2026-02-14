@@ -11,7 +11,7 @@ export function ProductImageGallery({ images, productName }: { images: string[];
 
   return (
     <div className="space-y-3">
-      <div className="relative aspect-square overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-lg">
+      <div className="relative aspect-[3/4] overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-lg">
         <Image
           src={main}
           alt={productName}
@@ -29,11 +29,11 @@ export function ProductImageGallery({ images, productName }: { images: string[];
               key={i}
               type="button"
               onClick={() => setActiveIndex(i)}
-              className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-lg border-2 transition-colors ${
+              className={`relative h-16 w-12 shrink-0 overflow-hidden rounded-lg border-2 transition-colors ${
                 activeIndex === i ? "border-bordo" : "border-siyah/10 hover:border-siyah/30"
               }`}
             >
-              <Image src={url} alt="" fill className="object-cover" sizes="64px" unoptimized />
+              <Image src={url} alt="" fill className="object-cover" sizes="48px" unoptimized />
             </button>
           ))}
         </div>
