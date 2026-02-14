@@ -80,7 +80,7 @@ export default function KulupPage() {
                 Kadro
               </Link>
               <Link href="/haberler" className="rounded-full border-2 border-siyah/20 px-6 py-3 text-sm font-bold text-siyah hover:bg-siyah/5 transition-colors">
-                Gelişmeler
+                Etkinlikler
               </Link>
             </div>
           </div>

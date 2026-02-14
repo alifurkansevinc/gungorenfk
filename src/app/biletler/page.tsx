@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { BiletAlButton } from "./BiletAlButton";
+import { MacKartlari } from "./MacKartlari";
 
 export const metadata = {
   title: "Maç Biletleri | Güngören FK",
@@ -29,7 +29,7 @@ export default async function BiletlerPage() {
           </nav>
           <h1 className="font-display mt-3 text-2xl font-bold text-siyah sm:text-3xl">Maç Biletleri</h1>
           <p className="mt-1 text-siyah/70">
-            Yaklaşan maçlar için bilet alın. Ödeme sonrası biletinizdeki QR kodu stadyum girişinde göstermeniz yeterli.
+            Bilet almak için önce bir maç seçin; bilet alma seçeneği seçtiğiniz maçın kartının içinde açılacaktır.
           </p>
         </div>
       </div>
@@ -40,33 +40,7 @@ export default async function BiletlerPage() {
             Şu an satışa sunulan maç bulunmuyor.
           </div>
         ) : (
-          <ul className="space-y-4">
-            {matches.map((m) => (
-              <li
-                key={m.id}
-                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm"
-              >
-                <div>
-                  <p className="font-semibold text-siyah">
-                    Güngören FK - {m.opponent_name}
-                  </p>
-                  <p className="mt-1 text-sm text-siyah/70">
-                    {new Date(m.match_date + "T12:00:00").toLocaleDateString("tr-TR", {
-                      weekday: "long",
-                      day: "numeric",
-                      month: "long",
-                      year: "numeric",
-                    })}
-                    {m.venue && ` · ${m.venue}`}
-                  </p>
-                  {m.competition && (
-                    <p className="mt-1 text-xs text-siyah/50">{m.competition}</p>
-                  )}
-                </div>
-                <BiletAlButton matchId={m.id} matchName={m.opponent_name} />
-              </li>
-            ))}
-          </ul>
+          <MacKartlari matches={matches} />
         )}
       </div>
     </div>

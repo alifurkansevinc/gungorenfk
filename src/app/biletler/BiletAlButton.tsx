@@ -14,11 +14,15 @@ export function BiletAlButton({ matchId, matchName }: { matchId: string; matchNa
         body: JSON.stringify({ matchId }),
       });
       const data = await res.json();
+      if (data.success && data.data?.redirectUrl) {
+        window.location.href = data.data.redirectUrl;
+        return;
+      }
       if (data.success && data.data?.paymentPageUrl) {
         window.location.href = data.data.paymentPageUrl;
         return;
       }
-      alert(data.error || "Ödeme başlatılamadı.");
+      alert(data.error || "Bilet alınamadı.");
     } catch {
       alert("Bağlantı hatası.");
     } finally {
@@ -33,7 +37,7 @@ export function BiletAlButton({ matchId, matchName }: { matchId: string; matchNa
       disabled={loading}
       className="shrink-0 rounded-xl bg-bordo px-6 py-2.5 font-bold text-beyaz hover:bg-bordo/90 disabled:opacity-50"
     >
-      {loading ? "Yönlendiriliyor..." : "Bilet Al (50 ₺)"}
+      {loading ? "Yönlendiriliyor..." : "Ücretsiz Bilet Al"}
     </button>
   );
 }

@@ -13,11 +13,11 @@ export default async function AdminHaberlerPage() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-siyah">Gelişmeler</h1>
-          <p className="mt-1 text-siyah/70">Haber / gelişme ekle, düzenle veya sil. Sitede haberler sayfasında listelenir.</p>
+          <h1 className="text-2xl font-bold text-siyah">Etkinlikler</h1>
+          <p className="mt-1 text-siyah/70">Etkinlik ekle, düzenle veya sil. Sitede Etkinlikler sayfasında listelenir.</p>
         </div>
         <Link href="/admin/haberler/yeni" className="rounded-lg bg-bordo px-4 py-2 text-sm font-semibold text-beyaz hover:bg-bordo-dark">
-          + Yeni haber
+          + Yeni etkinlik
         </Link>
       </div>
       <div className="mt-6 overflow-hidden rounded-xl border border-siyah/10">
@@ -32,7 +32,7 @@ export default async function AdminHaberlerPage() {
           </thead>
           <tbody>
             {(!news || news.length === 0) ? (
-              <tr><td colSpan={4} className="px-4 py-8 text-center text-siyah/60">Henüz haber yok. &quot;Yeni haber&quot; ile ekleyin.</td></tr>
+              <tr><td colSpan={4} className="px-4 py-8 text-center text-siyah/60">Henüz etkinlik yok. &quot;Yeni etkinlik&quot; ile ekleyin.</td></tr>
             ) : (
               news.map((n) => (
                 <tr key={n.id} className="border-t border-siyah/5 hover:bg-siyah/[0.02]">

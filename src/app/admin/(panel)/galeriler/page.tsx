@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { getAdminSupabase } from "../../actions";
+import { GaleriSilButton } from "./GaleriSilButton";
 
 export default async function AdminGalerilerPage() {
   const supabase = await getAdminSupabase();
@@ -13,14 +15,19 @@ export default async function AdminGalerilerPage() {
           <p className="text-siyah/60">Henüz galeri yok.</p>
         ) : (
           galleries.map((g) => (
-            <div key={g.id} className="rounded border border-black/10 bg-beyaz px-4 py-3">
-              <span className="font-medium">{g.title}</span>
-              {g.event_date && <span className="ml-2 text-sm text-siyah/60">{new Date(g.event_date).toLocaleDateString("tr-TR")}</span>}
+            <div key={g.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-black/10 bg-beyaz px-4 py-3">
+              <div>
+                <span className="font-medium">{g.title}</span>
+                {g.event_date && <span className="ml-2 text-sm text-siyah/60">{new Date(g.event_date).toLocaleDateString("tr-TR")}</span>}
+              </div>
+              <div className="flex gap-3">
+                <Link href={`/galeri/${g.slug}`} target="_blank" className="text-sm text-bordo hover:underline">Görüntüle</Link>
+                <GaleriSilButton id={g.id} title={g.title} />
+              </div>
             </div>
           ))
         )}
       </div>
-      <p className="mt-6 text-sm text-siyah/60">CRUD formu sonraki adımda eklenecek.</p>
     </div>
   );
 }

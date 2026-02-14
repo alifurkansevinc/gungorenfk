@@ -13,7 +13,7 @@ const NAV_BASE = [
   { href: "/kadro", label: "Kadro" },
   { href: "/kulup/teknik-heyet", label: "Teknik Heyet" },
   { href: "/kulup/yonetim-kurulu", label: "Yönetim Kurulu" },
-  { href: "/haberler", label: "Gelişmeler" },
+  { href: "/haberler", label: "Etkinlikler" },
   { href: "/kulup", label: "Kulübümüz" },
 ] as const;
 

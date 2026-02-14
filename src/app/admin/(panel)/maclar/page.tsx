@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAdminSupabase } from "../../actions";
+import { MacSilButton } from "./MacSilButton";
 
 export default async function AdminMaclarPage() {
   const supabase = await getAdminSupabase();
@@ -48,8 +49,9 @@ export default async function AdminMaclarPage() {
                       : "—"}
                   </td>
                   <td className="px-4 py-3 text-siyah/70">{m.status}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 flex gap-3">
                     <Link href={`/admin/maclar/duzenle/${m.id}`} className="text-bordo font-medium hover:underline">Düzenle</Link>
+                    <MacSilButton id={m.id} label={`${m.home_away === "home" ? "Güngören FK - " : ""}${m.opponent_name}${m.home_away === "away" ? " - Güngören FK" : ""}`} />
                   </td>
                 </tr>
               ))

@@ -121,7 +121,7 @@ export default async function Home() {
               <Image src={DEMO_IMAGES.news} alt="" fill className="object-cover transition-transform duration-700 ease-out group-hover:scale-110" sizes="25vw" />
               <div className="absolute inset-0 bg-gradient-to-t from-siyah/90 to-transparent" />
               <div className="absolute inset-0 flex flex-col justify-end p-5">
-                <span className="text-xs font-semibold uppercase tracking-wider text-beyaz/70">Gelişmeler</span>
+                <span className="text-xs font-semibold uppercase tracking-wider text-beyaz/70">Etkinlikler</span>
                 <span className="font-display mt-1 text-lg font-bold text-beyaz">Tümü →</span>
               </div>
             </Link>
@@ -194,7 +194,7 @@ export default async function Home() {
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div>
                 <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-siyah/50">İçerik</p>
-                <h2 className="font-display mt-1 text-2xl font-bold text-siyah">Gelişmeler</h2>
+                <h2 className="font-display mt-1 text-2xl font-bold text-siyah">Etkinlikler</h2>
               </div>
               <Link href="/haberler" className="text-sm font-bold text-bordo hover:underline">Tümü →</Link>
             </div>

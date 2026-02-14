@@ -3,25 +3,25 @@ import Link from "next/link";
 import Image from "next/image";
 
 export const metadata = {
-  title: "Gelişmeler | Güngören FK",
-  description: "Güngören FK gelişmeler ve haberler.",
+  title: "Etkinlikler | Güngören FK",
+  description: "Güngören FK etkinlikler ve duyurular.",
 };
 
 export default async function HaberlerPage() {
   const supabase = await createClient();
   const { data: news } = await supabase
     .from("news")
-    .select("id, title, slug, excerpt, image_url, published_at")
+    .select("id, title, slug, excerpt, image_url, published_at, event_date, event_time, event_place, event_type")
     .not("published_at", "is", null)
     .order("published_at", { ascending: false })
     .limit(20);
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-bold text-siyah sm:text-3xl">Gelişmeler</h1>
+      <h1 className="text-2xl font-bold text-siyah sm:text-3xl">Etkinlikler</h1>
       <div className="mt-8 space-y-6">
         {(!news || news.length === 0) ? (
-          <p className="text-siyah/60">Henüz haber yok.</p>
+          <p className="text-siyah/60">Henüz etkinlik yok.</p>
         ) : (
           news.map((n) => (
             <Link key={n.id} href={`/haberler/${n.slug}`} className="flex gap-4 rounded-xl border border-black/10 p-4 hover:bg-black/5 transition-colors">

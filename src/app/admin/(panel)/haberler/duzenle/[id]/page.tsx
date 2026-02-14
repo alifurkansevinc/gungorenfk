@@ -11,8 +11,8 @@ export default async function AdminHaberlerDuzenlePage({ params }: { params: Pro
 
   return (
     <div>
-      <Link href="/admin/haberler" className="text-sm text-bordo hover:underline">← Gelişmeler listesi</Link>
-      <h1 className="mt-4 text-2xl font-bold text-siyah">Haberi düzenle</h1>
+      <Link href="/admin/haberler" className="text-sm text-bordo hover:underline">← Etkinlikler listesi</Link>
+      <h1 className="mt-4 text-2xl font-bold text-siyah">Etkinliği düzenle</h1>
       <HaberFormu news={news} />
     </div>
   );

@@ -36,7 +36,7 @@ const menuItems = [
   { href: "/admin/taraftarlar", label: "Taraftarlar", icon: Users },
   { href: "/admin/maclar", label: "Maçlar", icon: Calendar },
   { href: "/admin/kadro", label: "Kadro", icon: Shirt },
-  { href: "/admin/haberler", label: "Gelişmeler", icon: Newspaper },
+  { href: "/admin/haberler", label: "Etkinlikler", icon: Newspaper },
   { href: "/admin/yonetim-kurulu", label: "Yönetim Kurulu", icon: UsersRound },
   { href: "/admin/teknik-heyet", label: "Teknik Heyet", icon: GraduationCap },
   { href: "/admin/rozet", label: "Rozet Kuralları", icon: Award },

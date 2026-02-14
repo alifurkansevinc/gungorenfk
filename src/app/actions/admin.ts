@@ -52,6 +52,15 @@ export async function updateMatch(id: string, formData: FormData) {
   return { ok: true };
 }
 
+export async function deleteMatch(id: string) {
+  const s = await supabase();
+  const { error } = await s.from("matches").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/maclar");
+  revalidatePath("/maclar");
+  return { ok: true };
+}
+
 // ——— Kadro ———
 export async function createSquadMember(formData: FormData) {
   const s = await supabase();
@@ -94,11 +103,23 @@ export async function updateSquadMember(id: string, formData: FormData) {
   return { ok: true };
 }
 
-// ——— Haberler / Gelişmeler ———
+export async function deleteSquadMember(id: string) {
+  const s = await supabase();
+  const { error } = await s.from("squad").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/kadro");
+  revalidatePath("/kadro");
+  return { ok: true };
+}
+
+// ——— Etkinlikler (news) ———
 export async function createNews(formData: FormData) {
   const s = await supabase();
   const title = (formData.get("title") as string)?.trim();
   const slug = (formData.get("slug") as string)?.trim() || title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  const eventDate = (formData.get("event_date") as string)?.trim() || null;
+  const eventEndDate = (formData.get("event_end_date") as string)?.trim() || null;
+  const capacityVal = formData.get("capacity");
   const { error } = await s.from("news").insert({
     title,
     slug,
@@ -106,6 +127,15 @@ export async function createNews(formData: FormData) {
     body: (formData.get("body") as string)?.trim() || null,
     published_at: (formData.get("published_at") as string) || null,
     image_url: (formData.get("image_url") as string)?.trim() || null,
+    event_date: eventDate || null,
+    event_end_date: eventEndDate || null,
+    event_time: (formData.get("event_time") as string)?.trim() || null,
+    event_place: (formData.get("event_place") as string)?.trim() || null,
+    event_type: (formData.get("event_type") as string)?.trim() || null,
+    capacity: capacityVal ? parseInt(capacityVal as string, 10) : null,
+    registration_url: (formData.get("registration_url") as string)?.trim() || null,
+    is_online: formData.get("is_online") === "on",
+    external_link: (formData.get("external_link") as string)?.trim() || null,
   });
   if (error) return { error: error.message };
   revalidatePath("/admin/haberler");
@@ -117,6 +147,9 @@ export async function updateNews(id: string, formData: FormData) {
   const s = await supabase();
   const title = (formData.get("title") as string)?.trim();
   const slug = (formData.get("slug") as string)?.trim() || title?.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+  const eventDate = (formData.get("event_date") as string)?.trim() || null;
+  const eventEndDate = (formData.get("event_end_date") as string)?.trim() || null;
+  const capacityVal = formData.get("capacity");
   const { error } = await s.from("news").update({
     title,
     slug,
@@ -124,6 +157,15 @@ export async function updateNews(id: string, formData: FormData) {
     body: (formData.get("body") as string)?.trim() || null,
     published_at: (formData.get("published_at") as string) || null,
     image_url: (formData.get("image_url") as string)?.trim() || null,
+    event_date: eventDate || null,
+    event_end_date: eventEndDate || null,
+    event_time: (formData.get("event_time") as string)?.trim() || null,
+    event_place: (formData.get("event_place") as string)?.trim() || null,
+    event_type: (formData.get("event_type") as string)?.trim() || null,
+    capacity: capacityVal ? parseInt(capacityVal as string, 10) : null,
+    registration_url: (formData.get("registration_url") as string)?.trim() || null,
+    is_online: formData.get("is_online") === "on",
+    external_link: (formData.get("external_link") as string)?.trim() || null,
     updated_at: new Date().toISOString(),
   }).eq("id", id);
   if (error) return { error: error.message };
@@ -174,6 +216,15 @@ export async function updateBoardMember(id: string, formData: FormData) {
   return { ok: true };
 }
 
+export async function deleteBoardMember(id: string) {
+  const s = await supabase();
+  const { error } = await s.from("board_members").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/yonetim-kurulu");
+  revalidatePath("/kulup/yonetim-kurulu");
+  return { ok: true };
+}
+
 // ——— Teknik Heyet ———
 export async function createTechnicalStaff(formData: FormData) {
   const s = await supabase();
@@ -203,6 +254,25 @@ export async function updateTechnicalStaff(id: string, formData: FormData) {
   if (error) return { error: error.message };
   revalidatePath("/admin/teknik-heyet");
   revalidatePath("/kulup/teknik-heyet");
+  return { ok: true };
+}
+
+export async function deleteTechnicalStaff(id: string) {
+  const s = await supabase();
+  const { error } = await s.from("technical_staff").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/teknik-heyet");
+  revalidatePath("/kulup/teknik-heyet");
+  return { ok: true };
+}
+
+// ——— Galeriler ———
+export async function deleteGallery(id: string) {
+  const s = await supabase();
+  const { error } = await s.from("galleries").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/galeriler");
+  revalidatePath("/galeri");
   return { ok: true };
 }
 

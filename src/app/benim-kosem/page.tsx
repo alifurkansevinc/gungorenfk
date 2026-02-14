@@ -192,7 +192,7 @@ export default async function BenimKosemPage() {
                   Kadro
                 </Link>
                 <Link href="/haberler" className="rounded-lg border-2 border-siyah/20 px-4 py-3 font-medium text-siyah hover:bg-siyah/5 transition-colors text-center">
-                  Gelişmeler
+                  Etkinlikler
                 </Link>
               </div>
             </section>

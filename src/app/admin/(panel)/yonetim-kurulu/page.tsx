@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getAdminSupabase } from "../../actions";
 import { BOARD_ROLE_LABELS } from "@/lib/board-labels";
+import { YonetimSilButton } from "./YonetimSilButton";
 
 export default async function AdminYonetimKuruluPage() {
   const supabase = await getAdminSupabase();
@@ -41,8 +42,9 @@ export default async function AdminYonetimKuruluPage() {
                   <td className="px-4 py-3 font-medium text-siyah">{m.name}</td>
                   <td className="px-4 py-3 text-siyah/70">{BOARD_ROLE_LABELS[m.role_slug] ?? m.role_slug}</td>
                   <td className="px-4 py-3">{m.is_active ? <span className="text-green-600">Aktif</span> : <span className="text-siyah/50">Pasif</span>}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 flex gap-3">
                     <Link href={`/admin/yonetim-kurulu/duzenle/${m.id}`} className="text-bordo font-medium hover:underline">Düzenle</Link>
+                    <YonetimSilButton id={m.id} name={m.name} />
                   </td>
                 </tr>
               ))

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAdminSupabase } from "../../actions";
+import { KadroSilButton } from "./KadroSilButton";
 
 export default async function AdminKadroPage() {
   const supabase = await getAdminSupabase();
@@ -45,8 +46,9 @@ export default async function AdminKadroPage() {
                   <td className="px-4 py-3 text-siyah/80">{p.position ?? p.position_category ?? "—"}</td>
                   <td className="px-4 py-3 text-siyah/80">{p.sort_order}</td>
                   <td className="px-4 py-3">{p.is_active ? <span className="text-green-600">Aktif</span> : <span className="text-siyah/50">Pasif</span>}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 flex gap-3">
                     <Link href={`/admin/kadro/duzenle/${p.id}`} className="text-bordo font-medium hover:underline">Düzenle</Link>
+                    <KadroSilButton id={p.id} name={p.name} />
                   </td>
                 </tr>
               ))

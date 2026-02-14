@@ -6,7 +6,7 @@ const columns = [
     links: [
       { href: "/maclar", label: "Sıralama & Maçlar" },
       { href: "/kadro", label: "Kadro" },
-      { href: "/haberler", label: "Gelişmeler" },
+      { href: "/haberler", label: "Etkinlikler" },
     ],
   },
   {

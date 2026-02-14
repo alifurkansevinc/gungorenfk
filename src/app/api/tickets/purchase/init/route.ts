@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { initializeCheckoutForm } from "@/lib/iyzico";
+import { checkAndLevelUp } from "@/lib/fan-level";
 
-const TICKET_PRICE = 50;
+const TICKET_PRICE = 0;
 
 function generateQrCode(): string {
   const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
@@ -41,6 +42,9 @@ export async function POST(req: NextRequest) {
     const guestEmail = user ? null : (body.email as string)?.trim() || null;
     const guestName = (user ? null : (body.name as string)?.trim() || "Bilet alıcı") ?? "Bilet alıcı";
 
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const isFree = TICKET_PRICE === 0;
+
     const { data: ticket, error: insertError } = await supabase
       .from("match_tickets")
       .insert({
@@ -50,7 +54,7 @@ export async function POST(req: NextRequest) {
         guest_name: guestName,
         qr_code: qrCode,
         status: "active",
-        payment_status: "PENDING",
+        payment_status: isFree ? "PAID" : "PENDING",
       })
       .select("id")
       .single();
@@ -60,9 +64,38 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Bilet kaydı oluşturulamadı." }, { status: 500 });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-    const matchLabel = `${match.opponent_name} - ${new Date(match.match_date + "T12:00:00").toLocaleDateString("tr-TR")}`;
+    if (isFree) {
+      if (user?.id) {
+        const { data: profile } = await supabase
+          .from("fan_profiles")
+          .select("id, match_tickets_count")
+          .eq("user_id", user.id)
+          .single();
+        if (profile) {
+          const newCount = (Number(profile.match_tickets_count) || 0) + 1;
+          await supabase
+            .from("fan_profiles")
+            .update({ match_tickets_count: newCount, updated_at: new Date().toISOString() })
+            .eq("id", profile.id);
+          const levelResult = await checkAndLevelUp(user.id);
+          const params = new URLSearchParams({ qrCode });
+          if (levelResult.leveledUp && levelResult.newLevelId) {
+            params.set("levelUp", "1");
+            params.set("newLevel", String(levelResult.newLevelId));
+          }
+          return NextResponse.json({
+            success: true,
+            data: { qrCode, redirectUrl: `${baseUrl}/biletler/basarili?${params.toString()}` },
+          });
+        }
+      }
+      return NextResponse.json({
+        success: true,
+        data: { qrCode, redirectUrl: `${baseUrl}/biletler/basarili?qrCode=${qrCode}` },
+      });
+    }
 
+    const matchLabel = `${match.opponent_name} - ${new Date(match.match_date + "T12:00:00").toLocaleDateString("tr-TR")}`;
     const result = await initializeCheckoutForm({
       orderId: ticket.id,
       orderNumber: `BLT-${qrCode}`,
