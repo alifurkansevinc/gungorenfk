@@ -33,6 +33,10 @@ export async function checkAndLevelUp(userId: string): Promise<{ leveledUp: bool
   const tickets = Number(profile.match_tickets_count) || 0;
   const donation = Number(profile.donation_total) || 0;
 
+  // En az iki barem türü hedefli olmalı; tek baremle (örn. sadece 1 bilet) seviye atlanmaz.
+  const targetsSet = [targetStore > 0, targetTickets > 0, targetDonation > 0].filter(Boolean).length;
+  if (targetsSet < 2) return { leveledUp: false };
+
   const reached =
     storeSpend >= targetStore && tickets >= targetTickets && donation >= targetDonation;
 

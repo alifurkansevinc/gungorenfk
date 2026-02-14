@@ -63,6 +63,27 @@ export default async function BenimKosemPage() {
 
   const hakKazandiklarim = getHakKazandiklarim(currentLevel.slug);
 
+  const { data: myTickets } = await supabase
+    .from("match_tickets")
+    .select("id, qr_code, match_id, matches(opponent_name, match_date, match_time, venue, home_away)")
+    .eq("user_id", user.id)
+    .eq("payment_status", "PAID")
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  const ticketsWithMatch = (myTickets ?? []).map((t) => {
+    const m = (t as { matches?: { opponent_name: string; match_date: string; match_time: string | null; venue: string | null; home_away: string } | null }).matches;
+    return {
+      id: t.id,
+      qr_code: t.qr_code,
+      opponent_name: m?.opponent_name ?? "Maç",
+      match_date: m?.match_date,
+      match_time: m?.match_time,
+      venue: m?.venue,
+      home_away: m?.home_away,
+    };
+  });
+
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
       <div className="border-b border-siyah/10 bg-siyah text-beyaz">
@@ -141,6 +162,52 @@ export default async function BenimKosemPage() {
                 <p className="mt-2 text-sm text-siyah/70">En yüksek kademe (Efsane) rozetindesin.</p>
               </section>
             )}
+
+            {/* Bilet cüzdanı */}
+            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
+              <h2 className="font-display text-lg font-bold text-siyah">Bilet cüzdanım</h2>
+              <p className="mt-1 text-sm text-siyah/70">Aldığınız maç biletleri. Maç günü QR kodu girişte göstermeniz yeterli.</p>
+              {ticketsWithMatch.length === 0 ? (
+                <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
+                  <p className="text-sm text-siyah/60">Henüz biletiniz yok.</p>
+                  <Link href="/biletler" className="mt-3 inline-block text-sm font-medium text-bordo hover:underline">Maç Biletleri →</Link>
+                </div>
+              ) : (
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {ticketsWithMatch.map((t) => {
+                    const macLabel = t.home_away === "home" ? `Güngören FK - ${t.opponent_name}` : `${t.opponent_name} - Güngören FK`;
+                    const qrUrl = t.qr_code
+                      ? `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(t.qr_code)}`
+                      : null;
+                    return (
+                      <Link
+                        key={t.id}
+                        href={`/biletler/basarili?qrCode=${t.qr_code}`}
+                        className="flex items-center gap-4 rounded-xl border border-siyah/10 bg-gradient-to-br from-siyah/5 to-bordo/5 p-4 transition-shadow hover:shadow-md"
+                      >
+                        {qrUrl && (
+                          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz">
+                            <img src={qrUrl} alt="QR" width={56} height={56} className="h-full w-full object-contain" />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-siyah truncate">{macLabel}</p>
+                          <p className="text-xs text-siyah/60">
+                            {t.match_date ? new Date(t.match_date + "T12:00:00").toLocaleDateString("tr-TR") : ""}
+                            {t.match_time ? ` · ${t.match_time}` : ""}
+                            {t.venue ? ` · ${t.venue}` : ""}
+                          </p>
+                        </div>
+                        <span className="shrink-0 text-xs font-medium text-bordo">Göster</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+              {ticketsWithMatch.length > 0 && (
+                <Link href="/biletler" className="mt-4 block text-center text-sm font-medium text-bordo hover:underline">Yeni bilet al →</Link>
+              )}
+            </section>
 
             {/* Favori oyuncu */}
             <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">

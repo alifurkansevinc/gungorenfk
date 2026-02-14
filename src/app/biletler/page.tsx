@@ -12,7 +12,7 @@ export default async function BiletlerPage() {
   const today = new Date().toISOString().slice(0, 10);
   const { data: matches } = await supabase
     .from("matches")
-    .select("id, opponent_name, home_away, venue, match_date, competition")
+    .select("id, opponent_name, home_away, venue, match_date, match_time, competition, opponent_logo_url")
     .gte("match_date", today)
     .eq("status", "scheduled")
     .order("match_date")
