@@ -50,7 +50,6 @@ export default async function BenimKosemPage() {
   const favoritePlayer = favoritePlayerId ? squad.find((p) => p.id === favoritePlayerId) : null;
 
   const storeSpend = Number((profile as { store_spend_total?: number }).store_spend_total ?? 0);
-  const ticketsCount = Number((profile as { match_tickets_count?: number }).match_tickets_count ?? 0);
   const donationTotal = Number((profile as { donation_total?: number }).donation_total ?? 0);
 
   const nextTargetStore = nextLevel?.target_store_spend != null ? Number(nextLevel.target_store_spend) : 500;
@@ -70,6 +69,8 @@ export default async function BenimKosemPage() {
     .eq("payment_status", "PAID")
     .order("created_at", { ascending: false })
     .limit(20);
+
+  const ticketsCount = new Set((myTickets ?? []).map((t) => (t as { match_id: string }).match_id)).size;
 
   type MatchRow = { opponent_name: string; match_date: string; match_time: string | null; venue: string | null; home_away: string };
   const ticketsWithMatch = (myTickets ?? []).map((t) => {

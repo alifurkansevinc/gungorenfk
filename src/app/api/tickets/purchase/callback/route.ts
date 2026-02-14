@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     const { data: ticket, error: findError } = await supabase
       .from("match_tickets")
-      .select("id, user_id, qr_code")
+      .select("id, user_id, match_id, qr_code")
       .eq("payment_token", token)
       .single();
 
@@ -34,24 +34,33 @@ export async function POST(req: NextRequest) {
         .update({ payment_status: "PAID", payment_token: null })
         .eq("id", ticket.id);
 
-      if (ticket.user_id) {
-        const { data: profile } = await supabase
-          .from("fan_profiles")
-          .select("id, match_tickets_count")
+      if (ticket.user_id && ticket.match_id) {
+        const { count: paidForMatch } = await supabase
+          .from("match_tickets")
+          .select("id", { count: "exact", head: true })
           .eq("user_id", ticket.user_id)
-          .single();
-        if (profile) {
-          const newCount = (Number(profile.match_tickets_count) || 0) + 1;
-          await supabase
+          .eq("match_id", ticket.match_id)
+          .eq("payment_status", "PAID");
+        const isFirstTicketForMatch = (paidForMatch ?? 0) === 1;
+        if (isFirstTicketForMatch) {
+          const { data: profile } = await supabase
             .from("fan_profiles")
-            .update({ match_tickets_count: newCount, updated_at: new Date().toISOString() })
-            .eq("id", profile.id);
-          const levelResult = await checkAndLevelUp(ticket.user_id);
-          if (levelResult.leveledUp && levelResult.newLevelId) {
-            return NextResponse.redirect(
-              new URL(`/biletler/basarili?qrCode=${ticket.qr_code}&levelUp=1&newLevel=${levelResult.newLevelId}`, base)
-            );
+            .select("id, match_tickets_count")
+            .eq("user_id", ticket.user_id)
+            .single();
+          if (profile) {
+            const newCount = (Number(profile.match_tickets_count) || 0) + 1;
+            await supabase
+              .from("fan_profiles")
+              .update({ match_tickets_count: newCount, updated_at: new Date().toISOString() })
+              .eq("id", profile.id);
           }
+        }
+        const levelResult = await checkAndLevelUp(ticket.user_id);
+        if (levelResult.leveledUp && levelResult.newLevelId) {
+          return NextResponse.redirect(
+            new URL(`/biletler/basarili?qrCode=${ticket.qr_code}&levelUp=1&newLevel=${levelResult.newLevelId}`, base)
+          );
         }
       }
 

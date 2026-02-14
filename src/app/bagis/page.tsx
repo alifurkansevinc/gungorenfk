@@ -23,7 +23,7 @@ export default async function BagisPage() {
           </nav>
           <h1 className="font-display mt-3 text-2xl font-bold text-siyah sm:text-3xl">Bağış Yap</h1>
           <p className="mt-1 text-siyah/70">
-            Kulübümüze destek olmak için aşağıdan tutar seçip güvenli ödeme (iyzico) ile bağış yapabilir veya havale/EFT bilgilerimizi kullanabilirsiniz.
+            Kulubüne destek ol, zirveye birlikte çıkalım. Aşağıdan tutar seçip güvenli ödeme (iyzico) ile bağış yapabilir veya havale/EFT bilgilerimizi kullanabilirsiniz.
           </p>
         </div>
       </div>

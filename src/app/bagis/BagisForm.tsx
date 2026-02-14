@@ -3,10 +3,10 @@
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-const PRESETS = [50, 100, 250, 500, 1000];
+const PRESETS = [1000, 5000, 10000, 50000, 100000];
 
 export function BagisForm() {
-  const [amount, setAmount] = useState<number>(100);
+  const [amount, setAmount] = useState<number>(1000);
   const [customAmount, setCustomAmount] = useState("");
   const [message, setMessage] = useState("");
   const [name, setName] = useState("");
@@ -77,7 +77,7 @@ export function BagisForm() {
                   : "border-siyah/20 text-siyah hover:border-bordo hover:bg-bordo/10"
               }`}
             >
-              {p} ₺
+              {p.toLocaleString("tr-TR")} ₺
             </button>
           ))}
         </div>

@@ -18,20 +18,20 @@ export const DEMO_MATCHES: (Match & { id: string })[] = [
 
 /** Demo kadro (veri yokken tasarım için) */
 export const DEMO_SQUAD: (SquadMember & { id: string })[] = [
-  { id: "demo-1", name: "Ahmet Yılmaz", shirt_number: 1, position: "Kaleci", position_category: "kl", photo_url: null, bio: "Deneyimli kaleci.", sort_order: 1, is_active: true, is_captain: false },
-  { id: "demo-2", name: "Mehmet Kaya", shirt_number: 2, position: "Sağ Bek", position_category: "bek", photo_url: null, bio: null, sort_order: 2, is_active: true, is_captain: false },
-  { id: "demo-3", name: "Ali Demir", shirt_number: 3, position: "Stoper", position_category: "stoper", photo_url: null, bio: null, sort_order: 3, is_active: true, is_captain: false },
-  { id: "demo-4", name: "Can Özkan", shirt_number: 4, position: "Stoper", position_category: "stoper", photo_url: null, bio: null, sort_order: 4, is_active: true, is_captain: false },
-  { id: "demo-5", name: "Emre Çelik", shirt_number: 5, position: "Sol Bek", position_category: "bek", photo_url: null, bio: null, sort_order: 5, is_active: true, is_captain: false },
-  { id: "demo-6", name: "Burak Arslan", shirt_number: 6, position: "Ön Libero", position_category: "ortasaha", photo_url: null, bio: null, sort_order: 6, is_active: true, is_captain: false },
-  { id: "demo-7", name: "Serkan Aydın", shirt_number: 7, position: "Sağ Kanat", position_category: "kanat", photo_url: null, bio: null, sort_order: 7, is_active: true, is_captain: false },
-  { id: "demo-8", name: "Oğuzhan Koç", shirt_number: 8, position: "Orta Saha", position_category: "ortasaha", photo_url: null, bio: "Kaptan.", sort_order: 8, is_active: true, is_captain: true },
-  { id: "demo-9", name: "Fatih Şahin", shirt_number: 9, position: "Forvet", position_category: "forvet", photo_url: null, bio: null, sort_order: 9, is_active: true, is_captain: false },
-  { id: "demo-10", name: "Hakan Polat", shirt_number: 10, position: "Orta Saha", position_category: "ortasaha", photo_url: null, bio: null, sort_order: 10, is_active: true, is_captain: false },
-  { id: "demo-11", name: "Yusuf Acar", shirt_number: 11, position: "Sol Kanat", position_category: "kanat", photo_url: null, bio: null, sort_order: 11, is_active: true, is_captain: false },
-  { id: "demo-12", name: "Murat Yıldız", shirt_number: 12, position: "Kaleci", position_category: "kl", photo_url: null, bio: null, sort_order: 12, is_active: true, is_captain: false },
-  { id: "demo-13", name: "Kerem Öztürk", shirt_number: 14, position: "Orta Saha", position_category: "ortasaha", photo_url: null, bio: null, sort_order: 14, is_active: true, is_captain: false },
-  { id: "demo-14", name: "Barış Kılıç", shirt_number: 17, position: "Forvet", position_category: "forvet", photo_url: null, bio: null, sort_order: 17, is_active: true, is_captain: false },
+  { id: "demo-1", name: "Ahmet Yılmaz", shirt_number: 1, position: "Kaleci", position_category: "kl", photo_url: null, bio: "Deneyimli kaleci.", sort_order: 1, is_active: true, is_captain: false, season: null },
+  { id: "demo-2", name: "Mehmet Kaya", shirt_number: 2, position: "Sağ Bek", position_category: "bek", photo_url: null, bio: null, sort_order: 2, is_active: true, is_captain: false, season: null },
+  { id: "demo-3", name: "Ali Demir", shirt_number: 3, position: "Stoper", position_category: "stoper", photo_url: null, bio: null, sort_order: 3, is_active: true, is_captain: false, season: null },
+  { id: "demo-4", name: "Can Özkan", shirt_number: 4, position: "Stoper", position_category: "stoper", photo_url: null, bio: null, sort_order: 4, is_active: true, is_captain: false, season: null },
+  { id: "demo-5", name: "Emre Çelik", shirt_number: 5, position: "Sol Bek", position_category: "bek", photo_url: null, bio: null, sort_order: 5, is_active: true, is_captain: false, season: null },
+  { id: "demo-6", name: "Burak Arslan", shirt_number: 6, position: "Ön Libero", position_category: "ortasaha", photo_url: null, bio: null, sort_order: 6, is_active: true, is_captain: false, season: null },
+  { id: "demo-7", name: "Serkan Aydın", shirt_number: 7, position: "Sağ Kanat", position_category: "kanat", photo_url: null, bio: null, sort_order: 7, is_active: true, is_captain: false, season: null },
+  { id: "demo-8", name: "Oğuzhan Koç", shirt_number: 8, position: "Orta Saha", position_category: "ortasaha", photo_url: null, bio: "Kaptan.", sort_order: 8, is_active: true, is_captain: true, season: null },
+  { id: "demo-9", name: "Fatih Şahin", shirt_number: 9, position: "Forvet", position_category: "forvet", photo_url: null, bio: null, sort_order: 9, is_active: true, is_captain: false, season: null },
+  { id: "demo-10", name: "Hakan Polat", shirt_number: 10, position: "Orta Saha", position_category: "ortasaha", photo_url: null, bio: null, sort_order: 10, is_active: true, is_captain: false, season: null },
+  { id: "demo-11", name: "Yusuf Acar", shirt_number: 11, position: "Sol Kanat", position_category: "kanat", photo_url: null, bio: null, sort_order: 11, is_active: true, is_captain: false, season: null },
+  { id: "demo-12", name: "Murat Yıldız", shirt_number: 12, position: "Kaleci", position_category: "kl", photo_url: null, bio: null, sort_order: 12, is_active: true, is_captain: false, season: null },
+  { id: "demo-13", name: "Kerem Öztürk", shirt_number: 14, position: "Orta Saha", position_category: "ortasaha", photo_url: null, bio: null, sort_order: 14, is_active: true, is_captain: false, season: null },
+  { id: "demo-14", name: "Barış Kılıç", shirt_number: 17, position: "Forvet", position_category: "forvet", photo_url: null, bio: null, sort_order: 17, is_active: true, is_captain: false, season: null },
 ];
 
 /** Demo yönetim kurulu (veri yokken) */
@@ -171,13 +171,14 @@ export async function getFanLevels(): Promise<FanLevel[]> {
   return (data ?? []) as FanLevel[];
 }
 
-/** Kadro listesi; veri yoksa demo döner. */
+/** Kadro listesi (sezon bazlı; veri yoksa demo döner). */
 export async function getSquad() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("squad")
-    .select("id, name, shirt_number, position, position_category, photo_url, bio, sort_order, is_captain")
+    .select("id, name, shirt_number, position, position_category, photo_url, bio, sort_order, is_captain, season")
     .eq("is_active", true)
+    .order("season", { ascending: false, nullsFirst: false })
     .order("sort_order");
   if (!data || data.length === 0) return DEMO_SQUAD;
   return data.map((r) => ({
@@ -185,6 +186,7 @@ export async function getSquad() {
     position_category: r.position_category ?? null,
     is_captain: r.is_captain ?? false,
     is_active: true,
+    season: (r as { season?: string | null }).season ?? null,
   })) as SquadMember[];
 }
 

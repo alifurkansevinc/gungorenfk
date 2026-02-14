@@ -6,7 +6,8 @@ export default async function AdminKadroPage() {
   const supabase = await getAdminSupabase();
   const { data: squad } = await supabase
     .from("squad")
-    .select("id, name, shirt_number, position, position_category, sort_order, is_active, is_captain")
+    .select("id, name, shirt_number, position, position_category, sort_order, is_active, is_captain, season")
+    .order("season", { ascending: false, nullsFirst: false })
     .order("sort_order");
 
   return (
@@ -26,6 +27,7 @@ export default async function AdminKadroPage() {
             <tr>
               <th className="px-4 py-3 font-semibold text-siyah/70">#</th>
               <th className="px-4 py-3 font-semibold text-siyah/70">Ad Soyad</th>
+              <th className="px-4 py-3 font-semibold text-siyah/70">Sezon</th>
               <th className="px-4 py-3 font-semibold text-siyah/70">Pozisyon</th>
               <th className="px-4 py-3 font-semibold text-siyah/70">Sıra</th>
               <th className="px-4 py-3 font-semibold text-siyah/70">Durum</th>
@@ -34,7 +36,7 @@ export default async function AdminKadroPage() {
           </thead>
           <tbody>
             {(!squad || squad.length === 0) ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-siyah/60">Henüz oyuncu yok. &quot;Yeni oyuncu&quot; ile ekleyin.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-siyah/60">Henüz oyuncu yok. &quot;Yeni oyuncu&quot; ile ekleyin.</td></tr>
             ) : (
               squad.map((p) => (
                 <tr key={p.id} className="border-t border-siyah/5 hover:bg-siyah/[0.02]">
@@ -43,6 +45,7 @@ export default async function AdminKadroPage() {
                     {p.name}
                     {p.is_captain && <span className="ml-1 text-xs text-siyah/60">(Kaptan)</span>}
                   </td>
+                  <td className="px-4 py-3 text-siyah/70">{p.season ?? "—"}</td>
                   <td className="px-4 py-3 text-siyah/80">{p.position ?? p.position_category ?? "—"}</td>
                   <td className="px-4 py-3 text-siyah/80">{p.sort_order}</td>
                   <td className="px-4 py-3">{p.is_active ? <span className="text-green-600">Aktif</span> : <span className="text-siyah/50">Pasif</span>}</td>

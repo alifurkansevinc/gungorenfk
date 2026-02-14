@@ -32,6 +32,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Maç bulunamadı." }, { status: 404 });
     }
 
+    if (user?.id) {
+      const { data: existingTicket } = await supabase
+        .from("match_tickets")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("match_id", matchId)
+        .eq("payment_status", "PAID")
+        .maybeSingle();
+      if (existingTicket) {
+        return NextResponse.json(
+          { success: false, error: "Bu maç için zaten biletiniz var. Bir maça yalnızca bir bilet alabilirsiniz." },
+          { status: 400 }
+        );
+      }
+    }
+
     let qrCode = generateQrCode();
     for (let attempt = 0; attempt < 5; attempt++) {
       const { data: existing } = await supabase.from("match_tickets").select("id").eq("qr_code", qrCode).maybeSingle();

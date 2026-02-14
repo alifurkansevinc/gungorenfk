@@ -75,6 +75,7 @@ export async function createSquadMember(formData: FormData) {
     sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
     is_active: formData.get("is_active") === "on",
     is_captain: formData.get("is_captain") === "on",
+    season: (formData.get("season") as string)?.trim() || null,
   });
   if (error) return { error: error.message };
   revalidatePath("/admin/kadro");
@@ -95,6 +96,7 @@ export async function updateSquadMember(id: string, formData: FormData) {
     sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
     is_active: formData.get("is_active") === "on",
     is_captain: formData.get("is_captain") === "on",
+    season: (formData.get("season") as string)?.trim() || null,
     updated_at: new Date().toISOString(),
   }).eq("id", id);
   if (error) return { error: error.message };

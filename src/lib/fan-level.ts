@@ -9,11 +9,19 @@ export async function checkAndLevelUp(userId: string): Promise<{ leveledUp: bool
 
   const { data: profile, error: profileError } = await supabase
     .from("fan_profiles")
-    .select("id, fan_level_id, store_spend_total, match_tickets_count, donation_total")
+    .select("id, fan_level_id, store_spend_total, donation_total")
     .eq("user_id", userId)
     .single();
 
   if (profileError || !profile) return { leveledUp: false };
+
+  const { data: distinctMatches } = await supabase
+    .from("match_tickets")
+    .select("match_id")
+    .eq("user_id", userId)
+    .eq("payment_status", "PAID");
+  const uniqueMatchIds = [...new Set((distinctMatches ?? []).map((r) => r.match_id))];
+  const tickets = uniqueMatchIds.length;
 
   const currentLevelId = profile.fan_level_id as number;
   const nextLevelId = currentLevelId + 1;
@@ -30,7 +38,6 @@ export async function checkAndLevelUp(userId: string): Promise<{ leveledUp: bool
   const targetTickets = Number(nextLevel.target_tickets) || 0;
   const targetDonation = Number(nextLevel.target_donation) || 0;
   const storeSpend = Number(profile.store_spend_total) || 0;
-  const tickets = Number(profile.match_tickets_count) || 0;
   const donation = Number(profile.donation_total) || 0;
 
   // En az iki barem türü hedefli olmalı; tek baremle (örn. sadece 1 bilet) seviye atlanmaz.

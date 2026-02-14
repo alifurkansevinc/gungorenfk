@@ -75,6 +75,7 @@ export type SquadMember = {
   sort_order: number;
   is_active: boolean;
   is_captain: boolean;
+  season: string | null;
 };
 
 export type BoardMember = {

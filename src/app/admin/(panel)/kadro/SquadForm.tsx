@@ -25,6 +25,7 @@ type SquadRow = {
   sort_order: number;
   is_active: boolean;
   is_captain: boolean;
+  season: string | null;
 };
 
 export function SquadForm({ member }: { member?: SquadRow | null }) {
@@ -80,6 +81,11 @@ export function SquadForm({ member }: { member?: SquadRow | null }) {
       <div>
         <label className="block text-sm font-medium text-siyah">Kısa biyografi</label>
         <textarea name="bio" defaultValue={member?.bio ?? ""} rows={2} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-siyah">Sezon</label>
+        <input name="season" type="text" defaultValue={member?.season ?? ""} placeholder="Örn: 24-25 Şampiyon Kadromuz, 26-27 Sezon Kadrosu" className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
+        <p className="mt-1 text-xs text-siyah/60">Aynı sezon metnini giren oyuncular sitede aynı blokta gösterilir. En son sezon en üstte, varsayılan açık.</p>
       </div>
       <div>
         <label className="block text-sm font-medium text-siyah">Sıra</label>
