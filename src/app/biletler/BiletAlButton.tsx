@@ -3,7 +3,15 @@
 import { useState } from "react";
 import { Ticket, Loader2 } from "lucide-react";
 
-export function BiletAlButton({ matchId, matchName }: { matchId: string; matchName: string }) {
+export function BiletAlButton({
+  matchId,
+  matchName,
+  seatId = null,
+}: {
+  matchId: string;
+  matchName: string;
+  seatId?: string | null;
+}) {
   const [loading, setLoading] = useState(false);
 
   const handleClick = async () => {
@@ -12,7 +20,7 @@ export function BiletAlButton({ matchId, matchName }: { matchId: string; matchNa
       const res = await fetch("/api/tickets/purchase/init", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ matchId }),
+        body: JSON.stringify({ matchId, ...(seatId ? { seatId } : {}) }),
       });
       const data = await res.json();
       if (data.success && data.data?.redirectUrl) {
@@ -47,7 +55,7 @@ export function BiletAlButton({ matchId, matchName }: { matchId: string; matchNa
         </span>
       )}
       <span className="relative text-lg">
-        {loading ? "Hazırlanıyor..." : "Ücretsiz Bilet Al"}
+        {loading ? "Hazırlanıyor..." : seatId ? "Bu koltukla bilet al" : "Ücretsiz Bilet Al"}
       </span>
     </button>
   );

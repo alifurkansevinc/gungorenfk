@@ -16,7 +16,7 @@ function generateQrCode(): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { matchId } = body as { matchId?: string };
+    const { matchId, seatId } = body as { matchId?: string; seatId?: string };
     if (!matchId) return NextResponse.json({ success: false, error: "matchId gerekli" }, { status: 400 });
 
     const supabaseAuth = await createClient();
@@ -67,11 +67,25 @@ export async function POST(req: NextRequest) {
       .eq("match_id", matchId)
       .not("seat_id", "is", null);
     const takenIds = new Set((takenSeats ?? []).map((r) => (r as { seat_id: string }).seat_id).filter(Boolean));
-    const { data: allSeats } = await supabase
-      .from("stadium_seats")
-      .select("id, seat_code")
-      .order("sort_order", { ascending: true });
-    const seat = (allSeats ?? []).find((s) => !takenIds.has(s.id));
+
+    let seat: { id: string; seat_code: string } | null = null;
+    if (seatId) {
+      const { data: chosen } = await supabase.from("stadium_seats").select("id, seat_code").eq("id", seatId).single();
+      if (!chosen || takenIds.has(chosen.id)) {
+        return NextResponse.json(
+          { success: false, error: "Seçilen koltuk artık müsait değil. Lütfen başka koltuk seçin." },
+          { status: 400 }
+        );
+      }
+      seat = chosen;
+    }
+    if (!seat) {
+      const { data: allSeats } = await supabase
+        .from("stadium_seats")
+        .select("id, seat_code")
+        .order("sort_order", { ascending: true });
+      seat = (allSeats ?? []).find((s) => !takenIds.has(s.id)) ?? null;
+    }
     if (!seat) {
       return NextResponse.json(
         { success: false, error: "Bu maç için koltuk kalmadı." },

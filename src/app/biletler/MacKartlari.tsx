@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import { BiletAlButton } from "./BiletAlButton";
+import { KoltukSecimi } from "./KoltukSecimi";
 import { Ticket, ChevronDown, ChevronUp, Calendar, MapPin, Clock } from "lucide-react";
 
 type Match = {
@@ -18,6 +19,8 @@ type Match = {
 
 export function MacKartlari({ matches }: { matches: Match[] }) {
   const [seciliMacId, setSeciliMacId] = useState<string | null>(null);
+  const [seciliKoltukId, setSeciliKoltukId] = useState<string | null>(null);
+  const [seciliKoltukKod, setSeciliKoltukKod] = useState<string | null>(null);
 
   if (!matches || matches.length === 0) return null;
 
@@ -49,7 +52,13 @@ export function MacKartlari({ matches }: { matches: Match[] }) {
           >
             <button
               type="button"
-              onClick={() => setSeciliMacId(secili ? null : m.id)}
+              onClick={() => {
+                setSeciliMacId(secili ? null : m.id);
+                if (!secili) {
+                  setSeciliKoltukId(null);
+                  setSeciliKoltukKod(null);
+                }
+              }}
               className="w-full text-left focus:outline-none focus-visible:ring-2 focus-visible:ring-bordo focus-visible:ring-offset-2 rounded-2xl"
             >
               <div className="flex flex-col sm:flex-row sm:items-center gap-5 p-6 sm:p-7">
@@ -110,20 +119,37 @@ export function MacKartlari({ matches }: { matches: Match[] }) {
 
             {secili && (
               <div className="border-t-2 border-bordo/20 bg-gradient-to-br from-bordo/5 via-beyaz to-bordo/5 px-6 pb-7 pt-6">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-bordo/15 shadow-inner">
-                      <Ticket className="h-7 w-7 text-bordo" />
+                <div className="space-y-5">
+                  <KoltukSecimi
+                    matchId={m.id}
+                    selectedSeatId={seciliMacId === m.id ? seciliKoltukId : null}
+                    onSelect={(id, code) => {
+                      setSeciliKoltukId(id);
+                      setSeciliKoltukKod(code);
+                    }}
+                  />
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+                    <div className="flex items-center gap-4">
+                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-bordo/15 shadow-inner">
+                        <Ticket className="h-7 w-7 text-bordo" />
+                      </div>
+                      <div>
+                        <p className="font-bold text-siyah">Ücretsiz bilet</p>
+                        <p className="text-sm text-siyah/70">
+                          {macLabel} — {tarihStr}
+                          {saatStr ? ` · ${saatStr}` : ""}
+                          {seciliKoltukId && seciliMacId === m.id && seciliKoltukKod && (
+                            <span className="mt-1 block font-medium text-bordo">Koltuk: {seciliKoltukKod}</span>
+                          )}
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="font-bold text-siyah">Ücretsiz bilet</p>
-                      <p className="text-sm text-siyah/70">
-                        {macLabel} — {tarihStr}
-                        {saatStr ? ` · ${saatStr}` : ""}
-                      </p>
-                    </div>
+                    <BiletAlButton
+                      matchId={m.id}
+                      matchName={m.opponent_name}
+                      seatId={seciliMacId === m.id ? seciliKoltukId : null}
+                    />
                   </div>
-                  <BiletAlButton matchId={m.id} matchName={m.opponent_name} />
                 </div>
               </div>
             )}
