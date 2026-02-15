@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     const { data: ticket, error: findError } = await supabase
       .from("match_tickets")
-      .select("id, user_id, match_id, qr_code")
+      .select("id, user_id, match_id, qr_code, seat_id")
       .eq("payment_token", token)
       .single();
 
@@ -58,13 +58,21 @@ export async function POST(req: NextRequest) {
         }
         const levelResult = await checkAndLevelUp(ticket.user_id);
         if (levelResult.leveledUp && levelResult.newLevelId) {
-          return NextResponse.redirect(
-            new URL(`/biletler/basarili?qrCode=${ticket.qr_code}&levelUp=1&newLevel=${levelResult.newLevelId}`, base)
-          );
+          const params = new URLSearchParams({ qrCode: ticket.qr_code, levelUp: "1", newLevel: String(levelResult.newLevelId) });
+          if ((ticket as { seat_id?: string }).seat_id) {
+            const { data: seat } = await supabase.from("stadium_seats").select("seat_code").eq("id", (ticket as { seat_id: string }).seat_id).single();
+            if (seat?.seat_code) params.set("seatCode", seat.seat_code);
+          }
+          return NextResponse.redirect(new URL(`/biletler/basarili?${params.toString()}`, base));
         }
       }
 
-      return NextResponse.redirect(new URL(`/biletler/basarili?qrCode=${ticket.qr_code}`, base));
+      let redirectUrl = `/biletler/basarili?qrCode=${ticket.qr_code}`;
+      if ((ticket as { seat_id?: string }).seat_id) {
+        const { data: seat } = await supabase.from("stadium_seats").select("seat_code").eq("id", (ticket as { seat_id: string }).seat_id).single();
+        if (seat?.seat_code) redirectUrl += `&seatCode=${encodeURIComponent(seat.seat_code)}`;
+      }
+      return NextResponse.redirect(new URL(redirectUrl, base));
     }
 
     await supabase

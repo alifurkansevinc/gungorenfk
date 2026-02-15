@@ -36,7 +36,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Maç bulunamadı." }, { status: 404 });
   }
 
-  const rows: Array<{ match_id: string; qr_code: string; status: string; payment_status: string }> = [];
+  const { data: taken } = await supabase
+    .from("match_tickets")
+    .select("seat_id")
+    .eq("match_id", matchId)
+    .not("seat_id", "is", null);
+  const takenIds = new Set((taken ?? []).map((r) => (r as { seat_id: string }).seat_id));
+  const { data: allSeats } = await supabase
+    .from("stadium_seats")
+    .select("id")
+    .order("sort_order", { ascending: true });
+  const availableSeatIds = (allSeats ?? []).map((s) => s.id).filter((id) => !takenIds.has(id));
+  if (availableSeatIds.length < quantity) {
+    return NextResponse.json(
+      { success: false, error: `Bu maç için yalnızca ${availableSeatIds.length} koltuk kaldı.` },
+      { status: 400 }
+    );
+  }
+
+  const rows: Array<{ match_id: string; qr_code: string; status: string; payment_status: string; seat_id: string }> = [];
   const used = new Set<string>();
 
   for (let i = 0; i < quantity; i++) {
@@ -51,6 +69,7 @@ export async function POST(req: NextRequest) {
       qr_code: qrCode,
       status: "active",
       payment_status: "PENDING",
+      seat_id: availableSeatIds[i],
     });
   }
 

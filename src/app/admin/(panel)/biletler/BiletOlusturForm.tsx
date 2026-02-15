@@ -52,7 +52,7 @@ export function BiletOlusturForm() {
     <form onSubmit={handleSubmit} className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       <h2 className="text-lg font-bold text-gray-900">Bilet oluştur</h2>
       <p className="mt-1 text-sm text-gray-500">
-        Maç seçip adet girin; benzersiz QR kodlu biletler oluşturulur. Koltuk şablonu ileride eklenecek.
+        Maç seçip adet girin; her bilete sıradaki boş koltuk (A-1-1, A-1-2, …) otomatik atanır.
       </p>
       {message && (
         <p

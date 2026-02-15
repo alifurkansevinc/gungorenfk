@@ -54,7 +54,7 @@ export default async function BenimKosemPage() {
 
   const { data: myTickets } = await supabase
     .from("match_tickets")
-    .select("id, qr_code, match_id, matches(opponent_name, match_date, match_time, venue, home_away)")
+    .select("id, qr_code, match_id, stadium_seats(seat_code), matches(opponent_name, match_date, match_time, venue, home_away)")
     .eq("user_id", user.id)
     .eq("payment_status", "PAID")
     .order("created_at", { ascending: false })
@@ -64,11 +64,12 @@ export default async function BenimKosemPage() {
 
   type MatchRow = { opponent_name: string; match_date: string; match_time: string | null; venue: string | null; home_away: string };
   const ticketsWithMatch = (myTickets ?? []).map((t) => {
-    const raw = t as unknown as { matches?: MatchRow | MatchRow[] | null };
+    const raw = t as unknown as { matches?: MatchRow | MatchRow[] | null; stadium_seats?: { seat_code: string } | null };
     const m = Array.isArray(raw.matches) ? raw.matches[0] : raw.matches;
     return {
       id: t.id,
       qr_code: t.qr_code,
+      seat_code: raw.stadium_seats?.seat_code ?? null,
       opponent_name: m?.opponent_name ?? "Maç",
       match_date: m?.match_date,
       match_time: m?.match_time,
@@ -200,6 +201,7 @@ export default async function BenimKosemPage() {
                             {t.match_time ? ` · ${t.match_time}` : ""}
                             {t.venue ? ` · ${t.venue}` : ""}
                           </p>
+                          {t.seat_code && <p className="mt-0.5 text-xs font-medium text-bordo">Koltuk: {t.seat_code}</p>}
                         </div>
                         <span className="shrink-0 text-xs font-medium text-bordo">Göster</span>
                       </Link>

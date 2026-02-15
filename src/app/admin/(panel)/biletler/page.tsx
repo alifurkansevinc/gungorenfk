@@ -6,7 +6,7 @@ export default async function AdminBiletlerPage() {
   const supabase = await getAdminSupabase();
   const { data: tickets } = await supabase
     .from("match_tickets")
-    .select("id, match_id, qr_code, status, payment_status, guest_name, guest_email, user_id, used_at, created_at, matches(opponent_name, match_date, venue)")
+    .select("id, match_id, qr_code, status, payment_status, guest_name, guest_email, user_id, used_at, created_at, seat_id, matches(opponent_name, match_date, venue), stadium_seats(seat_code)")
     .order("created_at", { ascending: false })
     .limit(300);
 
@@ -35,6 +35,7 @@ export default async function AdminBiletlerPage() {
               <tr className="border-b border-gray-100 bg-gray-50 text-left text-sm text-gray-500">
                 <th className="p-4 font-medium">Tarih</th>
                 <th className="p-4 font-medium">Maç</th>
+                <th className="p-4 font-medium">Koltuk</th>
                 <th className="p-4 font-medium">Alıcı</th>
                 <th className="p-4 font-medium">QR Kod</th>
                 <th className="p-4 font-medium">Ödeme</th>
@@ -45,7 +46,7 @@ export default async function AdminBiletlerPage() {
             <tbody>
               {(!tickets || tickets.length === 0) ? (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-gray-500">
+                  <td colSpan={8} className="p-12 text-center text-gray-500">
                     <Ticket className="mx-auto mb-4 h-12 w-12 text-gray-300" />
                     <p>Henüz bilet kaydı yok.</p>
                   </td>
@@ -63,6 +64,9 @@ export default async function AdminBiletlerPage() {
                     </td>
                     <td className="p-4 text-sm text-gray-900 max-w-[200px]">
                       {matchInfo(t as { matches?: { opponent_name?: string; match_date?: string; venue?: string } | null })}
+                    </td>
+                    <td className="p-4 font-medium text-bordo">
+                      {(t as { stadium_seats?: { seat_code: string } | null }).stadium_seats?.seat_code ?? "—"}
                     </td>
                     <td className="p-4">
                       {t.user_id ? (

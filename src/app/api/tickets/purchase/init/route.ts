@@ -61,6 +61,24 @@ export async function POST(req: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
     const isFree = TICKET_PRICE === 0;
 
+    const { data: takenSeats } = await supabase
+      .from("match_tickets")
+      .select("seat_id")
+      .eq("match_id", matchId)
+      .not("seat_id", "is", null);
+    const takenIds = new Set((takenSeats ?? []).map((r) => (r as { seat_id: string }).seat_id).filter(Boolean));
+    const { data: allSeats } = await supabase
+      .from("stadium_seats")
+      .select("id, seat_code")
+      .order("sort_order", { ascending: true });
+    const seat = (allSeats ?? []).find((s) => !takenIds.has(s.id));
+    if (!seat) {
+      return NextResponse.json(
+        { success: false, error: "Bu maç için koltuk kalmadı." },
+        { status: 400 }
+      );
+    }
+
     const { data: ticket, error: insertError } = await supabase
       .from("match_tickets")
       .insert({
@@ -71,6 +89,7 @@ export async function POST(req: NextRequest) {
         qr_code: qrCode,
         status: "active",
         payment_status: isFree ? "PAID" : "PENDING",
+        seat_id: seat.id,
       })
       .select("id")
       .single();
@@ -94,20 +113,20 @@ export async function POST(req: NextRequest) {
             .update({ match_tickets_count: newCount, updated_at: new Date().toISOString() })
             .eq("id", profile.id);
           const levelResult = await checkAndLevelUp(user.id);
-          const params = new URLSearchParams({ qrCode });
+          const params = new URLSearchParams({ qrCode, seatCode: seat.seat_code });
           if (levelResult.leveledUp && levelResult.newLevelId) {
             params.set("levelUp", "1");
             params.set("newLevel", String(levelResult.newLevelId));
           }
           return NextResponse.json({
             success: true,
-            data: { qrCode, redirectUrl: `${baseUrl}/biletler/basarili?${params.toString()}` },
+            data: { qrCode, seatCode: seat.seat_code, redirectUrl: `${baseUrl}/biletler/basarili?${params.toString()}` },
           });
         }
       }
       return NextResponse.json({
         success: true,
-        data: { qrCode, redirectUrl: `${baseUrl}/biletler/basarili?qrCode=${qrCode}` },
+        data: { qrCode, seatCode: seat.seat_code, redirectUrl: `${baseUrl}/biletler/basarili?qrCode=${qrCode}&seatCode=${encodeURIComponent(seat.seat_code)}` },
       });
     }
 
