@@ -66,7 +66,11 @@ export default async function AdminBiletlerPage() {
                       {matchInfo(t as { matches?: { opponent_name?: string; match_date?: string; venue?: string } | null })}
                     </td>
                     <td className="p-4 font-medium text-bordo">
-                      {(t as { stadium_seats?: { seat_code: string } | null }).stadium_seats?.seat_code ?? "—"}
+                      {(() => {
+                        const s = (t as unknown as { stadium_seats?: { seat_code: string } | { seat_code: string }[] | null }).stadium_seats;
+                        const seat = Array.isArray(s) ? s[0] : s;
+                        return seat?.seat_code ?? "—";
+                      })()}
                     </td>
                     <td className="p-4">
                       {t.user_id ? (

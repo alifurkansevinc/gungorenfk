@@ -64,12 +64,13 @@ export default async function BenimKosemPage() {
 
   type MatchRow = { opponent_name: string; match_date: string; match_time: string | null; venue: string | null; home_away: string };
   const ticketsWithMatch = (myTickets ?? []).map((t) => {
-    const raw = t as unknown as { matches?: MatchRow | MatchRow[] | null; stadium_seats?: { seat_code: string } | null };
+    const raw = t as unknown as { matches?: MatchRow | MatchRow[] | null; stadium_seats?: { seat_code: string } | { seat_code: string }[] | null };
     const m = Array.isArray(raw.matches) ? raw.matches[0] : raw.matches;
+    const seat = Array.isArray(raw.stadium_seats) ? raw.stadium_seats[0] : raw.stadium_seats;
     return {
       id: t.id,
       qr_code: t.qr_code,
-      seat_code: raw.stadium_seats?.seat_code ?? null,
+      seat_code: seat?.seat_code ?? null,
       opponent_name: m?.opponent_name ?? "Maç",
       match_date: m?.match_date,
       match_time: m?.match_time,
