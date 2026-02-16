@@ -1,14 +1,8 @@
-import Link from "next/link";
-import { getMemleketCounts, getTotalFanCount, TARGET_PER_CITY } from "@/lib/data";
+import { getMemleketCounts, TARGET_PER_CITY } from "@/lib/data";
 import { FadeInSection } from "@/components/FadeInSection";
 
 export async function AnadoluTemsilcisi() {
-  const [memleketCounts, { total, target }] = await Promise.all([
-    getMemleketCounts(),
-    getTotalFanCount(),
-  ]);
-
-  const totalPercent = Math.min(100, (total / target) * 100);
+  const memleketCounts = await getMemleketCounts();
   const topCities = memleketCounts.slice(0, 6);
   const restCount = memleketCounts.length > 6 ? memleketCounts.length - 6 : 0;
 
@@ -23,46 +17,8 @@ export async function AnadoluTemsilcisi() {
         <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-beyaz/20 to-transparent" />
 
         <div className="relative mx-auto max-w-4xl px-6">
-          {/* Toplam taraftar barı — ana vurgu */}
-          <div className="rounded-2xl border border-beyaz/10 bg-beyaz/5 p-6 sm:p-8 shadow-xl backdrop-blur-sm">
-            <p className="font-display text-xs font-semibold uppercase tracking-[0.25em] text-bordo">
-              Taraftar ailesi
-            </p>
-            <h2 className="font-display mt-2 text-2xl font-bold sm:text-3xl">
-              Birlikte güçleniyoruz
-            </h2>
-            <p className="mt-2 text-sm text-beyaz/70">
-              Kayıtlı taraftar sayımız artıyor. Sen de aramıza katıl!
-            </p>
-            <div className="mt-6 sm:mt-8">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <span className="font-display text-3xl font-bold text-beyaz sm:text-4xl tabular-nums">
-                  {total.toLocaleString("tr-TR")}
-                </span>
-                <span className="text-beyaz/60 font-medium">
-                  / {target.toLocaleString("tr-TR")} taraftar hedefi
-                </span>
-              </div>
-              <div className="mt-3 h-4 w-full overflow-hidden rounded-full bg-beyaz/20 shadow-inner">
-                <div
-                  className="progress-fill progress-bar-glow h-full rounded-full bg-gradient-to-r from-bordo to-bordo-dark"
-                  style={{ width: `${totalPercent}%` }}
-                />
-              </div>
-            </div>
-            <Link
-              href="/taraftar/kayit"
-              className="mt-6 inline-flex items-center gap-2 rounded-full bg-bordo px-6 py-3 text-sm font-bold text-beyaz transition-all duration-300 hover:bg-bordo-dark hover:scale-[1.02] btn-glow"
-            >
-              Taraftar ol
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
-          </div>
-
           {/* 1000 Taraftar 1 Bayrak — iller */}
-          <div className="mt-10 sm:mt-14">
+          <div>
             <p className="font-display text-xs font-semibold uppercase tracking-[0.2em] text-beyaz/50">
               Kampanya
             </p>
