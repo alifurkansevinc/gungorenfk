@@ -23,6 +23,7 @@ import {
   ExternalLink,
   Heart,
   Ticket,
+  ArrowLeftRight,
 } from "lucide-react";
 
 const menuItems = [
@@ -36,6 +37,7 @@ const menuItems = [
   { href: "/admin/taraftarlar", label: "Taraftarlar", icon: Users },
   { href: "/admin/maclar", label: "Maçlar", icon: Calendar },
   { href: "/admin/kadro", label: "Kadro", icon: Shirt },
+  { href: "/admin/transferler", label: "Transferler", icon: ArrowLeftRight },
   { href: "/admin/haberler", label: "Etkinlikler", icon: Newspaper },
   { href: "/admin/yonetim-kurulu", label: "Yönetim Kurulu", icon: UsersRound },
   { href: "/admin/teknik-heyet", label: "Teknik Heyet", icon: GraduationCap },

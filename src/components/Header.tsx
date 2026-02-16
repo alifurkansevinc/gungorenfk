@@ -11,10 +11,10 @@ const NAV_BASE = [
   { href: "/bagis", label: "Bağış Yap" },
   { href: "/biletler", label: "Maç Biletleri" },
   { href: "/kadro", label: "Kadro" },
+  { href: "/transferler", label: "Transferler" },
   { href: "/kulup/teknik-heyet", label: "Teknik Heyet" },
   { href: "/kulup/yonetim-kurulu", label: "Yönetim Kurulu" },
   { href: "/haberler", label: "Etkinlikler" },
-  { href: "/kulup", label: "Kulübümüz" },
 ] as const;
 
 export function Header() {

@@ -339,6 +339,98 @@ export async function deleteGallery(id: string) {
   return { ok: true };
 }
 
+// ——— Transferler ———
+export async function createTransfer(formData: FormData) {
+  const s = await supabase();
+  const player_name = (formData.get("player_name") as string)?.trim();
+  if (!player_name) return { error: "Oyuncu adı zorunludur." };
+  const { data, error } = await s.from("transfers").insert({
+    player_name,
+    player_image_url: (formData.get("player_image_url") as string)?.trim() || null,
+    from_team_name: (formData.get("from_team_name") as string)?.trim() || "",
+    from_team_league: (formData.get("from_team_league") as string)?.trim() || null,
+    to_team_name: (formData.get("to_team_name") as string)?.trim() || "",
+    to_team_league: (formData.get("to_team_league") as string)?.trim() || null,
+    transfer_date: (formData.get("transfer_date") as string) || null,
+    sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
+    updated_at: new Date().toISOString(),
+  }).select("id").single();
+  if (error) return { error: error.message };
+  revalidatePath("/admin/transferler");
+  revalidatePath("/transferler");
+  return { ok: true, id: data?.id };
+}
+
+export async function updateTransfer(id: string, formData: FormData) {
+  const s = await supabase();
+  const player_name = (formData.get("player_name") as string)?.trim();
+  if (!player_name) return { error: "Oyuncu adı zorunludur." };
+  const { error } = await s.from("transfers").update({
+    player_name,
+    player_image_url: (formData.get("player_image_url") as string)?.trim() || null,
+    from_team_name: (formData.get("from_team_name") as string)?.trim() || "",
+    from_team_league: (formData.get("from_team_league") as string)?.trim() || null,
+    to_team_name: (formData.get("to_team_name") as string)?.trim() || "",
+    to_team_league: (formData.get("to_team_league") as string)?.trim() || null,
+    transfer_date: (formData.get("transfer_date") as string) || null,
+    sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
+    updated_at: new Date().toISOString(),
+  }).eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/transferler");
+  revalidatePath("/transferler");
+  return { ok: true };
+}
+
+export async function deleteTransfer(id: string) {
+  const s = await supabase();
+  const { error } = await s.from("transfers").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/transferler");
+  revalidatePath("/transferler");
+  return { ok: true };
+}
+
+export async function addTransferSeasonStat(transferId: string, formData: FormData) {
+  const s = await supabase();
+  const { error } = await s.from("transfer_season_stats").insert({
+    transfer_id: transferId,
+    season_label: (formData.get("season_label") as string)?.trim() || "",
+    matches_played: parseInt((formData.get("matches_played") as string) || "0", 10),
+    goals: parseInt((formData.get("goals") as string) || "0", 10),
+    assists: parseInt((formData.get("assists") as string) || "0", 10),
+    sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/admin/transferler");
+  revalidatePath("/transferler");
+  return { ok: true };
+}
+
+export async function updateTransferSeasonStat(statId: string, formData: FormData) {
+  const s = await supabase();
+  const { error } = await s.from("transfer_season_stats").update({
+    season_label: (formData.get("season_label") as string)?.trim() || "",
+    matches_played: parseInt((formData.get("matches_played") as string) || "0", 10),
+    goals: parseInt((formData.get("goals") as string) || "0", 10),
+    assists: parseInt((formData.get("assists") as string) || "0", 10),
+    sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
+  }).eq("id", statId);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/transferler");
+  revalidatePath("/transferler");
+  return { ok: true };
+}
+
+export async function deleteTransferSeasonStat(statId: string) {
+  const s = await supabase();
+  const { error } = await s.from("transfer_season_stats").delete().eq("id", statId);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/transferler");
+  revalidatePath("/transferler");
+  return { ok: true };
+}
+
 // ——— Rozet (fan_levels) ———
 export async function updateFanLevel(id: string, formData: FormData) {
   const s = await supabase();
