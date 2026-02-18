@@ -344,6 +344,7 @@ export async function createTransfer(formData: FormData) {
   const s = await supabase();
   const player_name = (formData.get("player_name") as string)?.trim();
   if (!player_name) return { error: "Oyuncu adı zorunludur." };
+  const direction = (formData.get("direction") as string) === "outgoing" ? "outgoing" : "incoming";
   const { data, error } = await s.from("transfers").insert({
     player_name,
     player_image_url: (formData.get("player_image_url") as string)?.trim() || null,
@@ -353,6 +354,7 @@ export async function createTransfer(formData: FormData) {
     to_team_league: (formData.get("to_team_league") as string)?.trim() || null,
     transfer_date: (formData.get("transfer_date") as string) || null,
     sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
+    direction,
     updated_at: new Date().toISOString(),
   }).select("id").single();
   if (error) return { error: error.message };
@@ -365,6 +367,7 @@ export async function updateTransfer(id: string, formData: FormData) {
   const s = await supabase();
   const player_name = (formData.get("player_name") as string)?.trim();
   if (!player_name) return { error: "Oyuncu adı zorunludur." };
+  const direction = (formData.get("direction") as string) === "outgoing" ? "outgoing" : "incoming";
   const { error } = await s.from("transfers").update({
     player_name,
     player_image_url: (formData.get("player_image_url") as string)?.trim() || null,
@@ -374,6 +377,7 @@ export async function updateTransfer(id: string, formData: FormData) {
     to_team_league: (formData.get("to_team_league") as string)?.trim() || null,
     transfer_date: (formData.get("transfer_date") as string) || null,
     sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
+    direction,
     updated_at: new Date().toISOString(),
   }).eq("id", id);
   if (error) return { error: error.message };

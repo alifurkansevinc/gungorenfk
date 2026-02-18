@@ -1,12 +1,16 @@
 import Link from "next/link";
 import { getAdminSupabase } from "../../actions";
 import { TransferSilButton } from "./TransferSilButton";
+import { AdminTransferlerTabs } from "./AdminTransferlerTabs";
 
-export default async function AdminTransferlerPage() {
+export default async function AdminTransferlerPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
+  const { tab } = await searchParams;
+  const activeTab = tab === "outgoing" ? "outgoing" : "incoming";
   const supabase = await getAdminSupabase();
   const { data: transfers } = await supabase
     .from("transfers")
-    .select("id, player_name, from_team_name, to_team_name, transfer_date, sort_order")
+    .select("id, player_name, from_team_name, to_team_name, transfer_date, sort_order, direction")
+    .eq("direction", activeTab)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
 
@@ -19,18 +23,27 @@ export default async function AdminTransferlerPage() {
         </div>
         <Link href="/admin/transferler/yeni" className="rounded bg-bordo px-4 py-2 text-sm font-medium text-beyaz hover:bg-bordo-dark min-touch">Yeni transfer</Link>
       </div>
+      <AdminTransferlerTabs activeTab={activeTab} />
       <div className="mt-6 space-y-2">
         {(!transfers || transfers.length === 0) ? (
-          <p className="text-siyah/60">Henüz transfer kaydı yok.</p>
+          <p className="text-siyah/60">{activeTab === "incoming" ? "Henüz gelen transfer kaydı yok." : "Henüz giden transfer kaydı yok."}</p>
         ) : (
           transfers.map((t) => (
             <div key={t.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-black/10 bg-beyaz px-4 py-3">
               <div>
                 <span className="font-medium">{t.player_name}</span>
                 <span className="mx-2 text-siyah/50">→</span>
-                <span className="text-siyah/80">{t.from_team_name}</span>
-                <span className="mx-2 text-siyah/50">→</span>
-                <span className="text-siyah/80">{t.to_team_name}</span>
+                {activeTab === "incoming" ? (
+                  <>
+                    <span className="text-siyah/80">{t.from_team_name}</span>
+                    <span className="ml-2 text-siyah/50">(Geldiği takım)</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-siyah/80">{t.to_team_name}</span>
+                    <span className="ml-2 text-siyah/50">(Gittiği takım)</span>
+                  </>
+                )}
                 {t.transfer_date && (
                   <span className="ml-2 text-sm text-siyah/60">{new Date(t.transfer_date).toLocaleDateString("tr-TR")}</span>
                 )}

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createTransfer, updateTransfer } from "@/app/actions/admin";
 
+const CLUB_NAME = "Güngören FK";
+
 type TransferRow = {
   id: string;
   player_name: string;
@@ -15,6 +17,7 @@ type TransferRow = {
   to_team_league: string | null;
   transfer_date: string | null;
   sort_order: number;
+  direction?: "incoming" | "outgoing";
 };
 
 export function TransferFormu({ transfer }: { transfer?: TransferRow | null }) {
@@ -38,10 +41,25 @@ export function TransferFormu({ transfer }: { transfer?: TransferRow | null }) {
   }
 
   const transferDate = transfer?.transfer_date ? String(transfer.transfer_date).slice(0, 10) : "";
+  const defaultDirection = transfer?.direction === "outgoing" ? "outgoing" : "incoming";
+  const [direction, setDirection] = useState<"incoming" | "outgoing">(defaultDirection);
 
   return (
     <form onSubmit={handleSubmit} className="mt-6 max-w-2xl space-y-4">
       {error && <p className="rounded bg-red-100 p-2 text-sm text-red-800">{error}</p>}
+      <div>
+        <span className="block text-sm font-medium text-siyah mb-2">Transfer türü *</span>
+        <div className="flex gap-4">
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="direction" value="incoming" defaultChecked={defaultDirection === "incoming"} onChange={() => setDirection("incoming")} className="rounded-full border-siyah/30 text-bordo" />
+            <span>Gelen (kadromuza katılan)</span>
+          </label>
+          <label className="flex items-center gap-2 cursor-pointer">
+            <input type="radio" name="direction" value="outgoing" defaultChecked={defaultDirection === "outgoing"} onChange={() => setDirection("outgoing")} className="rounded-full border-siyah/30 text-bordo" />
+            <span>Giden (bizden ayrılan)</span>
+          </label>
+        </div>
+      </div>
       <div>
         <label className="block text-sm font-medium text-siyah">Oyuncu adı *</label>
         <input name="player_name" defaultValue={transfer?.player_name} required className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="Ad Soyad" />
@@ -50,26 +68,33 @@ export function TransferFormu({ transfer }: { transfer?: TransferRow | null }) {
         <label className="block text-sm font-medium text-siyah">Oyuncu fotoğraf URL</label>
         <input name="player_image_url" type="url" defaultValue={transfer?.player_image_url ?? ""} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="https://..." />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="block text-sm font-medium text-siyah">Geldiği takım *</label>
-          <input name="from_team_name" defaultValue={transfer?.from_team_name} required className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="Takım adı" />
+      {direction === "incoming" ? (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-sm font-medium text-siyah">Geldiği takım *</label>
+            <input name="from_team_name" defaultValue={transfer?.from_team_name} required className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="Takım adı" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-siyah">Geldiği takım ligi</label>
+            <input name="from_team_league" defaultValue={transfer?.from_team_league ?? ""} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="Örn: Süper Lig" />
+          </div>
+          <input type="hidden" name="to_team_name" value={CLUB_NAME} />
+          <input type="hidden" name="to_team_league" value="" />
         </div>
-        <div>
-          <label className="block text-sm font-medium text-siyah">Geldiği takım ligi</label>
-          <input name="from_team_league" defaultValue={transfer?.from_team_league ?? ""} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="Örn: Süper Lig" />
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2">
+          <input type="hidden" name="from_team_name" value={CLUB_NAME} />
+          <input type="hidden" name="from_team_league" value="" />
+          <div>
+            <label className="block text-sm font-medium text-siyah">Gittiği takım *</label>
+            <input name="to_team_name" defaultValue={transfer?.to_team_name} required className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="Takım adı" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-siyah">Gittiği takım ligi</label>
+            <input name="to_team_league" defaultValue={transfer?.to_team_league ?? ""} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="Örn: 1. Lig" />
+          </div>
         </div>
-      </div>
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <label className="block text-sm font-medium text-siyah">Gittiği takım *</label>
-          <input name="to_team_name" defaultValue={transfer?.to_team_name} required className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="Takım adı" />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-siyah">Gittiği takım ligi</label>
-          <input name="to_team_league" defaultValue={transfer?.to_team_league ?? ""} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="Örn: 1. Lig" />
-        </div>
-      </div>
+      )}
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="block text-sm font-medium text-siyah">Transfer tarihi</label>
