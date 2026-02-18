@@ -1,5 +1,5 @@
 ---
-description: Otomatik push — değişikliklerden veya build sonrası sormadan commit ve push yap
+description: Her tamamlamadan sonra otomatik commit ve push; sorma
 alwaysApply: true
 ---
 
@@ -7,10 +7,7 @@ alwaysApply: true
 
 Bu projede (Güngören FK):
 
-1. **Kod değişiklikleri tamamlandığında hemen** veya **build başarılı olduktan sonra** (uncommitted değişiklik varsa):
-   - Kullanıcıya "Push yapayım mı?" diye **sorma**; doğrudan push yap.
-   - `git add -A`, anlamlı bir commit mesajı ile `git commit`, ardından `git push` çalıştır.
-2. **Build sonrası**: `npm run build` (veya eşdeğeri) başarıyla bittiyse ve working tree’de değişiklik varsa, aynı oturumda mutlaka commit + push yap.
-3. Commit mesajı: Yapılan değişiklikleri kısaca Türkçe özetleyen bir satır (örn. "Header yükseklikleri azaltıldı, kadro slider eklendi").
+1. **Her görev tamamlandığında** (kod değişikliği yapıldıysa ve uncommitted değişiklik varsa): Kullanıcıya sormadan `git add -A`, anlamlı Türkçe commit mesajı ile `git commit`, ardından `git push origin main` çalıştır.
+2. Commit mesajı: Yapılan değişikliği kısaca Türkçe özetleyen bir satır (örn. "Transfer kartları: logo ön planda").
 
-Değişiklik yoksa veya kullanıcı özellikle "pushlama" derse push atma.
+3. Değişiklik yoksa veya kullanıcı "pushlama" derse push yapma.
