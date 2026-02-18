@@ -71,67 +71,46 @@ export default async function TransferlerPage({ searchParams }: { searchParams: 
             <p className="mt-1 text-sm">Yakında burada listelenecektir.</p>
           </div>
         ) : (
-          <ul className="mt-8 space-y-10">
+          <ul className="mt-8 space-y-6">
             {list.map((t) => {
               const stats = statsMap[t.id] ?? [];
               const isIncoming = (t.direction ?? "incoming") === "incoming";
+              const otherTeamName = isIncoming ? t.from_team_name : t.to_team_name;
+              const otherTeamLeague = isIncoming ? t.from_team_league : t.to_team_league;
+              const teamLabel = isIncoming ? "Geldiği takım" : "Gittiği takım";
               return (
-                <li key={t.id} className="overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-lg shadow-siyah/5">
-                  {/* Gelenler: [Geldiği takım] | [Oyuncu]. Gidenler: [Oyuncu] | [Gittiği takım] */}
-                  <div className={`grid min-h-[200px] gap-0 sm:min-h-[240px] ${isIncoming ? "grid-cols-[1fr_auto]" : "grid-cols-[auto_1fr]"}`}>
-                    {isIncoming ? (
-                      <>
-                        <div className="flex flex-col justify-center border-r border-siyah/10 bg-gradient-to-b from-siyah/5 to-transparent px-6 py-6 text-center sm:px-10">
-                          <p className="text-xs font-semibold uppercase tracking-wider text-bordo">Geldiği takım</p>
-                          <p className="font-display mt-2 text-lg font-bold text-siyah sm:text-xl">{t.from_team_name}</p>
-                          {t.from_team_league && (
-                            <p className="mt-1 text-sm text-siyah/60">{t.from_team_league}</p>
-                          )}
-                        </div>
-                        <div className="flex flex-col items-center justify-center px-6 py-6 sm:px-10">
-                          <div className="relative h-24 w-24 rounded-full overflow-hidden border-4 border-bordo/30 shadow-xl sm:h-28 sm:w-28">
-                            <Image
-                              src={t.player_image_url || PLACEHOLDER_PLAYER}
-                              alt=""
-                              fill
-                              className="object-cover"
-                              sizes="112px"
-                              unoptimized={!t.player_image_url?.startsWith("https://")}
-                            />
-                          </div>
-                          <p className="font-display mt-3 text-center text-lg font-bold text-siyah sm:text-xl">{t.player_name}</p>
-                          {t.transfer_date && (
-                            <p className="mt-1 text-xs text-siyah/50">{new Date(t.transfer_date).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}</p>
-                          )}
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="flex flex-col items-center justify-center border-r border-siyah/10 px-6 py-6 sm:px-10">
-                          <div className="relative h-24 w-24 rounded-full overflow-hidden border-4 border-bordo/30 shadow-xl sm:h-28 sm:w-28">
-                            <Image
-                              src={t.player_image_url || PLACEHOLDER_PLAYER}
-                              alt=""
-                              fill
-                              className="object-cover"
-                              sizes="112px"
-                              unoptimized={!t.player_image_url?.startsWith("https://")}
-                            />
-                          </div>
-                          <p className="font-display mt-3 text-center text-lg font-bold text-siyah sm:text-xl">{t.player_name}</p>
-                          {t.transfer_date && (
-                            <p className="mt-1 text-xs text-siyah/50">{new Date(t.transfer_date).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}</p>
-                          )}
-                        </div>
-                        <div className="flex flex-col justify-center bg-gradient-to-b from-bordo/5 to-transparent px-6 py-6 text-center sm:px-10">
-                          <p className="text-xs font-semibold uppercase tracking-wider text-bordo">Gittiği takım</p>
-                          <p className="font-display mt-2 text-lg font-bold text-siyah sm:text-xl">{t.to_team_name}</p>
-                          {t.to_team_league && (
-                            <p className="mt-1 text-sm text-siyah/60">{t.to_team_league}</p>
-                          )}
-                        </div>
-                      </>
-                    )}
+                <li key={t.id} className="overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-md shadow-siyah/5">
+                  {/* Kart: Logo + Oyuncu ön planda, takım bilgisi kompakt */}
+                  <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-5 sm:p-6">
+                    {/* Kulüp logosu — kompakt */}
+                    <div className="flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 relative rounded-xl overflow-hidden bg-siyah/5 border border-siyah/10 flex items-center justify-center">
+                      <Image src="/logogbfk.png" alt="Güngören FK" width={80} height={80} className="object-contain p-1.5 w-full h-full" unoptimized />
+                    </div>
+
+                    {/* Oyuncu fotoğrafı — büyük, ön planda */}
+                    <div className="flex-shrink-0 relative w-28 h-28 sm:w-32 sm:h-32 rounded-full overflow-hidden border-4 border-bordo/40 shadow-lg ring-2 ring-siyah/10">
+                      <Image
+                        src={t.player_image_url || PLACEHOLDER_PLAYER}
+                        alt=""
+                        fill
+                        className="object-cover"
+                        sizes="128px"
+                        unoptimized={!t.player_image_url?.startsWith("https://")}
+                      />
+                    </div>
+
+                    {/* İsim + tarih + takım bilgisi (tek satırda kompakt) */}
+                    <div className="flex-1 min-w-0 text-center sm:text-left">
+                      <h2 className="font-display text-xl sm:text-2xl font-bold text-siyah">{t.player_name}</h2>
+                      {t.transfer_date && (
+                        <p className="mt-0.5 text-sm text-siyah/55">{new Date(t.transfer_date).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}</p>
+                      )}
+                      <p className="mt-2 inline-flex flex-wrap items-center gap-1.5 rounded-lg bg-siyah/5 border border-siyah/10 px-3 py-1.5 text-sm">
+                        <span className="font-semibold uppercase tracking-wide text-bordo text-xs">{teamLabel}</span>
+                        <span className="text-siyah font-medium">{otherTeamName}</span>
+                        {otherTeamLeague && <span className="text-siyah/55">· {otherTeamLeague}</span>}
+                      </p>
+                    </div>
                   </div>
 
                   {stats.length > 0 && (
