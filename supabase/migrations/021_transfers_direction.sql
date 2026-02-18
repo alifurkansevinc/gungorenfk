@@ -1,4 +1,4 @@
--- Transfer yönü: gelen (bize gelen) / giden (bizden giden)
+-- Transfer yönü: gelen (bize gelen) / giden (bizden giden) — 021
 ALTER TABLE transfers
   ADD COLUMN IF NOT EXISTS direction text NOT NULL DEFAULT 'incoming';
 
