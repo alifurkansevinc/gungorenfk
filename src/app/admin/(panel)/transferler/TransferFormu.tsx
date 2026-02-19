@@ -11,6 +11,8 @@ type TransferRow = {
   id: string;
   player_name: string;
   player_image_url: string | null;
+  position: string | null;
+  age: number | null;
   from_team_name: string;
   from_team_league: string | null;
   to_team_name: string;
@@ -19,6 +21,8 @@ type TransferRow = {
   sort_order: number;
   direction?: "incoming" | "outgoing";
 };
+
+const MEVKI_OPTIONS = ["Kaleci", "Defans", "Orta Saha", "Forvet"];
 
 export function TransferFormu({ transfer }: { transfer?: TransferRow | null }) {
   const router = useRouter();
@@ -67,6 +71,21 @@ export function TransferFormu({ transfer }: { transfer?: TransferRow | null }) {
       <div>
         <label className="block text-sm font-medium text-siyah">Oyuncu fotoğraf URL</label>
         <input name="player_image_url" type="url" defaultValue={transfer?.player_image_url ?? ""} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="https://..." />
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div>
+          <label className="block text-sm font-medium text-siyah">Mevki</label>
+          <select name="position" defaultValue={transfer?.position ?? ""} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2">
+            <option value="">Seçin</option>
+            {MEVKI_OPTIONS.map((m) => (
+              <option key={m} value={m}>{m}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-siyah">Yaş</label>
+          <input name="age" type="number" min={14} max={50} defaultValue={transfer?.age ?? ""} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="Örn: 24" />
+        </div>
       </div>
       {direction === "incoming" ? (
         <div className="grid gap-4 sm:grid-cols-2">

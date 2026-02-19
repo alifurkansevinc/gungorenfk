@@ -345,9 +345,12 @@ export async function createTransfer(formData: FormData) {
   const player_name = (formData.get("player_name") as string)?.trim();
   if (!player_name) return { error: "Oyuncu adı zorunludur." };
   const direction = (formData.get("direction") as string) === "outgoing" ? "outgoing" : "incoming";
+  const ageVal = formData.get("age");
   const { data, error } = await s.from("transfers").insert({
     player_name,
     player_image_url: (formData.get("player_image_url") as string)?.trim() || null,
+    position: (formData.get("position") as string)?.trim() || null,
+    age: ageVal !== null && ageVal !== "" ? parseInt(String(ageVal), 10) : null,
     from_team_name: (formData.get("from_team_name") as string)?.trim() || "",
     from_team_league: (formData.get("from_team_league") as string)?.trim() || null,
     to_team_name: (formData.get("to_team_name") as string)?.trim() || "",
@@ -368,9 +371,12 @@ export async function updateTransfer(id: string, formData: FormData) {
   const player_name = (formData.get("player_name") as string)?.trim();
   if (!player_name) return { error: "Oyuncu adı zorunludur." };
   const direction = (formData.get("direction") as string) === "outgoing" ? "outgoing" : "incoming";
+  const ageVal = formData.get("age");
   const { error } = await s.from("transfers").update({
     player_name,
     player_image_url: (formData.get("player_image_url") as string)?.trim() || null,
+    position: (formData.get("position") as string)?.trim() || null,
+    age: ageVal !== null && ageVal !== "" ? parseInt(String(ageVal), 10) : null,
     from_team_name: (formData.get("from_team_name") as string)?.trim() || "",
     from_team_league: (formData.get("from_team_league") as string)?.trim() || null,
     to_team_name: (formData.get("to_team_name") as string)?.trim() || "",

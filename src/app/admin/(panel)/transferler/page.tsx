@@ -9,7 +9,7 @@ export default async function AdminTransferlerPage({ searchParams }: { searchPar
   const supabase = await getAdminSupabase();
   const { data: transfers } = await supabase
     .from("transfers")
-    .select("id, player_name, from_team_name, to_team_name, transfer_date, sort_order, direction")
+    .select("id, player_name, position, age, from_team_name, to_team_name, transfer_date, sort_order, direction")
     .eq("direction", activeTab)
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
@@ -32,6 +32,9 @@ export default async function AdminTransferlerPage({ searchParams }: { searchPar
             <div key={t.id} className="flex flex-wrap items-center justify-between gap-2 rounded border border-black/10 bg-beyaz px-4 py-3">
               <div>
                 <span className="font-medium">{t.player_name}</span>
+                {(t.position || t.age != null) && (
+                  <span className="ml-2 text-sm text-siyah/60">({[t.position, t.age != null ? `${t.age} yaş` : null].filter(Boolean).join(" · ")})</span>
+                )}
                 <span className="mx-2 text-siyah/50">→</span>
                 {activeTab === "incoming" ? (
                   <>

@@ -18,7 +18,7 @@ export default async function TransferlerPage({ searchParams }: { searchParams: 
   const supabase = await createClient();
   const { data: transfers } = await supabase
     .from("transfers")
-    .select("id, player_name, player_image_url, from_team_name, from_team_league, to_team_name, to_team_league, transfer_date, direction")
+    .select("id, player_name, player_image_url, position, age, from_team_name, from_team_league, to_team_name, to_team_league, transfer_date, direction")
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false });
 
@@ -99,9 +99,14 @@ export default async function TransferlerPage({ searchParams }: { searchParams: 
                       />
                     </div>
 
-                    {/* İsim + tarih + takım bilgisi (tek satırda kompakt) */}
+                    {/* İsim + mevki/yaş + tarih + takım bilgisi */}
                     <div className="flex-1 min-w-0 text-center sm:text-left">
                       <h2 className="font-display text-xl sm:text-2xl font-bold text-siyah">{t.player_name}</h2>
+                      {(t.position || t.age != null) && (
+                        <p className="mt-0.5 text-sm text-siyah/60">
+                          {[t.position, t.age != null ? `${t.age} yaş` : null].filter(Boolean).join(" · ")}
+                        </p>
+                      )}
                       {t.transfer_date && (
                         <p className="mt-0.5 text-sm text-siyah/55">{new Date(t.transfer_date).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}</p>
                       )}
