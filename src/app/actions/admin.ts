@@ -435,6 +435,88 @@ export async function deleteTransferSeasonStat(statId: string) {
   return { ok: true };
 }
 
+// ——— Öne çıkan (homepage_featured) ———
+const FEATURED_MAX = 5;
+
+export async function createHomepageFeatured(formData: FormData) {
+  const s = await supabase();
+  const { count } = await s.from("homepage_featured").select("*", { count: "exact", head: true });
+  if ((count ?? 0) >= FEATURED_MAX) return { error: `En fazla ${FEATURED_MAX} modül eklenebilir.` };
+  const module_key = (formData.get("module_key") as string)?.trim();
+  if (!module_key) return { error: "Modül seçin." };
+  const image_url = (formData.get("image_url") as string)?.trim();
+  if (!image_url) return { error: "Görsel URL zorunludur." };
+  const { data: maxOrder } = await s.from("homepage_featured").select("sort_order").order("sort_order", { ascending: false }).limit(1).single();
+  const sort_order = (maxOrder?.sort_order ?? -1) + 1;
+  const { error } = await s.from("homepage_featured").insert({
+    module_key,
+    title: (formData.get("title") as string)?.trim() || null,
+    subtitle: (formData.get("subtitle") as string)?.trim() || null,
+    image_url,
+    link: (formData.get("link") as string)?.trim() || null,
+    is_large: formData.get("is_large") === "on",
+    sort_order,
+    updated_at: new Date().toISOString(),
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/admin/one-cikan");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function updateHomepageFeatured(id: string, formData: FormData) {
+  const s = await supabase();
+  const is_large = formData.get("is_large") === "on";
+  if (is_large) {
+    await s.from("homepage_featured").update({ is_large: false }).neq("id", id);
+  }
+  const { error } = await s.from("homepage_featured").update({
+    title: (formData.get("title") as string)?.trim() || null,
+    subtitle: (formData.get("subtitle") as string)?.trim() || null,
+    image_url: (formData.get("image_url") as string)?.trim() || "",
+    link: (formData.get("link") as string)?.trim() || null,
+    is_large,
+    updated_at: new Date().toISOString(),
+  }).eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/one-cikan");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function deleteHomepageFeatured(id: string) {
+  const s = await supabase();
+  const { error } = await s.from("homepage_featured").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/one-cikan");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function reorderHomepageFeatured(orderedIds: string[]) {
+  const s = await supabase();
+  for (let i = 0; i < orderedIds.length; i++) {
+    await s.from("homepage_featured").update({ sort_order: i, updated_at: new Date().toISOString() }).eq("id", orderedIds[i]);
+  }
+  revalidatePath("/admin/one-cikan");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+export async function moveHomepageFeatured(id: string, direction: "up" | "down") {
+  const s = await supabase();
+  const { data: items } = await s.from("homepage_featured").select("id, sort_order").order("sort_order", { ascending: true });
+  if (!items || items.length < 2) return { ok: true };
+  const idx = items.findIndex((i) => i.id === id);
+  if (idx === -1) return { error: "Bulunamadı." };
+  const swapIdx = direction === "up" ? idx - 1 : idx + 1;
+  if (swapIdx < 0 || swapIdx >= items.length) return { ok: true };
+  const newOrder = items.slice();
+  [newOrder[idx], newOrder[swapIdx]] = [newOrder[swapIdx], newOrder[idx]];
+  await reorderHomepageFeatured(newOrder.map((i) => i.id));
+  return { ok: true };
+}
+
 // ——— Rozet (fan_levels) ———
 export async function updateFanLevel(id: string, formData: FormData) {
   const s = await supabase();

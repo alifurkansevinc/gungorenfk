@@ -4,8 +4,16 @@ import { AnadoluTemsilcisi } from "@/components/AnadoluTemsilcisi";
 import { TaraftarBarStrip } from "@/components/TaraftarBarStrip";
 import { FadeInSection } from "@/components/FadeInSection";
 import { DEMO_IMAGES } from "@/lib/demo-images";
+import { createClient } from "@/lib/supabase/server";
+import { getModuleByKey } from "@/lib/featured-modules";
 
 export default async function Home() {
+  const supabase = await createClient();
+  const { data: featuredItems } = await supabase
+    .from("homepage_featured")
+    .select("id, module_key, title, subtitle, image_url, link, is_large")
+    .order("sort_order", { ascending: true });
+
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
       {/* Hero */}
@@ -52,58 +60,49 @@ export default async function Home() {
       {/* Taraftar bar (1000 Taraftar 1 Bayrak) — detaylı bölüm */}
       <AnadoluTemsilcisi />
 
-      {/* Öne çıkan kartlar */}
-      <FadeInSection>
-      <section className="py-8 sm:py-10">
-        <div className="mx-auto max-w-7xl px-6">
-          <p className="font-display text-xs font-semibold uppercase tracking-[0.25em] text-siyah/50">Öne çıkan</p>
-          <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Link
-              href="/magaza"
-              className="group relative overflow-hidden rounded-2xl bg-siyah shadow-xl card-hover lg:col-span-2 lg:row-span-2 min-h-[280px]"
-            >
-              <Image
-                src={DEMO_IMAGES.product}
-                alt=""
-                fill
-                className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-siyah/95 via-siyah/40 to-transparent" />
-              <div className="absolute inset-0 flex flex-col justify-end p-6 sm:p-8">
-                <span className="text-xs font-semibold uppercase tracking-wider text-bordo">Mağaza</span>
-                <span className="font-display mt-2 text-xl font-bold text-beyaz sm:text-2xl">Resmi ürünler</span>
-                <span className="mt-1 text-sm text-beyaz/80">Forma, atkı, aksesuar →</span>
+      {/* Öne çıkan kartlar — admin panelinden yönetilen modüller (max 5) */}
+      {(featuredItems?.length ?? 0) > 0 && (
+        <FadeInSection>
+          <section className="py-8 sm:py-10">
+            <div className="mx-auto max-w-7xl px-6">
+              <p className="font-display text-xs font-semibold uppercase tracking-[0.25em] text-siyah/50">Öne çıkan</p>
+              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {featuredItems!.map((item, index) => {
+                  const def = getModuleByKey(item.module_key);
+                  const href = item.link?.trim() || def?.link || "#";
+                  const title = item.title?.trim() || def?.defaultTitle || item.module_key;
+                  const subtitle = item.subtitle?.trim() || def?.defaultSubtitle || "";
+                  const isLarge = item.is_large;
+                  return (
+                    <Link
+                      key={item.id}
+                      href={href}
+                      className={`group relative overflow-hidden rounded-2xl bg-siyah shadow-lg card-hover ${
+                        isLarge ? "lg:col-span-2 lg:row-span-2 min-h-[280px]" : "min-h-[180px]"
+                      }`}
+                    >
+                      <Image
+                        src={item.image_url}
+                        alt=""
+                        fill
+                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                        sizes={isLarge ? "(max-width: 1024px) 100vw, 50vw" : "25vw"}
+                        unoptimized
+                      />
+                      <div className={`absolute inset-0 ${isLarge ? "bg-gradient-to-t from-siyah/95 via-siyah/40 to-transparent" : "bg-gradient-to-t from-siyah/90 to-transparent"}`} />
+                      <div className={`absolute inset-0 flex flex-col justify-end ${isLarge ? "p-6 sm:p-8" : "p-5"}`}>
+                        <span className="text-xs font-semibold uppercase tracking-wider text-bordo">{(def?.label ?? item.module_key)}</span>
+                        <span className={`font-display mt-2 font-bold text-beyaz ${isLarge ? "text-xl sm:text-2xl" : "text-lg"}`}>{title}</span>
+                        {subtitle && <span className={`text-beyaz/80 ${isLarge ? "mt-1 text-sm" : "mt-1 text-sm"}`}>{subtitle} →</span>}
+                      </div>
+                    </Link>
+                  );
+                })}
               </div>
-            </Link>
-            <Link href="/bagis" className="group relative overflow-hidden rounded-2xl bg-siyah shadow-lg card-hover min-h-[180px]">
-              <Image src={DEMO_IMAGES.news} alt="" fill className="object-cover transition-transform duration-700 ease-out group-hover:scale-110" sizes="25vw" />
-              <div className="absolute inset-0 bg-gradient-to-t from-siyah/90 to-transparent" />
-              <div className="absolute inset-0 flex flex-col justify-end p-5">
-                <span className="text-xs font-semibold uppercase tracking-wider text-beyaz/70">Bağış Yap</span>
-                <span className="font-display mt-1 text-lg font-bold text-beyaz">Destek ol →</span>
-              </div>
-            </Link>
-            <Link href="/kadro" className="group relative overflow-hidden rounded-2xl bg-siyah shadow-lg card-hover min-h-[180px]">
-              <Image src={DEMO_IMAGES.team} alt="" fill className="object-cover transition-transform duration-700 ease-out group-hover:scale-110" sizes="25vw" />
-              <div className="absolute inset-0 bg-gradient-to-t from-siyah/90 to-transparent" />
-              <div className="absolute inset-0 flex flex-col justify-end p-5">
-                <span className="text-xs font-semibold uppercase tracking-wider text-beyaz/70">Kadro</span>
-                <span className="font-display mt-1 text-lg font-bold text-beyaz">Takım →</span>
-              </div>
-            </Link>
-            <Link href="/biletler" className="group relative overflow-hidden rounded-2xl bg-bordo shadow-lg card-hover min-h-[180px]">
-              <Image src={DEMO_IMAGES.taraftar} alt="" fill className="object-cover opacity-40 transition-transform duration-700 ease-out group-hover:scale-110" sizes="25vw" />
-              <div className="absolute inset-0 bg-bordo/80" />
-              <div className="absolute inset-0 flex flex-col justify-end p-5">
-                <span className="text-xs font-semibold uppercase tracking-wider text-beyaz/90">Maç Biletleri</span>
-                <span className="font-display mt-1 text-lg font-bold text-beyaz">Bilet al →</span>
-              </div>
-            </Link>
-          </div>
-        </div>
-      </section>
-      </FadeInSection>
+            </div>
+          </section>
+        </FadeInSection>
+      )}
     </div>
   );
 }

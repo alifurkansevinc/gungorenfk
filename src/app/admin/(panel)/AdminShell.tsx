@@ -24,10 +24,12 @@ import {
   Heart,
   Ticket,
   ArrowLeftRight,
+  LayoutGrid,
 } from "lucide-react";
 
 const menuItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/one-cikan", label: "Öne Çıkan", icon: LayoutGrid },
   { href: "/admin/siparisler", label: "Siparişler", icon: ShoppingCart },
   { href: "/admin/magaza", label: "Mağaza", icon: Store },
   { href: "/admin/teslim-al", label: "Teslim al", icon: Package },
