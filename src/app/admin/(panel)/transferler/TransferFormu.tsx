@@ -22,7 +22,19 @@ type TransferRow = {
   direction?: "incoming" | "outgoing";
 };
 
-const MEVKI_OPTIONS = ["Kaleci", "Defans", "Orta Saha", "Forvet"];
+const MEVKI_OPTIONS = [
+  "Kaleci",
+  "Stoper",
+  "Sağ Bek",
+  "Sol Bek",
+  "Ön Libero",
+  "Defansif Orta Saha",
+  "Merkez Orta Saha",
+  "Sağ Kanat",
+  "Sol Kanat",
+  "İkinci Forvet",
+  "Merkez Forvet",
+];
 
 export function TransferFormu({ transfer }: { transfer?: TransferRow | null }) {
   const router = useRouter();
