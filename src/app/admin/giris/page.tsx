@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
 import { checkIsAdmin, verifyBypass } from "../actions";
 
 export default function AdminGirisPage() {
@@ -12,46 +11,50 @@ export default function AdminGirisPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [bypassLoading, setBypassLoading] = useState(false);
-  const router = useRouter();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
-    const supabase = createClient();
-    const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
-    if (err) {
-      setError(err.message);
-      setLoading(false);
+    try {
+      const supabase = createClient();
+      const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
+      if (err) {
+        setError(err.message);
+        return;
+      }
+      const result = await checkIsAdmin(data.user.id);
+      if (!result.isAdmin) {
+        await supabase.auth.signOut();
+        setError(
+          result.error
+            ? `Admin kontrolü başarısız: ${result.error}`
+            : "Bu hesap admin değil. admin_users tablosunda bu hesabın user_id'si olmalı."
+        );
+        return;
+      }
+      window.location.href = "/admin";
       return;
-    }
-    const result = await checkIsAdmin(data.user.id);
-    if (!result.isAdmin) {
-      await supabase.auth.signOut();
-      setError(
-        result.error
-          ? `Admin kontrolü başarısız: ${result.error}`
-          : "Bu hesap admin değil. admin_users tablosunda bu hesabın user_id'si olmalı."
-      );
+    } finally {
       setLoading(false);
-      return;
     }
-    router.push("/admin");
-    router.refresh();
   }
 
   async function handleBypass(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setBypassLoading(true);
-    const result = await verifyBypass(bypassCode);
-    if (!result.ok) {
-      setError(result.error ?? "Geçersiz bypass kodu");
-      setBypassLoading(false);
+    try {
+      const result = await verifyBypass(bypassCode);
+      if (!result.ok) {
+        setError(result.error ?? "Geçersiz bypass kodu");
+        return;
+      }
+      window.location.href = "/admin";
       return;
+    } finally {
+      setBypassLoading(false);
     }
-    router.push("/admin");
-    router.refresh();
   }
 
   return (
