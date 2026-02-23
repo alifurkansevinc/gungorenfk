@@ -71,8 +71,9 @@ export async function getAdminSupabase() {
 }
 
 /**
- * Admin girişi: sunucuda signInWithPassword ile session cookie'leri set edilir,
- * böylece layout aynı session'ı görür.
+ * Admin girişi: şifre doğrulanır, admin_users kontrol edilir; başarıda
+ * bypass ile aynı cookie set edilir (Supabase session cookie'ye güvenmiyoruz).
+ * .env'de ADMIN_BYPASS_SECRET tanımlı olmalı.
  */
 export async function signInAdmin(
   email: string,
@@ -80,6 +81,8 @@ export async function signInAdmin(
 ): Promise<{ ok: boolean; error?: string }> {
   const trimmed = email?.trim().toLowerCase();
   if (!trimmed || !password) return { ok: false, error: "E-posta ve şifre girin." };
+  const secret = process.env.ADMIN_BYPASS_SECRET;
+  if (!secret) return { ok: false, error: "Sunucu ayarı eksik: ADMIN_BYPASS_SECRET tanımlanmalı." };
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -96,6 +99,14 @@ export async function signInAdmin(
         error: result.error ? `Admin değil: ${result.error}` : "Bu hesap admin değil.",
       };
     }
+    const store = await cookies();
+    store.set(BYPASS_COOKIE_NAME, secret, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: BYPASS_MAX_AGE,
+      path: "/",
+    });
     redirect("/admin");
   } catch (e) {
     if (e && typeof e === "object" && "digest" in e && (e as { digest?: string }).digest === "NEXT_REDIRECT")
