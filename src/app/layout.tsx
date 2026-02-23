@@ -4,6 +4,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CartProvider } from "@/context/CartContext";
+import { RecoveryRedirect } from "@/components/RecoveryRedirect";
 
 const oswald = Oswald({
   variable: "--font-display",
@@ -39,6 +40,7 @@ export default function RootLayout({
     <html lang="tr" className="scroll-smooth">
       <body className={`${oswald.variable} ${outfit.variable} font-body antialiased min-h-screen flex flex-col bg-beyaz text-siyah`}>
         <CartProvider>
+          <RecoveryRedirect />
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />
