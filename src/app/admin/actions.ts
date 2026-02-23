@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 
@@ -95,8 +96,10 @@ export async function signInAdmin(
         error: result.error ? `Admin değil: ${result.error}` : "Bu hesap admin değil.",
       };
     }
-    return { ok: true };
+    redirect("/admin");
   } catch (e) {
+    if (e && typeof e === "object" && "digest" in e && (e as { digest?: string }).digest === "NEXT_REDIRECT")
+      throw e;
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: msg };
   }
