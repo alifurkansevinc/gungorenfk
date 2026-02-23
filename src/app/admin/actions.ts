@@ -68,3 +68,28 @@ export async function getAdminSupabase() {
   if (bypass) return createServiceRoleClient();
   return createClient();
 }
+
+/**
+ * E-posta ile yeni admin ekler. Sadece mevcut admin tarafından çağrılmalı.
+ * Kullanıcı önce Supabase Auth'da kayıtlı olmalı (site üzerinden veya Dashboard'dan).
+ */
+export async function addAdminByEmail(email: string): Promise<{ ok: boolean; error?: string }> {
+  const trimmed = email?.trim().toLowerCase();
+  if (!trimmed) return { ok: false, error: "E-posta girin." };
+  try {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    if (error) return { ok: false, error: error.message };
+    const user = data?.users?.find((u) => u.email?.toLowerCase() === trimmed);
+    if (!user) return { ok: false, error: "Bu e-posta ile kayıtlı kullanıcı bulunamadı. Önce site veya Supabase Auth üzerinden kayıt olmalı." };
+    const { error: insertErr } = await supabase.from("admin_users").insert({ user_id: user.id }).select().single();
+    if (insertErr) {
+      if (insertErr.code === "23505") return { ok: false, error: "Bu kullanıcı zaten admin." };
+      return { ok: false, error: insertErr.message };
+    }
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg };
+  }
+}

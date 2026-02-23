@@ -55,13 +55,29 @@ export default function AdminGirisPage() {
   }
 
   return (
-    <div className="mx-auto max-w-sm px-4 py-16">
-      <h1 className="text-xl font-bold text-siyah">Admin Girişi</h1>
+    <div className="mx-auto max-w-md px-4 py-16">
+      <h1 className="text-2xl font-bold text-siyah">Admin girişi</h1>
+      <p className="mt-1 text-sm text-siyah/60">E-posta ve şifre ile giriş yapın. Hesabınızın admin olması gerekir.</p>
+      <p className="mt-2 text-xs text-siyah/50">İlk admin: Supabase Dashboard → Authentication → Users’da kullanıcı oluşturun; SQL Editor’da <code className="rounded bg-siyah/10 px-1">SELECT add_first_admin('kullanıcı-uuid');</code> çalıştırın (migration 025 gerekli).</p>
 
-      {/* Bypass ile giriş (geçici) */}
-      <div className="mt-8 rounded-xl border border-siyah/15 bg-siyah/5 p-4">
-        <p className="text-sm font-medium text-siyah/80">Bypass ile giriş (geçici)</p>
-        <p className="mt-1 text-xs text-siyah/60">.env içinde ADMIN_BYPASS_SECRET ile aynı kodu girin.</p>
+      <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+        {error && <p className="rounded bg-red-100 p-2 text-sm text-red-800">{error}</p>}
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium text-siyah">E-posta</label>
+          <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 w-full rounded border border-black/20 px-3 py-2" placeholder="admin@example.com" />
+        </div>
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium text-siyah">Şifre</label>
+          <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1 w-full rounded border border-black/20 px-3 py-2" />
+        </div>
+        <button type="submit" disabled={loading} className="w-full rounded bg-bordo py-3 font-medium text-beyaz hover:bg-bordo-dark disabled:opacity-50">
+          {loading ? "Giriş yapılıyor..." : "Giriş yap"}
+        </button>
+      </form>
+
+      <div className="mt-10 rounded-xl border border-siyah/10 bg-siyah/5 p-4">
+        <p className="text-sm font-medium text-siyah/80">Geliştirici bypass</p>
+        <p className="mt-1 text-xs text-siyah/60">.env içinde ADMIN_BYPASS_SECRET ile aynı kodu girin (isteğe bağlı).</p>
         <form onSubmit={handleBypass} className="mt-3 flex gap-2">
           <input
             type="password"
@@ -76,23 +92,6 @@ export default function AdminGirisPage() {
           </button>
         </form>
       </div>
-
-      <p className="mt-6 text-center text-xs text-siyah/50">veya</p>
-
-      <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-        {error && <p className="rounded bg-red-100 p-2 text-sm text-red-800">{error}</p>}
-        <div>
-          <label htmlFor="email" className="block text-sm font-medium text-siyah">E-posta</label>
-          <input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required className="mt-1 w-full rounded border border-black/20 px-3 py-2" />
-        </div>
-        <div>
-          <label htmlFor="password" className="block text-sm font-medium text-siyah">Şifre</label>
-          <input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required className="mt-1 w-full rounded border border-black/20 px-3 py-2" />
-        </div>
-        <button type="submit" disabled={loading} className="w-full rounded bg-bordo py-2 font-medium text-beyaz hover:bg-bordo-dark disabled:opacity-50">
-          {loading ? "Giriş yapılıyor..." : "Supabase ile giriş"}
-        </button>
-      </form>
     </div>
   );
 }

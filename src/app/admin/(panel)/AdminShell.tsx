@@ -25,10 +25,12 @@ import {
   Ticket,
   ArrowLeftRight,
   LayoutGrid,
+  ShieldCheck,
 } from "lucide-react";
 
 const menuItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/admin/admins", label: "Admin kullanıcıları", icon: ShieldCheck },
   { href: "/admin/one-cikan", label: "Öne Çıkan", icon: LayoutGrid },
   { href: "/admin/siparisler", label: "Siparişler", icon: ShoppingCart },
   { href: "/admin/magaza", label: "Mağaza", icon: Store },
