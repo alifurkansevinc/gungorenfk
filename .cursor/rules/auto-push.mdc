@@ -1,13 +1,15 @@
 ---
-description: Her tamamlamadan sonra otomatik commit ve push; sorma
+description: Her cevap sonunda otomatik commit + push; kullanıcıya sorma
 alwaysApply: true
 ---
 
-# Otomatik push
+# Otomatik push (zorunlu)
 
 Bu projede (Güngören FK):
 
-1. **Her görev tamamlandığında** (kod değişikliği yapıldıysa ve uncommitted değişiklik varsa): Kullanıcıya sormadan `git add -A`, anlamlı Türkçe commit mesajı ile `git commit`, ardından `git push origin main` çalıştır.
-2. Commit mesajı: Yapılan değişikliği kısaca Türkçe özetleyen bir satır (örn. "Transfer kartları: logo ön planda").
-
-3. Değişiklik yoksa veya kullanıcı "pushlama" derse push yapma.
+1. **Her cevabın sonunda**, yaptığın kod değişikliği varsa ve uncommitted dosya kalmışsa: **sormadan** şunları çalıştır:
+   - `git add -A`
+   - `git commit -m "kısa Türkçe mesaj"`
+   - `git push`
+2. Commit mesajı: Yapılan değişikliği tek satırda Türkçe özetle.
+3. Kullanıcı "push yapma" veya "pushlama" derse bu seferlik atla; yoksa **her zaman** push et, kullanıcıyı "push yapayım mı?" diye yorma.
