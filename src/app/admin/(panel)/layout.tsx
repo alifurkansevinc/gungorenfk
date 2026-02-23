@@ -10,9 +10,9 @@ export default async function AdminPanelLayout({
   if (!bypass) {
     const supabase = await createClient();
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) redirect("/admin/giris");
+    if (!user) redirect("/admin/giris?reason=no_session");
     const { data: adminRow } = await supabase.from("admin_users").select("id").eq("user_id", user.id).single();
-    if (!adminRow) redirect("/admin/giris");
+    if (!adminRow) redirect("/admin/giris?reason=not_admin");
   }
 
   return <AdminShell>{children}</AdminShell>;

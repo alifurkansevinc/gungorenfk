@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { checkIsAdmin, verifyBypass } from "../actions";
 
-export default function AdminGirisPage() {
+function AdminGirisForm() {
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [bypassCode, setBypassCode] = useState("");
@@ -15,6 +17,14 @@ export default function AdminGirisPage() {
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
+
+  const reason = searchParams.get("reason");
+  const reasonMessage =
+    reason === "no_session"
+      ? "Oturum sunucuya iletilemedi. Lütfen tekrar giriş yapın veya sayfayı yenileyip deneyin."
+      : reason === "not_admin"
+        ? "Bu hesap admin yetkisine sahip değil."
+        : null;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -37,8 +47,8 @@ export default function AdminGirisPage() {
         );
         return;
       }
+      await new Promise((r) => setTimeout(r, 250));
       window.location.href = "/admin";
-      return;
     } finally {
       setLoading(false);
     }
@@ -68,6 +78,7 @@ export default function AdminGirisPage() {
       <p className="mt-2 text-xs text-siyah/50">İlk admin: Supabase Dashboard → Authentication → Users’da kullanıcı oluşturun; SQL Editor’da <code className="rounded bg-siyah/10 px-1">SELECT add_first_admin('kullanıcı-uuid');</code> çalıştırın (migration 025 gerekli).</p>
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+        {reasonMessage && <p className="rounded bg-amber-100 p-2 text-sm text-amber-800">{reasonMessage}</p>}
         {error && <p className="rounded bg-red-100 p-2 text-sm text-red-800">{error}</p>}
         <div>
           <label htmlFor="email" className="block text-sm font-medium text-siyah">E-posta</label>
@@ -135,5 +146,13 @@ export default function AdminGirisPage() {
         </form>
       </div>
     </div>
+  );
+}
+
+export default function AdminGirisPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-md px-4 py-16 text-center text-siyah/70">Yükleniyor...</div>}>
+      <AdminGirisForm />
+    </Suspense>
   );
 }
