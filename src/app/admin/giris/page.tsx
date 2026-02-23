@@ -1,9 +1,16 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { checkIsAdmin, verifyBypass } from "../actions";
+
+function getReasonMessage(reason: string | null): string | null {
+  if (reason === "no_session")
+    return "Oturum sunucuya iletilemedi. Lütfen tekrar giriş yapın veya sayfayı yenileyip deneyin.";
+  if (reason === "not_admin") return "Bu hesap admin yetkisine sahip değil.";
+  return null;
+}
 
 function AdminGirisForm() {
   const searchParams = useSearchParams();
@@ -17,14 +24,22 @@ function AdminGirisForm() {
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
+  const reasonFromParams = searchParams.get("reason");
+  const [reasonMessage, setReasonMessage] = useState<string | null>(() =>
+    getReasonMessage(reasonFromParams)
+  );
 
-  const reason = searchParams.get("reason");
-  const reasonMessage =
-    reason === "no_session"
-      ? "Oturum sunucuya iletilemedi. Lütfen tekrar giriş yapın veya sayfayı yenileyip deneyin."
-      : reason === "not_admin"
-        ? "Bu hesap admin yetkisine sahip değil."
-        : null;
+  useEffect(() => {
+    const msg = getReasonMessage(reasonFromParams);
+    if (msg) {
+      setReasonMessage(msg);
+      return;
+    }
+    if (typeof window !== "undefined") {
+      const r = new URLSearchParams(window.location.search).get("reason");
+      setReasonMessage(getReasonMessage(r));
+    }
+  }, [reasonFromParams]);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
