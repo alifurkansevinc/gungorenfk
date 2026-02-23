@@ -85,7 +85,7 @@ export default function AdminGirisPage() {
       <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4">
         <h2 className="text-sm font-semibold text-amber-900">Şifremi unuttum</h2>
         <p className="mt-1 text-xs text-amber-800">
-          E-posta adresinizi yazıp &quot;Sıfırlama linki gönder&quot;e tıklayın. Gelen linkte yeni şifre belirleyeceksiniz.
+          E-posta adresinizi yazıp &quot;Sıfırlama linki gönder&quot;e tıklayın. Gelen linki <strong>aynı tarayıcıda</strong> açın. Supabase Redirect URLs’e <code className="rounded bg-amber-200 px-1">https://siteniz.com/api/auth/callback</code> ekleyin.
         </p>
         {resetError && <p className="mt-2 rounded bg-red-100 p-2 text-sm text-red-800">{resetError}</p>}
         {resetSent && <p className="mt-2 rounded bg-green-100 p-2 text-sm text-green-800">E-posta gönderildi. Gelen linke tıklayıp yeni şifre belirleyin.</p>}
@@ -95,7 +95,7 @@ export default function AdminGirisPage() {
             setResetError(null);
             setResetLoading(true);
             const supabase = createClient();
-            const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/auth/callback` : "";
+            const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/api/auth/callback` : "";
             const { error: err } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), { redirectTo });
             setResetLoading(false);
             if (err) { setResetError(err.message); return; }

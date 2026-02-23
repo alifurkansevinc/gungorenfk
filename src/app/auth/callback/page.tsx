@@ -24,6 +24,12 @@ function AuthCallbackContent() {
     }
 
     async function run() {
+      if (searchParams.get("error") === "exchange") {
+        setError("Link kullanılamadı. Lütfen şifre sıfırlama e-postasını, e-postayı açtığınız aynı tarayıcıda tekrar isteyip linke tıklayın.");
+        setStep("error");
+        return;
+      }
+
       const code = searchParams.get("code");
       const tokenHash = searchParams.get("token_hash");
       const type = searchParams.get("type");
