@@ -1,6 +1,7 @@
 import { getAdminSupabase } from "../../actions";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { AdminKullaniciForm } from "./AdminKullaniciForm";
+import { SifreSifirlaForm } from "./SifreSifirlaForm";
 
 export default async function AdminAdminsPage() {
   const supabase = await getAdminSupabase();
@@ -23,6 +24,8 @@ export default async function AdminAdminsPage() {
       <p className="mt-1 text-siyah/70">Admin panele giriş yapabilecek hesaplar. Yeni admin eklemek için e-posta girin (o e-posta ile Supabase Auth’da kayıt olmuş olmalı).</p>
 
       <AdminKullaniciForm />
+
+      <SifreSifirlaForm />
 
       <div className="mt-8">
         <h2 className="text-lg font-semibold text-siyah">Mevcut adminler</h2>

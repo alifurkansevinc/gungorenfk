@@ -93,3 +93,25 @@ export async function addAdminByEmail(email: string): Promise<{ ok: boolean; err
     return { ok: false, error: msg };
   }
 }
+
+/**
+ * E-posta ile kullanıcı şifresini sıfırlar (Admin API). Sadece admin panelinden çağrılmalı.
+ */
+export async function resetUserPasswordByEmail(email: string, newPassword: string): Promise<{ ok: boolean; error?: string }> {
+  const trimmed = email?.trim().toLowerCase();
+  if (!trimmed) return { ok: false, error: "E-posta girin." };
+  if (!newPassword || newPassword.length < 6) return { ok: false, error: "Yeni şifre en az 6 karakter olmalı." };
+  try {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    if (error) return { ok: false, error: error.message };
+    const user = data?.users?.find((u) => u.email?.toLowerCase() === trimmed);
+    if (!user) return { ok: false, error: "Bu e-posta ile kayıtlı kullanıcı bulunamadı." };
+    const { error: updateErr } = await supabase.auth.admin.updateUserById(user.id, { password: newPassword });
+    if (updateErr) return { ok: false, error: updateErr.message };
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg };
+  }
+}
