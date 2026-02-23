@@ -2,14 +2,20 @@
 
 import { revalidatePath } from "next/cache";
 import { getAdminSupabase } from "@/app/admin/actions";
+import { createServiceRoleClient } from "@/lib/supabase/service";
 
 async function supabase() {
   return getAdminSupabase();
 }
 
+/** Maç yazma işlemleri RLS bypass (service role) ile yapılır; böylece policy hatası oluşmaz. */
+function matchesClient() {
+  return createServiceRoleClient();
+}
+
 // ——— Maçlar ———
 export async function createMatch(formData: FormData) {
-  const s = await supabase();
+  const s = matchesClient();
   const { error } = await s.from("matches").insert({
     opponent_name: (formData.get("opponent_name") as string)?.trim(),
     home_away: formData.get("home_away") as "home" | "away",
@@ -30,7 +36,7 @@ export async function createMatch(formData: FormData) {
 }
 
 export async function updateMatch(id: string, formData: FormData) {
-  const s = await supabase();
+  const s = matchesClient();
   const { error } = await s.from("matches").update({
     opponent_name: (formData.get("opponent_name") as string)?.trim(),
     home_away: formData.get("home_away") as "home" | "away",
@@ -53,7 +59,7 @@ export async function updateMatch(id: string, formData: FormData) {
 }
 
 export async function deleteMatch(id: string) {
-  const s = await supabase();
+  const s = matchesClient();
   const { error } = await s.from("matches").delete().eq("id", id);
   if (error) return { error: error.message };
   revalidatePath("/admin/maclar");
