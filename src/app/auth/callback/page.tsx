@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function AuthCallbackPage() {
+function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState<"wait" | "form" | "done" | "error">("wait");
@@ -154,5 +154,17 @@ export default function AuthCallbackPage() {
         </button>
       </form>
     </div>
+  );
+}
+
+export default function AuthCallbackPage() {
+  return (
+    <Suspense fallback={
+      <div className="mx-auto max-w-md px-4 py-16 text-center">
+        <p className="text-siyah/70">Doğrulanıyor...</p>
+      </div>
+    }>
+      <AuthCallbackContent />
+    </Suspense>
   );
 }
