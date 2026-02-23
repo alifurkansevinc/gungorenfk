@@ -70,6 +70,39 @@ export async function getAdminSupabase() {
 }
 
 /**
+ * Admin girişi: sunucuda signInWithPassword ile session cookie'leri set edilir,
+ * böylece layout aynı session'ı görür.
+ */
+export async function signInAdmin(
+  email: string,
+  password: string
+): Promise<{ ok: boolean; error?: string }> {
+  const trimmed = email?.trim().toLowerCase();
+  if (!trimmed || !password) return { ok: false, error: "E-posta ve şifre girin." };
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email: trimmed,
+      password,
+    });
+    if (error) return { ok: false, error: error.message };
+    if (!data.user) return { ok: false, error: "Giriş başarısız." };
+    const result = await checkIsAdmin(data.user.id);
+    if (!result.isAdmin) {
+      await supabase.auth.signOut();
+      return {
+        ok: false,
+        error: result.error ? `Admin değil: ${result.error}` : "Bu hesap admin değil.",
+      };
+    }
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg };
+  }
+}
+
+/**
  * E-posta ile yeni admin ekler. Sadece mevcut admin tarafından çağrılmalı.
  * Kullanıcı önce Supabase Auth'da kayıtlı olmalı (site üzerinden veya Dashboard'dan).
  */

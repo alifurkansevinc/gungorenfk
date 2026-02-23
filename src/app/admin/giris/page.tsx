@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { checkIsAdmin, verifyBypass } from "../actions";
+import { signInAdmin, verifyBypass } from "../actions";
 
 function getReasonMessage(reason: string | null): string | null {
   if (reason === "no_session")
@@ -46,23 +46,11 @@ function AdminGirisForm() {
     setError(null);
     setLoading(true);
     try {
-      const supabase = createClient();
-      const { data, error: err } = await supabase.auth.signInWithPassword({ email, password });
-      if (err) {
-        setError(err.message);
+      const result = await signInAdmin(email, password);
+      if (!result.ok) {
+        setError(result.error ?? "Giriş başarısız.");
         return;
       }
-      const result = await checkIsAdmin(data.user.id);
-      if (!result.isAdmin) {
-        await supabase.auth.signOut();
-        setError(
-          result.error
-            ? `Admin kontrolü başarısız: ${result.error}`
-            : "Bu hesap admin değil. admin_users tablosunda bu hesabın user_id'si olmalı."
-        );
-        return;
-      }
-      await new Promise((r) => setTimeout(r, 250));
       window.location.href = "/admin";
     } finally {
       setLoading(false);
