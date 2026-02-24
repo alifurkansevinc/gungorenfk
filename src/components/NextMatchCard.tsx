@@ -19,7 +19,7 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
       <section className="mb-14">
         <div className="relative overflow-hidden rounded-3xl border-2 border-siyah/10 bg-gradient-to-br from-siyah/5 to-siyah/10 px-8 py-12 text-center">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(139,21,56,0.15),transparent)]" />
-          <p className="relative text-siyah/60">Önümüzdeki maç henüz belirlenmedi. Admin panelinden Maçlar bölümünden ekleyebilirsiniz.</p>
+          <p className="relative text-siyah/60">Bu sezonu şampiyon tamamladık, Temmuz ayında hazırlık maçlarıyla sezonu açacağız.</p>
         </div>
       </section>
     );

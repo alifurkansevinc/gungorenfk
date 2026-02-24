@@ -104,7 +104,7 @@ export default async function Home() {
                       />
                       <div className={`absolute inset-0 ${isLarge ? "bg-gradient-to-t from-siyah/95 via-siyah/40 to-transparent" : "bg-gradient-to-t from-siyah/90 to-transparent"}`} />
                       <div className={`absolute inset-0 flex flex-col justify-end ${isLarge ? "p-6 sm:p-8" : "p-5"}`}>
-                        <span className="text-xs font-semibold uppercase tracking-wider text-bordo">{(def?.label ?? item.module_key)}</span>
+                        <span className="text-xs font-semibold uppercase tracking-wider text-beyaz">{(def?.label ?? item.module_key)}</span>
                         <span className={`font-display mt-2 font-bold text-beyaz ${isLarge ? "text-xl sm:text-2xl" : "text-lg"}`}>{title}</span>
                         {subtitle && <span className={`text-beyaz/80 ${isLarge ? "mt-1 text-sm" : "mt-1 text-sm"}`}>{subtitle} →</span>}
                       </div>
