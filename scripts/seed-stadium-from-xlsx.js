@@ -11,7 +11,7 @@ const fs = require("fs");
 const path = require("path");
 
 const xlsxPath = path.join(__dirname, "..", "statoturma.xlsx");
-const outPath = path.join(__dirname, "..", "supabase", "migrations", "028_stadium_seats_statoturma.sql");
+const outPath = path.join(__dirname, "..", "supabase", "migrations", "030_stadium_seats_layout_from_excel.sql");
 
 const seatRegex = /^([A-E])(\d+)-(\d+)$/i;
 const seats = [];
@@ -31,13 +31,14 @@ wb.SheetNames.forEach((sheetName) => {
       if (!m) continue;
       const section = m[1].toUpperCase();
       const rowNum = parseInt(m[2], 10);
-      const seatInRow = parseInt(m[3], 10);
-      const seatCode = `${section}-${rowNum}-${seatInRow}`;
+      const seatNumber = parseInt(m[3], 10);
+      const seatCode = `${section}-${rowNum}-${seatNumber}`;
+      const positionInRow = c + 1;
       seats.push({
         seat_code: seatCode,
         section,
         row_number: rowNum,
-        seat_in_row: seatInRow,
+        seat_in_row: positionInRow,
         sort_order: ++sortOrder,
       });
     }
@@ -46,7 +47,7 @@ wb.SheetNames.forEach((sheetName) => {
 
 const byCode = {};
 seats.forEach((s) => {
-  byCode[s.seat_code] = s;
+  if (!byCode[s.seat_code]) byCode[s.seat_code] = s;
 });
 const unique = Object.values(byCode).sort((a, b) => a.sort_order - b.sort_order);
 unique.forEach((s, i) => {
@@ -59,8 +60,8 @@ const values = unique.map(
 );
 
 const lines = [
-  "-- Stadyum koltukları: statoturma.xlsx bloklarından (A, B, C, D, E)",
-  "-- Bilet numaralandırması bu plana göre.",
+  "-- Stadyum koltukları: Excel şablonuna göre sıra/koltuk (seat_in_row = sütun pozisyonu, koridor boşlukları korunur)",
+  "-- C blok ve diğer bloklar statoturma.xlsx ile aynı düzende.",
   "INSERT INTO stadium_seats (seat_code, section, row_number, seat_in_row, sort_order)",
   "VALUES",
   values.join(",\n"),

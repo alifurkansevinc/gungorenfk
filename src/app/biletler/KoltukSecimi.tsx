@@ -138,6 +138,11 @@ export function KoltukSecimi({
 
   const isOverview = expandedBlock === null;
 
+  const seatLabel = (seat: Seat) => {
+    const parts = seat.seat_code.split("-");
+    return parts.length > 0 ? parts[parts.length - 1] : String(seat.seat_in_row);
+  };
+
   const renderBlockSeats = (section: string) => {
     const rows = rowNumbersByBlock[section] ?? [];
     if (rows.length === 0) return null;
@@ -147,6 +152,8 @@ export function KoltukSecimi({
           const rowSeats = (blocks[section]?.[rowNum] ?? []).sort(
             (a, b) => a.seat_in_row - b.seat_in_row
           );
+          const maxPos = rowSeats.length > 0 ? Math.max(...rowSeats.map((s) => s.seat_in_row)) : 0;
+          const seatsByPos = new Map(rowSeats.map((s) => [s.seat_in_row, s]));
           return (
             <div
               key={`${section}-${rowNum}`}
@@ -157,7 +164,18 @@ export function KoltukSecimi({
               </span>
               <div className="min-w-0 flex-1 overflow-x-auto">
                 <div className="flex flex-nowrap items-center justify-start gap-0.5 py-0.5">
-                  {rowSeats.map((seat) => {
+                  {Array.from({ length: maxPos }, (_, i) => i + 1).map((pos) => {
+                    const seat = seatsByPos.get(pos);
+                    if (!seat) {
+                      return (
+                        <span
+                          key={`gap-${section}-${rowNum}-${pos}`}
+                          className="h-6 w-6 min-w-[1.5rem] shrink-0 rounded bg-siyah/10"
+                          title="Koridor"
+                          aria-hidden
+                        />
+                      );
+                    }
                     const taken = takenIds.has(seat.id);
                     const selected = selectedSeatId === seat.id;
                     return (
@@ -177,7 +195,7 @@ export function KoltukSecimi({
                               : "border border-siyah/20 bg-beyaz text-siyah/70 hover:border-bordo/50 hover:bg-bordo/10 hover:text-bordo"
                         }`}
                       >
-                        {seat.seat_in_row}
+                        {seatLabel(seat)}
                       </button>
                     );
                   })}
