@@ -170,6 +170,28 @@ export function KoltukSecimi({
     }
   }, [seats, takenIds, taraftarCapacity, taraftarSold]);
 
+  const blockMaxColumn = useMemo(() => {
+    try {
+      const out: Record<string, number> = {};
+      const list = Array.isArray(seats) ? seats : [];
+      BLOCK_ORDER.forEach((sec) => {
+        const sectionSeats = list.filter((s) => s && String(s.section != null ? s.section : "").toUpperCase() === sec);
+        const max =
+          sectionSeats.length > 0
+            ? Math.max(...sectionSeats.map((s) => Number(s.seat_in_row) || 0))
+            : 0;
+        out[sec] = Math.max(1, max);
+      });
+      return out;
+    } catch {
+      const out: Record<string, number> = {};
+      BLOCK_ORDER.forEach((sec) => {
+        out[sec] = 24;
+      });
+      return out;
+    }
+  }, [seats]);
+
   const selectedSeat = seats.find((s) => s.id === selectedSeatId);
 
   if (!validMatchId) {
@@ -209,28 +231,6 @@ export function KoltukSecimi({
     const parts = code.split("-");
     return parts.length > 0 ? parts[parts.length - 1] : String(seat.seat_in_row);
   };
-
-  const blockMaxColumn = useMemo(() => {
-    try {
-      const out: Record<string, number> = {};
-      const list = Array.isArray(seats) ? seats : [];
-      BLOCK_ORDER.forEach((sec) => {
-        const sectionSeats = list.filter((s) => s && String(s.section != null ? s.section : "").toUpperCase() === sec);
-        const max =
-          sectionSeats.length > 0
-            ? Math.max(...sectionSeats.map((s) => Number(s.seat_in_row) || 0))
-            : 0;
-        out[sec] = Math.max(1, max);
-      });
-      return out;
-    } catch {
-      const out: Record<string, number> = {};
-      BLOCK_ORDER.forEach((sec) => {
-        out[sec] = 24;
-      });
-      return out;
-    }
-  }, [seats]);
 
   const renderBlockSeats = (section: string) => {
     const rows = rowNumbersByBlock[section] ?? [];
