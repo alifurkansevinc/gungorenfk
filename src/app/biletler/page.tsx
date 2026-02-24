@@ -1,18 +1,20 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MacKartlari } from "./MacKartlari";
 import { EtkinlikKartlari } from "./EtkinlikKartlari";
+import { BiletIcinGirisCTA } from "./BiletIcinGirisCTA";
 
 export const metadata = {
   title: "Biletler | Güngören FK",
   description: "Güngören FK maç ve etkinlik biletlerini online alın. QR kod ile giriş.",
 };
 
+export const dynamic = "force-dynamic";
+
 export default async function BiletlerPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/taraftar/giris?redirect=" + encodeURIComponent("/biletler"));
+  const isGuest = !user;
 
   const today = new Date().toISOString().slice(0, 10);
   const [matchesRes, eventsRes] = await Promise.all([
@@ -52,6 +54,12 @@ export default async function BiletlerPage() {
       </div>
 
       <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6 lg:px-8 space-y-14">
+        {isGuest && (
+          <section>
+            <BiletIcinGirisCTA variant="card" />
+          </section>
+        )}
+
         <section>
           <h2 className="text-xl font-bold text-siyah mb-4">Maç Biletleri</h2>
           {(!matches || matches.length === 0) ? (
@@ -60,7 +68,7 @@ export default async function BiletlerPage() {
               <p className="mt-1 text-sm">Yakında yeni maçlar eklenecektir.</p>
             </div>
           ) : (
-            <MacKartlari matches={matches} />
+            <MacKartlari matches={matches} isGuest={isGuest} />
           )}
         </section>
 
@@ -73,7 +81,7 @@ export default async function BiletlerPage() {
               <Link href="/haberler" className="mt-3 inline-block text-sm font-medium text-bordo hover:underline">Etkinlikler →</Link>
             </div>
           ) : (
-            <EtkinlikKartlari events={ticketedEvents} />
+            <EtkinlikKartlari events={ticketedEvents} isGuest={isGuest} />
           )}
         </section>
       </div>

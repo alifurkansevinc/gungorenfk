@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Calendar, MapPin, Clock } from "lucide-react";
 import { EtkinlikBiletAlButton } from "./EtkinlikBiletAlButton";
+import { BiletIcinGirisCTA } from "./BiletIcinGirisCTA";
 
 type EventItem = {
   id: string;
@@ -15,7 +16,7 @@ type EventItem = {
   event_type: string | null;
 };
 
-export function EtkinlikKartlari({ events }: { events: EventItem[] }) {
+export function EtkinlikKartlari({ events, isGuest }: { events: EventItem[]; isGuest?: boolean }) {
   if (!events || events.length === 0) return null;
 
   return (
@@ -66,7 +67,11 @@ export function EtkinlikKartlari({ events }: { events: EventItem[] }) {
               </div>
             </div>
             <div className="shrink-0">
-              <EtkinlikBiletAlButton eventId={e.id} eventTitle={e.title} />
+              {isGuest ? (
+                <BiletIcinGirisCTA variant="inline" />
+              ) : (
+                <EtkinlikBiletAlButton eventId={e.id} eventTitle={e.title} />
+              )}
             </div>
           </div>
         );

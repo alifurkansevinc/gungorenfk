@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { SITE_LOGO_URL } from "@/lib/demo-images";
 import { BiletAlButton } from "./BiletAlButton";
+import { BiletIcinGirisCTA } from "./BiletIcinGirisCTA";
 import { KoltukSecimi } from "./KoltukSecimi";
 import { Ticket, ChevronDown, ChevronUp, Calendar, MapPin, Clock } from "lucide-react";
 
@@ -18,7 +19,7 @@ type Match = {
   opponent_logo_url: string | null;
 };
 
-export function MacKartlari({ matches }: { matches: Match[] }) {
+export function MacKartlari({ matches, isGuest }: { matches: Match[]; isGuest?: boolean }) {
   const [seciliMacId, setSeciliMacId] = useState<string | null>(null);
   const [seciliKoltukId, setSeciliKoltukId] = useState<string | null>(null);
   const [seciliKoltukKod, setSeciliKoltukKod] = useState<string | null>(null);
@@ -120,38 +121,42 @@ export function MacKartlari({ matches }: { matches: Match[] }) {
 
             {secili && (
               <div className="border-t-2 border-bordo/20 bg-gradient-to-br from-bordo/5 via-beyaz to-bordo/5 px-6 pb-7 pt-6">
-                <div className="space-y-5">
-                  <KoltukSecimi
-                    matchId={m.id}
-                    selectedSeatId={seciliMacId === m.id ? seciliKoltukId : null}
-                    onSelect={(id, code) => {
-                      setSeciliKoltukId(id);
-                      setSeciliKoltukKod(code);
-                    }}
-                  />
-                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
-                    <div className="flex items-center gap-4">
-                      <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-bordo/15 shadow-inner">
-                        <Ticket className="h-7 w-7 text-bordo" />
-                      </div>
-                      <div>
-                        <p className="font-bold text-siyah">Ücretsiz bilet</p>
-                        <p className="text-sm text-siyah/70">
-                          {macLabel} — {tarihStr}
-                          {saatStr ? ` · ${saatStr}` : ""}
-                          {seciliKoltukId && seciliMacId === m.id && seciliKoltukKod && (
-                            <span className="mt-1 block font-medium text-bordo">Koltuk: {seciliKoltukKod}</span>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-                    <BiletAlButton
+                {isGuest ? (
+                  <BiletIcinGirisCTA variant="inline" />
+                ) : (
+                  <div className="space-y-5">
+                    <KoltukSecimi
                       matchId={m.id}
-                      matchName={m.opponent_name}
-                      seatId={seciliMacId === m.id ? seciliKoltukId : null}
+                      selectedSeatId={seciliMacId === m.id ? seciliKoltukId : null}
+                      onSelect={(id, code) => {
+                        setSeciliKoltukId(id);
+                        setSeciliKoltukKod(code);
+                      }}
                     />
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-5">
+                      <div className="flex items-center gap-4">
+                        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-bordo/15 shadow-inner">
+                          <Ticket className="h-7 w-7 text-bordo" />
+                        </div>
+                        <div>
+                          <p className="font-bold text-siyah">Ücretsiz bilet</p>
+                          <p className="text-sm text-siyah/70">
+                            {macLabel} — {tarihStr}
+                            {saatStr ? ` · ${saatStr}` : ""}
+                            {seciliKoltukId && seciliMacId === m.id && seciliKoltukKod && (
+                              <span className="mt-1 block font-medium text-bordo">Koltuk: {seciliKoltukKod}</span>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                      <BiletAlButton
+                        matchId={m.id}
+                        matchName={m.opponent_name}
+                        seatId={seciliMacId === m.id ? seciliKoltukId : null}
+                      />
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </div>

@@ -52,20 +52,18 @@ export async function POST(req: NextRequest) {
       if (!(event as { is_ticketed?: boolean }).is_ticketed) {
         return NextResponse.json({ success: false, error: "Bu etkinlik biletli değil." }, { status: 400 });
       }
-      if (user?.id) {
-        const { data: existing } = await supabase
-          .from("match_tickets")
-          .select("id")
-          .eq("user_id", user.id)
-          .eq("event_id", eventId)
-          .eq("payment_status", "PAID")
-          .maybeSingle();
-        if (existing) {
-          return NextResponse.json(
-            { success: false, error: "Bu etkinlik için zaten biletiniz var." },
-            { status: 400 }
-          );
-        }
+      const { data: existing } = await supabase
+        .from("match_tickets")
+        .select("id")
+        .eq("user_id", user.id)
+        .eq("event_id", eventId)
+        .eq("payment_status", "PAID")
+        .maybeSingle();
+      if (existing) {
+        return NextResponse.json(
+          { success: false, error: "Bu etkinlik için zaten biletiniz var." },
+          { status: 400 }
+        );
       }
       let qrCode = generateQrCode();
       for (let attempt = 0; attempt < 5; attempt++) {
@@ -77,7 +75,7 @@ export async function POST(req: NextRequest) {
         .from("match_tickets")
         .insert({
           event_id: eventId,
-          user_id: user?.id ?? null,
+          user_id: user.id,
           guest_email: guestEmail,
           guest_name: guestName,
           qr_code: qrCode,
@@ -203,7 +201,7 @@ export async function POST(req: NextRequest) {
       .from("match_tickets")
       .insert({
         match_id: matchId,
-        user_id: user?.id ?? null,
+        user_id: user.id,
         guest_email: guestEmail,
         guest_name: guestName,
         qr_code: qrCode,
@@ -220,7 +218,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (isFree) {
-      if (user?.id) {
+      {
         const { data: profile } = await supabase
           .from("fan_profiles")
           .select("id, match_tickets_count")
@@ -258,10 +256,10 @@ export async function POST(req: NextRequest) {
       paidPrice: TICKET_PRICE,
       shippingCost: 0,
       buyer: {
-        id: user?.id || `guest_${ticket.id}`,
+        id: user.id,
         name: guestName.split(" ")[0]?.trim() || "Bilet",
         surname: guestName.split(" ").slice(1).join(" ").trim() || "Alıcı",
-        email: user?.email || guestEmail || "bilet@gungorenfk.com",
+        email: user.email || "bilet@gungorenfk.com",
         phone: "0000000000",
         registrationAddress: "Maç bileti",
         city: "İstanbul",
