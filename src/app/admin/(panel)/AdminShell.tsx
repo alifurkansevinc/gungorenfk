@@ -47,6 +47,7 @@ const menuItems = [
   { href: "/admin/yonetim-kurulu", label: "Yönetim Kurulu", icon: UsersRound },
   { href: "/admin/teknik-heyet", label: "Teknik Heyet", icon: GraduationCap },
   { href: "/admin/rozet", label: "Rozet Kuralları", icon: Award },
+  { href: "/admin/avantaj-modulleri", label: "Avantaj modülleri", icon: LayoutGrid },
   { href: "/admin/galeriler", label: "Galeriler", icon: ImageIcon },
 ];
 

@@ -171,6 +171,29 @@ export async function getFanLevels(): Promise<FanLevel[]> {
   return (data ?? []) as FanLevel[];
 }
 
+/** Bir rütbeye atanmış modül avantajları (ad, değer tipi, değer, birim). Benim Köşem’de madde metnine dönüştürülür. */
+export async function getLevelBenefits(levelId: number): Promise<{ name: string; value_type: string; value: number; unit_label: string | null }[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("fan_level_benefits")
+    .select("value, benefit_modules(name, value_type, unit_label)")
+    .eq("fan_level_id", levelId);
+  if (!data || data.length === 0) return [];
+  const out: { name: string; value_type: string; value: number; unit_label: string | null }[] = [];
+  for (const row of data) {
+    const raw = (row as { benefit_modules: { name: string; value_type: string; unit_label: string | null } | { name: string; value_type: string; unit_label: string | null }[] | null }).benefit_modules;
+    const mod = Array.isArray(raw) ? raw[0] : raw;
+    if (!mod) continue;
+    out.push({
+      name: mod.name,
+      value_type: mod.value_type,
+      value: Number((row as { value: number }).value),
+      unit_label: mod.unit_label ?? null,
+    });
+  }
+  return out;
+}
+
 /** Kadro listesi (sezon bazlı; veri yoksa demo döner). */
 export async function getSquad() {
   const supabase = await createClient();
@@ -249,6 +272,21 @@ export async function getFeaturedProducts(limit = 4) {
 }
 
 /** Slug ile tek ürün (mağaza detay). DB’de yoksa demo ürünlerden döner. */
+/** Rütbenin hediye hakkı kotası (adet/yıl). Yoksa 0. */
+export async function getGiftQuotaForLevel(levelId: number): Promise<number> {
+  const supabase = await createClient();
+  const { data: mod } = await supabase.from("benefit_modules").select("id").eq("slug", "hediye_hakki").maybeSingle();
+  if (!mod) return 0;
+  const { data: row } = await supabase
+    .from("fan_level_benefits")
+    .select("value")
+    .eq("fan_level_id", levelId)
+    .eq("benefit_module_id", mod.id)
+    .single();
+  return row ? Math.max(0, Number(row.value)) : 0;
+}
+
+/** Slug ile tek ürün (mağaza detay). DB'de yoksa demo ürünlerden döner. */
 export async function getProductBySlug(slug: string) {
   const supabase = await createClient();
   const { data: product } = await supabase

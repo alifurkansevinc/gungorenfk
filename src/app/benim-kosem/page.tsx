@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
-import { getSquad, getFanLevels } from "@/lib/data";
+import { getSquad, getFanLevels, getLevelBenefits, getGiftQuotaForLevel } from "@/lib/data";
 import type { FanLevel } from "@/types/db";
 import { FanLevelBadge } from "@/app/taraftar/FanLevelBadge";
 import { FavoriOyuncuSec } from "./FavoriOyuncuSec";
@@ -12,6 +12,13 @@ export const metadata = {
   title: "Benim Köşem | Güngören FK",
   description: "Taraftar paneli: rozet, favori oyuncu, haklar.",
 };
+
+/** Modül avantajını tek satır metne çevirir (Benim Köşem listesi için). */
+function formatBenefit(b: { name: string; value_type: string; value: number; unit_label: string | null }): string {
+  if (b.value_type === "boolean") return b.value === 1 ? b.name : "";
+  if (b.value_type === "percent") return `${b.name}: %${Math.round(b.value)}`;
+  return `${b.name}: ${b.value} ${b.unit_label || ""}`.trim();
+}
 
 /** Seviyeye göre hak kazandıklarım metni (backend ile genişletilebilir). */
 function getHakKazandiklarim(levelSlug: string): string[] {
@@ -49,6 +56,25 @@ export default async function BenimKosemPage() {
   const currentLevel: FanLevel = level ?? levels[0] ?? { id: 1, name: "As Oyuncu", slug: "as-oyuncu", min_points: 0, sort_order: 1, description: null, target_store_spend: null, target_tickets: null, target_donation: null, advantages: null };
   const currentLevelWithAdvantages = levels.find((l) => l.id === currentLevel.id) ?? currentLevel;
   const nextLevel = levels.find((l) => l.sort_order === currentLevel.sort_order + 1);
+  const [currentLevelBenefits, nextLevelBenefits, giftQuota] = await Promise.all([
+    getLevelBenefits(currentLevel.id),
+    nextLevel ? getLevelBenefits(nextLevel.id) : Promise.resolve([]),
+    getGiftQuotaForLevel(currentLevel.id),
+  ]);
+  const currentLevelBenefitsFiltered = currentLevelBenefits.map(formatBenefit).filter(Boolean);
+  const nextLevelBenefitsFiltered = nextLevelBenefits.map(formatBenefit).filter(Boolean);
+  const year = new Date().getFullYear();
+  const { count: giftUsedCount } = await supabase
+    .from("gift_redemptions")
+    .select("id", { count: "exact", head: true })
+    .eq("user_id", user.id)
+    .eq("redemption_year", year);
+  const { data: pendingGifts } = await supabase
+    .from("gift_redemptions")
+    .select("id, qr_code, store_products(name)")
+    .eq("user_id", user.id)
+    .eq("status", "pending_pickup")
+    .order("created_at", { ascending: false });
   const favoritePlayerId = (profile as { favorite_player_id?: string | null }).favorite_player_id ?? null;
   const favoritePlayer = favoritePlayerId ? squad.find((p) => p.id === favoritePlayerId) : null;
 
@@ -141,10 +167,18 @@ export default async function BenimKosemPage() {
   const barDonation = nextTargetDonation > 0 ? Math.min(100, (donationTotal / nextTargetDonation) * 100) : 0;
   const overallBar = nextLevel ? (barStore + barTickets + barDonation) / 3 : 100;
 
-  const mevcutAvantajlarListe =
-    currentLevelWithAdvantages.advantages?.trim()
+  const mevcutAvantajlarListe = [
+    ...currentLevelBenefitsFiltered,
+    ...(currentLevelWithAdvantages.advantages?.trim()
       ? currentLevelWithAdvantages.advantages.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
-      : getHakKazandiklarim(currentLevel.slug);
+      : getHakKazandiklarim(currentLevel.slug)),
+  ];
+  const sonrakiAvantajlarListe = [
+    ...nextLevelBenefitsFiltered,
+    ...(nextLevel?.advantages?.trim()
+      ? nextLevel.advantages.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+      : []),
+  ];
 
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
@@ -171,17 +205,13 @@ export default async function BenimKosemPage() {
               {currentLevel.description && (
                 <p className="mt-4 text-sm text-siyah/80 leading-relaxed">{currentLevel.description}</p>
               )}
-              {(currentLevelWithAdvantages.advantages?.trim() || getHakKazandiklarim(currentLevel.slug).length > 0) && (
+              {mevcutAvantajlarListe.length > 0 && (
                 <>
                   <h3 className="mt-4 text-sm font-semibold text-siyah/80">Mevcut rütbenin avantajları</h3>
                   <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-siyah/80">
-                    {currentLevelWithAdvantages.advantages?.trim()
-                      ? currentLevelWithAdvantages.advantages
-                          .split(/\r?\n/)
-                          .map((line) => line.trim())
-                          .filter(Boolean)
-                          .map((madde, i) => <li key={i}>{madde}</li>)
-                      : getHakKazandiklarim(currentLevel.slug).map((h, i) => <li key={i}>{h}</li>)}
+                    {mevcutAvantajlarListe.map((madde, i) => (
+                      <li key={i}>{madde}</li>
+                    ))}
                   </ul>
                 </>
               )}
@@ -192,17 +222,13 @@ export default async function BenimKosemPage() {
               <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
                 <h2 className="font-display text-lg font-bold text-siyah">Sonraki rozetin için</h2>
                 <p className="mt-1 text-sm text-siyah/70">Sonraki kademe: <strong>{nextLevel.name}</strong>.</p>
-                {nextLevel.advantages?.trim() && (
+                {sonrakiAvantajlarListe.length > 0 && (
                   <>
                     <h3 className="mt-3 text-sm font-semibold text-siyah/80">Sonraki rütbenin avantajları</h3>
                     <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-siyah/80">
-                      {nextLevel.advantages
-                        .split(/\r?\n/)
-                        .map((line) => line.trim())
-                        .filter(Boolean)
-                        .map((madde, i) => (
-                          <li key={i}>{madde}</li>
-                        ))}
+                      {sonrakiAvantajlarListe.map((madde, i) => (
+                        <li key={i}>{madde}</li>
+                      ))}
                     </ul>
                   </>
                 )}
@@ -361,6 +387,39 @@ export default async function BenimKosemPage() {
                 <Link href="/magaza" className="mt-4 block text-center text-sm font-medium text-bordo hover:underline">Mağaza →</Link>
               )}
             </section>
+
+            {/* Hediye haklarım — rütbeden kazanılan hediye; mağaza ürünü ücretsiz, QR ile teslim */}
+            {giftQuota > 0 && (
+              <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
+                <h2 className="font-display text-lg font-bold text-siyah">Hediye haklarım</h2>
+                <p className="mt-1 text-sm text-siyah/70">Rütbenizden kazanılan hediyeler mağaza ürünü olarak verilir; ücretsiz, QR ile mağazadan teslim alırsınız.</p>
+                <p className="mt-2 text-sm font-medium text-siyah">Bu yıl: <span className="text-bordo">{giftUsedCount ?? 0} / {giftQuota}</span> hediye kullandınız.</p>
+                {pendingGifts && pendingGifts.length > 0 && (
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    {pendingGifts.map((g) => {
+                      const qrData = `${baseUrl}/admin/teslim-al?code=${encodeURIComponent((g as { qr_code: string }).qr_code)}`;
+                      const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(qrData)}`;
+                      const productName = (g as { store_products?: { name: string } | null }).store_products?.name ?? "Ürün";
+                      return (
+                        <div key={g.id} className="flex items-center gap-4 rounded-xl border border-bordo/20 bg-gradient-to-br from-bordo/5 to-siyah/5 p-4">
+                          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz">
+                            <img src={qrImgUrl} alt="Hediye QR" width={64} height={64} className="h-full w-full object-contain" />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="font-semibold text-siyah">Hediye: {productName}</p>
+                            <p className="mt-0.5 font-mono text-xs text-siyah/70">Kod: {(g as { qr_code: string }).qr_code}</p>
+                            <p className="mt-1 text-xs text-siyah/60">Mağazada bu QR ile teslim alın.</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {(giftUsedCount ?? 0) < giftQuota && (
+                  <Link href="/benim-kosem/hediye-kullan" className="mt-4 inline-block rounded-lg bg-bordo px-4 py-2 text-sm font-medium text-beyaz hover:bg-bordo/90">Hediye hakkını kullan</Link>
+                )}
+              </section>
+            )}
 
             {/* Favori oyuncu */}
             <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">

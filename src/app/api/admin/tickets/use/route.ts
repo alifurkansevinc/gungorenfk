@@ -17,6 +17,32 @@ export async function POST(req: NextRequest) {
 
   const supabase = createServiceRoleClient();
 
+  // Hediye teslim (GIFT- ile başlayan QR): mağazada hediye ürün teslim alırken kullanılır
+  if (qrCode.startsWith("GIFT-")) {
+    const { data: giftRow, error: giftFindError } = await supabase
+      .from("gift_redemptions")
+      .select("id, status")
+      .eq("qr_code", qrCode)
+      .single();
+
+    if (giftFindError || !giftRow) {
+      return NextResponse.json({ success: false, error: "Hediye kaydı bulunamadı." }, { status: 404 });
+    }
+    if ((giftRow as { status: string }).status === "picked_up") {
+      return NextResponse.json({ success: false, error: "Bu hediye zaten teslim alındı." }, { status: 400 });
+    }
+
+    const { error: giftUpdateError } = await supabase
+      .from("gift_redemptions")
+      .update({ status: "picked_up", picked_up_at: new Date().toISOString() })
+      .eq("id", giftRow.id);
+
+    if (giftUpdateError) {
+      return NextResponse.json({ success: false, error: giftUpdateError.message }, { status: 500 });
+    }
+    return NextResponse.json({ success: true, message: "Hediye teslim alındı." });
+  }
+
   // Rozet teslim bileti (RZ- ile başlayan QR): mağazada rozet teslim alırken kullanılır, kullanıldıktan sonra Benim Köşemden düşer
   if (qrCode.startsWith("RZ-")) {
     const { data: rozetRow, error: rozetFindError } = await supabase

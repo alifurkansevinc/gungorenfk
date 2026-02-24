@@ -545,6 +545,8 @@ export async function moveHomepageFeatured(id: string, direction: "up" | "down")
 // ——— Rozet (fan_levels) ———
 export async function updateFanLevel(id: string, formData: FormData) {
   const s = await supabase();
+  const levelId = parseInt(id, 10);
+  if (Number.isNaN(levelId)) return { error: "Geçersiz rütbe id" };
   const min_points = formData.get("min_points");
   const target_store = formData.get("target_store_spend");
   const target_tickets = formData.get("target_tickets");
@@ -560,11 +562,77 @@ export async function updateFanLevel(id: string, formData: FormData) {
     target_store_spend: target_store ? parseFloat(target_store as string) : null,
     target_tickets: target_tickets ? parseInt(target_tickets as string, 10) : null,
     target_donation: target_donation ? parseFloat(target_donation as string) : null,
-  }).eq("id", parseInt(id, 10));
+  }).eq("id", levelId);
   if (error) return { error: error.message };
+
+  // Avantaj modül değerleri: benefit_module_<uuid> = value
+  const benefitEntries: { benefit_module_id: string; value: number }[] = [];
+  for (const [key, val] of formData.entries()) {
+    if (typeof key === "string" && key.startsWith("benefit_module_") && typeof val === "string" && val.trim() !== "") {
+      const moduleId = key.slice("benefit_module_".length);
+      const num = parseFloat(val.replace(",", "."));
+      if (!Number.isNaN(num) && num >= 0) benefitEntries.push({ benefit_module_id: moduleId, value: num });
+    }
+  }
+  await s.from("fan_level_benefits").delete().eq("fan_level_id", levelId);
+  if (benefitEntries.length > 0) {
+    await s.from("fan_level_benefits").insert(
+      benefitEntries.map((e) => ({ fan_level_id: levelId, benefit_module_id: e.benefit_module_id, value: e.value }))
+    );
+  }
+
   revalidatePath("/admin/rozet");
+  revalidatePath("/admin/avantaj-modulleri");
   revalidatePath("/benim-kosem");
   revalidatePath("/");
+  return { ok: true };
+}
+
+// ——— Avantaj modülleri (benefit_modules) ———
+export async function createBenefitModule(formData: FormData) {
+  const s = await supabase();
+  const value_type = (formData.get("value_type") as string) || "number";
+  if (!["percent", "number", "boolean"].includes(value_type)) return { error: "Geçersiz value_type" };
+  const { error } = await s.from("benefit_modules").insert({
+    name: (formData.get("name") as string)?.trim(),
+    slug: (formData.get("slug") as string)?.trim().toLowerCase().replace(/\s+/g, "_"),
+    value_type,
+    unit_label: (formData.get("unit_label") as string)?.trim() || "",
+    sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/admin/avantaj-modulleri");
+  revalidatePath("/admin/rozet");
+  return { ok: true };
+}
+
+export async function updateBenefitModule(id: string, formData: FormData) {
+  const s = await supabase();
+  const value_type = (formData.get("value_type") as string) || "number";
+  if (!["percent", "number", "boolean"].includes(value_type)) return { error: "Geçersiz value_type" };
+  const { error } = await s.from("benefit_modules").update({
+    name: (formData.get("name") as string)?.trim(),
+    slug: (formData.get("slug") as string)?.trim().toLowerCase().replace(/\s+/g, "_"),
+    value_type,
+    unit_label: (formData.get("unit_label") as string)?.trim() || "",
+    sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
+  }).eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/avantaj-modulleri");
+  revalidatePath("/admin/rozet");
+  revalidatePath("/benim-kosem");
+  return { ok: true };
+}
+
+export async function deleteBenefitModule(id: string) {
+  const s = await supabase();
+  const { error } = await s.from("fan_level_benefits").delete().eq("benefit_module_id", id);
+  if (error) return { error: error.message };
+  const { error: err2 } = await s.from("benefit_modules").delete().eq("id", id);
+  if (err2) return { error: err2.message };
+  revalidatePath("/admin/avantaj-modulleri");
+  revalidatePath("/admin/rozet");
+  revalidatePath("/benim-kosem");
   return { ok: true };
 }
 
