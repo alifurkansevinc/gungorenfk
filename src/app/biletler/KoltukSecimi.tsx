@@ -45,15 +45,18 @@ export function KoltukSecimi({
     setLoading(true);
     setError(null);
     fetch(`/api/tickets/available-seats?matchId=${encodeURIComponent(matchId)}`)
-      .then((r) => r.json())
-      .then((data) => {
+      .then((r) => r.json().catch(() => ({})))
+      .then((data: unknown) => {
         if (cancelled) return;
-        if (data.error) {
-          setError(data.error);
-          setSeats([]);
-          setTakenIds(new Set());
-        } else {
-          const raw = Array.isArray(data.seats) ? data.seats : [];
+        try {
+          const d = data as Record<string, unknown>;
+          if (d && d.error) {
+            setError(String(d.error));
+            setSeats([]);
+            setTakenIds(new Set());
+            return;
+          }
+          const raw = Array.isArray(d?.seats) ? d.seats : [];
           const safe: Seat[] = raw.filter((s: unknown) => s && typeof (s as Seat).id === "string").map((s: unknown) => {
             const x = s as Record<string, unknown>;
             return {
@@ -65,10 +68,12 @@ export function KoltukSecimi({
             } as Seat;
           });
           setSeats(safe);
-          const taken = Array.isArray(data.takenIds) ? data.takenIds.filter((id: unknown) => typeof id === "string") : [];
+          const taken = Array.isArray(d?.takenIds) ? d.takenIds.filter((id: unknown) => typeof id === "string") : [];
           setTakenIds(new Set(taken));
-          setTaraftarCapacity(Number(data.taraftarCapacity) || 1000);
-          setTaraftarSold(Number(data.taraftarSold) || 0);
+          setTaraftarCapacity(Number(d?.taraftarCapacity) || 1000);
+          setTaraftarSold(Number(d?.taraftarSold) || 0);
+        } catch {
+          if (!cancelled) setError("Koltuk verisi işlenemedi.");
         }
       })
       .catch(() => {
@@ -112,6 +117,7 @@ export function KoltukSecimi({
     BLOCK_ORDER.forEach((sec) => {
       const rows = Object.keys(blocks[sec] || {})
         .map(Number)
+        .filter((n) => !Number.isNaN(n))
         .sort((a, b) => b - a);
       out[sec] = rows;
     });
@@ -120,11 +126,11 @@ export function KoltukSecimi({
 
   const emptyCountByBlock = useMemo(() => {
     const out: Record<string, number> = {
-      Taraftar: Math.max(0, taraftarCapacity - taraftarSold),
+      Taraftar: Math.max(0, Number(taraftarCapacity) - Number(taraftarSold)),
     };
     BLOCK_ORDER.forEach((sec) => {
-      const blockSeats = seats.filter((s) => (s.section || "").toUpperCase() === sec);
-      out[sec] = blockSeats.filter((s) => !takenIds.has(s.id)).length;
+      const blockSeats = seats.filter((s) => s && String(s.section || "").toUpperCase() === sec);
+      out[sec] = blockSeats.filter((s) => s && takenIds.has(s.id) === false).length;
     });
     return out;
   }, [seats, takenIds, taraftarCapacity, taraftarSold]);
@@ -181,9 +187,10 @@ export function KoltukSecimi({
     return (
       <div className="flex flex-col gap-1">
         {rows.map((rowNum) => {
-          const rowSeats = (blocks[section]?.[rowNum] ?? []).sort(
-            (a, b) => a.seat_in_row - b.seat_in_row
-          );
+          const rawRow = blocks[section]?.[rowNum] ?? [];
+          const rowSeats = Array.isArray(rawRow)
+            ? [...rawRow].sort((a, b) => (Number(a.seat_in_row) || 0) - (Number(b.seat_in_row) || 0))
+            : [];
           const seatsByPos = new Map(rowSeats.map((s) => [s.seat_in_row, s]));
           return (
             <div
@@ -352,7 +359,7 @@ export function KoltukSecimi({
 
       {selectedSeat && (
         <p className="text-center text-sm font-semibold text-bordo">
-          Seçilen koltuk: <span className="font-mono">{selectedSeat.seat_code}</span>
+          Seçilen koltuk: <span className="font-mono">{selectedSeat?.seat_code ?? selectedSeat?.id ?? "—"}</span>
         </p>
       )}
     </div>

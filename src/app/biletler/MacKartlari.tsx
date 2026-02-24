@@ -6,7 +6,29 @@ import { SITE_LOGO_URL } from "@/lib/demo-images";
 import { BiletAlButton } from "./BiletAlButton";
 import { BiletIcinGirisCTA } from "./BiletIcinGirisCTA";
 import { KoltukSecimi } from "./KoltukSecimi";
+import { SeatSectionErrorBoundary } from "./SeatSectionErrorBoundary";
 import { Ticket, ChevronDown, ChevronUp, Calendar, MapPin, Clock } from "lucide-react";
+
+function OpponentLogo({ url, name }: { url: string | null; name: string }) {
+  const [fail, setFail] = useState(false);
+  if (!url || fail) {
+    return (
+      <span className="flex h-full w-full min-h-[5rem] items-center justify-center text-2xl font-bold text-siyah/40">
+        {name && name.length >= 2 ? name.slice(0, 2).toUpperCase() : "—"}
+      </span>
+    );
+  }
+  return (
+    <Image
+      src={url}
+      alt={name}
+      fill
+      className="object-contain p-2.5"
+      unoptimized
+      onError={() => setFail(true)}
+    />
+  );
+}
 
 type Match = {
   id: string;
@@ -71,13 +93,7 @@ export function MacKartlari({ matches, isGuest }: { matches: Match[]; isGuest?: 
                   </div>
                   <span className="text-xl font-black text-siyah/30 sm:text-2xl">VS</span>
                   <div className="relative h-20 w-20 rounded-2xl overflow-hidden border-2 border-siyah/10 bg-siyah/5 shadow-lg sm:h-24 sm:w-24">
-                    {m.opponent_logo_url ? (
-                      <Image src={m.opponent_logo_url} alt={m.opponent_name} fill className="object-contain p-2.5" unoptimized />
-                    ) : (
-                      <span className="flex h-full w-full items-center justify-center text-2xl font-bold text-siyah/40">
-                        {m.opponent_name.slice(0, 2).toUpperCase()}
-                      </span>
-                    )}
+                    <OpponentLogo url={m.opponent_logo_url} name={m.opponent_name ?? ""} />
                   </div>
                 </div>
 
@@ -124,6 +140,7 @@ export function MacKartlari({ matches, isGuest }: { matches: Match[]; isGuest?: 
                 {isGuest ? (
                   <BiletIcinGirisCTA variant="inline" />
                 ) : (
+                  <SeatSectionErrorBoundary>
                   <div className="space-y-5">
                     <KoltukSecimi
                       matchId={m.id}
@@ -159,6 +176,7 @@ export function MacKartlari({ matches, isGuest }: { matches: Match[]; isGuest?: 
                       />
                     </div>
                   </div>
+                  </SeatSectionErrorBoundary>
                 )}
               </div>
             )}
