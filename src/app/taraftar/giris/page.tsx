@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 export default function TaraftarGirisPage() {
   const [email, setEmail] = useState("");
@@ -11,6 +11,9 @@ export default function TaraftarGirisPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawRedirect = searchParams.get("redirect") || "";
+  const redirectTo = rawRedirect.startsWith("/") && !rawRedirect.startsWith("//") ? rawRedirect : "/benim-kosem";
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -23,7 +26,7 @@ export default function TaraftarGirisPage() {
       setLoading(false);
       return;
     }
-    router.push("/benim-kosem");
+    router.push(redirectTo);
     router.refresh();
   }
 

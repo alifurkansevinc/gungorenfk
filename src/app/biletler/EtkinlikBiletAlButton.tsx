@@ -21,6 +21,10 @@ export function EtkinlikBiletAlButton({
         body: JSON.stringify({ eventId }),
       });
       const data = await res.json();
+      if (res.status === 401 && data.loginUrl) {
+        window.location.href = data.loginUrl;
+        return;
+      }
       if (data.success && data.data?.redirectUrl) {
         window.location.href = data.data.redirectUrl;
         return;

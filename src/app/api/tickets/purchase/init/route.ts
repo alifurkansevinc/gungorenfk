@@ -24,11 +24,20 @@ export async function POST(req: NextRequest) {
 
     const supabaseAuth = await createClient();
     const { data: { user } } = await supabaseAuth.auth.getUser();
-    const supabase = createServiceRoleClient();
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+
+    if (!user) {
+      const loginUrl = `${baseUrl}/taraftar/giris?redirect=${encodeURIComponent("/biletler")}`;
+      return NextResponse.json(
+        { success: false, error: "Bilet almak için giriş yapmanız gerekiyor.", loginUrl },
+        { status: 401 }
+      );
+    }
+
+    const supabase = createServiceRoleClient();
     const isFree = TICKET_PRICE === 0;
-    const guestEmail = user ? null : (body.email as string)?.trim() || null;
-    const guestName = (user ? null : (body.name as string)?.trim() || "Bilet alıcı") ?? "Bilet alıcı";
+    const guestEmail = null;
+    const guestName = "Bilet alıcı";
 
     // ——— Biletli etkinlik (koltuk yok) ———
     if (isEventTicket) {

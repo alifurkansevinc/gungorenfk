@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { MacKartlari } from "./MacKartlari";
 import { EtkinlikKartlari } from "./EtkinlikKartlari";
@@ -10,6 +11,9 @@ export const metadata = {
 
 export default async function BiletlerPage() {
   const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/taraftar/giris?redirect=" + encodeURIComponent("/biletler"));
+
   const today = new Date().toISOString().slice(0, 10);
   const [matchesRes, eventsRes] = await Promise.all([
     supabase

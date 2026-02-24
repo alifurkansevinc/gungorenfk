@@ -23,6 +23,10 @@ export function BiletAlButton({
         body: JSON.stringify({ matchId, ...(seatId ? { seatId } : {}) }),
       });
       const data = await res.json();
+      if (res.status === 401 && data.loginUrl) {
+        window.location.href = data.loginUrl;
+        return;
+      }
       if (data.success && data.data?.redirectUrl) {
         window.location.href = data.data.redirectUrl;
         return;
