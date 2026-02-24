@@ -139,7 +139,9 @@ export function KoltukSecimi({
   const isOverview = expandedBlock === null;
 
   const seatLabel = (seat: Seat) => {
-    const parts = seat.seat_code.split("-");
+    const code = seat?.seat_code;
+    if (!code || typeof code !== "string") return String(seat?.seat_in_row ?? "?");
+    const parts = code.split("-");
     return parts.length > 0 ? parts[parts.length - 1] : String(seat.seat_in_row);
   };
 
@@ -147,7 +149,11 @@ export function KoltukSecimi({
     const out: Record<string, number> = {};
     BLOCK_ORDER.forEach((sec) => {
       const sectionSeats = seats.filter((s) => (s.section || "").toUpperCase() === sec);
-      out[sec] = sectionSeats.length > 0 ? Math.max(...sectionSeats.map((s) => s.seat_in_row)) : 0;
+      const max =
+        sectionSeats.length > 0
+          ? Math.max(...sectionSeats.map((s) => Number(s.seat_in_row) || 0))
+          : 0;
+      out[sec] = Math.max(1, max);
     });
     return out;
   }, [seats]);
@@ -155,7 +161,7 @@ export function KoltukSecimi({
   const renderBlockSeats = (section: string) => {
     const rows = rowNumbersByBlock[section] ?? [];
     if (rows.length === 0) return null;
-    const totalCols = blockMaxColumn[section] ?? 24;
+    const totalCols = Math.max(1, blockMaxColumn[section] ?? 24);
     return (
       <div className="flex flex-col gap-1">
         {rows.map((rowNum) => {
