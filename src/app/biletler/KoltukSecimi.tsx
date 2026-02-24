@@ -289,7 +289,8 @@ export function KoltukSecimi({
             <div className="p-8 text-center text-siyah/70">
               <p className="font-medium">{SECTIONS.find((s) => s.key === expandedBlock)?.label ?? expandedBlock}</p>
               <p className="mt-2 text-sm">
-                Bu blok için koltuk verisi bulunamadı. Lütfen daha sonra tekrar deneyin veya site yöneticisi ile iletişime geçin.
+                Bu blok için koltuk verisi veritabanında görünmüyor. Yönetici: Supabase SQL Editor’da{" "}
+                <code className="rounded bg-siyah/10 px-1 text-xs">029_stadium_seats_e_block.sql</code> migration’ını çalıştırın.
               </p>
             </div>
           ) : (

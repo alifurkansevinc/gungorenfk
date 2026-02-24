@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
     supabase
       .from("stadium_seats")
       .select("id, seat_code, section, row_number, seat_in_row")
-      .order("sort_order", { ascending: true }),
+      .order("sort_order", { ascending: true })
+      .range(0, 1999),
     supabase
       .from("match_tickets")
       .select("id")
