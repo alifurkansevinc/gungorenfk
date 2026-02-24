@@ -9,6 +9,7 @@ export type Seat = {
   section: string;
   row_number: number;
   seat_in_row: number;
+  is_protocol?: boolean;
 };
 
 /** Stadyum planı: 1 Taraftar Bölümü, 2–6 A–E blokları */
@@ -73,6 +74,7 @@ export function KoltukSecimi({
               section: typeof x.section === "string" ? x.section : "",
               row_number: Number(x.row_number) || 0,
               seat_in_row: Number(x.seat_in_row) || 0,
+              is_protocol: Boolean(x.is_protocol),
             } as Seat;
           });
           setSeats(safe);
@@ -158,7 +160,7 @@ export function KoltukSecimi({
       BLOCK_ORDER.forEach((sec) => {
         const list = Array.isArray(seats) ? seats : [];
         const blockSeats = list.filter((s) => s && String(s.section != null ? s.section : "").toUpperCase() === sec);
-        out[sec] = blockSeats.filter((s) => s && !takenIds.has(s.id)).length;
+        out[sec] = blockSeats.filter((s) => s && !takenIds.has(s.id) && !s.is_protocol).length;
       });
       return out;
     } catch {
@@ -266,22 +268,26 @@ export function KoltukSecimi({
                     );
                   }
                   const taken = takenIds.has(seat.id);
-                  const selected = selectedSeatId === seat.id;
+                  const protocol = Boolean(seat.is_protocol);
+                  const disabled = taken || protocol;
+                  const selected = selectedSeatId === seat.id && !protocol;
                   return (
                     <button
                       key={seat.id}
                       type="button"
-                      disabled={taken}
+                      disabled={disabled}
                       onClick={() =>
-                        onSelect(taken ? null : seat.id, taken ? null : seat.seat_code)
+                        disabled ? undefined : onSelect(seat.id, seat.seat_code)
                       }
-                      title={taken ? "Dolu" : (seat?.seat_code ?? seat?.id ?? "")}
+                      title={taken ? "Dolu" : protocol ? "Protokol (satışa kapalı)" : (seat?.seat_code ?? seat?.id ?? "")}
                       className={`h-7 w-7 min-w-[1.75rem] max-w-[1.75rem] shrink-0 rounded text-[10px] font-medium transition-all ${
                         taken
                           ? "cursor-not-allowed bg-bordo text-beyaz/90"
-                          : selected
-                            ? "border-2 border-bordo bg-bordo/25 text-bordo ring-2 ring-bordo/40"
-                            : "border border-siyah/20 bg-beyaz text-siyah/70 hover:border-bordo/50 hover:bg-bordo/10 hover:text-bordo"
+                          : protocol
+                            ? "cursor-not-allowed border border-sky-300 bg-sky-100 text-sky-700"
+                            : selected
+                              ? "border-2 border-bordo bg-bordo/25 text-bordo ring-2 ring-bordo/40"
+                              : "border border-siyah/20 bg-beyaz text-siyah/70 hover:border-bordo/50 hover:bg-bordo/10 hover:text-bordo"
                       }`}
                     >
                       {seatLabel(seat)}
@@ -311,6 +317,10 @@ export function KoltukSecimi({
         <span className="flex items-center gap-2">
           <span className="h-5 w-5 rounded border-2 border-bordo bg-bordo/20 ring-1 ring-bordo/30" />
           Seçili
+        </span>
+        <span className="flex items-center gap-2">
+          <span className="h-5 w-5 rounded border border-sky-300 bg-sky-100 shadow-sm" />
+          Protokol (satışa kapalı)
         </span>
       </div>
 
@@ -400,7 +410,7 @@ export function KoltukSecimi({
               </p>
             </div>
           ) : (
-            <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden p-4">
+            <div className="max-h-[70vh] overflow-y-auto overflow-x-auto p-4">
               <div className="w-max min-w-full max-w-6xl mx-auto">
                 {renderBlockSeats(expandedBlock)}
               </div>

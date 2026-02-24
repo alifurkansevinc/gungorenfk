@@ -192,21 +192,30 @@ export async function POST(req: NextRequest) {
       }
       seat = { id: null, seat_code: "Taraftar Bölümü" };
     } else if (seatId) {
-      const { data: chosen } = await supabase.from("stadium_seats").select("id, seat_code").eq("id", seatId).single();
-      if (!chosen || takenIds.has(chosen.id)) {
+      const { data: chosen } = await supabase.from("stadium_seats").select("id, seat_code, is_protocol").eq("id", seatId).single();
+      const chosenRow = chosen as { id: string; seat_code: string; is_protocol?: boolean } | null;
+      if (!chosenRow || takenIds.has(chosenRow.id)) {
         return NextResponse.json(
           { success: false, error: "Seçilen koltuk artık müsait değil. Lütfen başka koltuk seçin." },
           { status: 400 }
         );
       }
-      seat = chosen;
+      if (chosenRow.is_protocol) {
+        return NextResponse.json(
+          { success: false, error: "Protokol koltukları satışa kapalıdır." },
+          { status: 400 }
+        );
+      }
+      seat = { id: chosenRow.id, seat_code: chosenRow.seat_code };
     }
     if (!seat) {
       const { data: allSeats } = await supabase
         .from("stadium_seats")
-        .select("id, seat_code")
+        .select("id, seat_code, is_protocol")
         .order("sort_order", { ascending: true });
-      seat = (allSeats ?? []).find((s) => !takenIds.has(s.id)) ?? null;
+      const list = (allSeats ?? []) as { id: string; seat_code: string; is_protocol?: boolean }[];
+      seat = list.find((s) => !takenIds.has(s.id) && !s.is_protocol) ?? null;
+      if (seat) seat = { id: seat.id, seat_code: seat.seat_code };
     }
     if (!seat) {
       return NextResponse.json(

@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     ...SECTIONS.map((section) =>
       supabase
         .from("stadium_seats")
-        .select("id, seat_code, section, row_number, seat_in_row, sort_order")
+        .select("id, seat_code, section, row_number, seat_in_row, sort_order, is_protocol")
         .in("section", [section, section.toLowerCase()])
         .order("sort_order", { ascending: true })
     ),
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
   const takenIds = new Set((takenRes.data ?? []).map((r) => (r as { seat_id: string }).seat_id));
   const taraftarSold = (taraftarRes.data ?? []).length;
 
-  type SeatRow = { id: string; seat_code: string; section: string | null; row_number: number; seat_in_row: number; sort_order: number };
+  type SeatRow = { id: string; seat_code: string; section: string | null; row_number: number; seat_in_row: number; sort_order: number; is_protocol?: boolean };
   const allRows: SeatRow[] = [];
   for (let i = 0; i < SECTIONS.length; i++) {
     const res = sectionResults[i];
@@ -54,6 +54,7 @@ export async function GET(req: NextRequest) {
     section: (s.section ?? "").trim().toUpperCase() || s.section,
     row_number: s.row_number,
     seat_in_row: s.seat_in_row,
+    is_protocol: Boolean(s.is_protocol),
   }));
 
   return NextResponse.json({
