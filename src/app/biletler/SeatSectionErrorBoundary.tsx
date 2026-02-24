@@ -17,7 +17,7 @@ export class SeatSectionErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error("Bilet bölümü hatası:", error, info.componentStack);
+    console.error("Bilet bölümü hatası:", error?.message ?? String(error), error?.stack, info.componentStack);
   }
 
   render() {

@@ -40,11 +40,19 @@ export function KoltukSecimi({
   const [error, setError] = useState<string | null>(null);
   const [expandedBlock, setExpandedBlock] = useState<string | null>(null);
 
+  const validMatchId = typeof matchId === "string" && matchId.trim().length > 0;
+
   useEffect(() => {
+    if (!validMatchId) {
+      setLoading(false);
+      setError("Maç bilgisi eksik.");
+      setSeats([]);
+      return;
+    }
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetch(`/api/tickets/available-seats?matchId=${encodeURIComponent(matchId)}`)
+    fetch(`/api/tickets/available-seats?matchId=${encodeURIComponent(matchId.trim())}`)
       .then((r) => r.json().catch(() => ({})))
       .then((data: unknown) => {
         if (cancelled) return;
@@ -85,58 +93,92 @@ export function KoltukSecimi({
     return () => {
       cancelled = true;
     };
-  }, [matchId]);
+  }, [matchId, validMatchId]);
 
   const blocks = useMemo(() => {
-    const byBlock: Record<string, Record<number, Seat[]>> = {};
-    BLOCK_ORDER.forEach((sec) => {
-      byBlock[sec] = {};
-    });
-    seats.forEach((s) => {
-      if (!s || typeof s.id !== "string") return;
-      const sec = String(s.section || "").toUpperCase();
-      if (!BLOCK_ORDER.includes(sec)) return;
-      const row = Number(s.row_number);
-      if (Number.isNaN(row)) return;
-      if (!byBlock[sec][row]) byBlock[sec][row] = [];
-      byBlock[sec][row].push(s);
-    });
-    BLOCK_ORDER.forEach((sec) => {
-      Object.keys(byBlock[sec] || {}).forEach((r) => {
-        const row = Number(r);
-        if (!Number.isNaN(row) && Array.isArray(byBlock[sec][row])) {
-          byBlock[sec][row].sort((a, b) => (Number(a.seat_in_row) || 0) - (Number(b.seat_in_row) || 0));
-        }
+    try {
+      const byBlock: Record<string, Record<number, Seat[]>> = {};
+      BLOCK_ORDER.forEach((sec) => {
+        byBlock[sec] = {};
       });
-    });
-    return byBlock;
+      const list = Array.isArray(seats) ? seats : [];
+      list.forEach((s) => {
+        if (!s || typeof s.id !== "string") return;
+        const sec = String(s.section != null ? s.section : "").toUpperCase();
+        if (!BLOCK_ORDER.includes(sec)) return;
+        const row = Number(s.row_number);
+        if (Number.isNaN(row)) return;
+        if (!byBlock[sec][row]) byBlock[sec][row] = [];
+        byBlock[sec][row].push(s);
+      });
+      BLOCK_ORDER.forEach((sec) => {
+        Object.keys(byBlock[sec] || {}).forEach((r) => {
+          const row = Number(r);
+          if (!Number.isNaN(row) && Array.isArray(byBlock[sec][row])) {
+            byBlock[sec][row].sort((a, b) => (Number(a.seat_in_row) || 0) - (Number(b.seat_in_row) || 0));
+          }
+        });
+      });
+      return byBlock;
+    } catch {
+      const empty: Record<string, Record<number, Seat[]>> = {};
+      BLOCK_ORDER.forEach((sec) => {
+        empty[sec] = {};
+      });
+      return empty;
+    }
   }, [seats]);
 
   const rowNumbersByBlock = useMemo(() => {
-    const out: Record<string, number[]> = {};
-    BLOCK_ORDER.forEach((sec) => {
-      const rows = Object.keys(blocks[sec] || {})
-        .map(Number)
-        .filter((n) => !Number.isNaN(n))
-        .sort((a, b) => b - a);
-      out[sec] = rows;
-    });
-    return out;
+    try {
+      const out: Record<string, number[]> = {};
+      BLOCK_ORDER.forEach((sec) => {
+        const keys = Object.keys(blocks[sec] ?? {});
+        const rows = keys
+          .map((r) => Number(r))
+          .filter((n) => !Number.isNaN(n))
+          .sort((a, b) => b - a);
+        out[sec] = rows;
+      });
+      return out;
+    } catch {
+      const out: Record<string, number[]> = {};
+      BLOCK_ORDER.forEach((sec) => {
+        out[sec] = [];
+      });
+      return out;
+    }
   }, [blocks]);
 
   const emptyCountByBlock = useMemo(() => {
-    const out: Record<string, number> = {
-      Taraftar: Math.max(0, Number(taraftarCapacity) - Number(taraftarSold)),
-    };
-    BLOCK_ORDER.forEach((sec) => {
-      const blockSeats = seats.filter((s) => s && String(s.section || "").toUpperCase() === sec);
-      out[sec] = blockSeats.filter((s) => s && takenIds.has(s.id) === false).length;
-    });
-    return out;
+    try {
+      const out: Record<string, number> = {
+        Taraftar: Math.max(0, (Number(taraftarCapacity) || 0) - (Number(taraftarSold) || 0)),
+      };
+      BLOCK_ORDER.forEach((sec) => {
+        const list = Array.isArray(seats) ? seats : [];
+        const blockSeats = list.filter((s) => s && String(s.section != null ? s.section : "").toUpperCase() === sec);
+        out[sec] = blockSeats.filter((s) => s && !takenIds.has(s.id)).length;
+      });
+      return out;
+    } catch {
+      const out: Record<string, number> = { Taraftar: 0 };
+      BLOCK_ORDER.forEach((sec) => {
+        out[sec] = 0;
+      });
+      return out;
+    }
   }, [seats, takenIds, taraftarCapacity, taraftarSold]);
 
   const selectedSeat = seats.find((s) => s.id === selectedSeatId);
 
+  if (!validMatchId) {
+    return (
+      <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+        Maç bilgisi eksik. Sayfayı yenileyin.
+      </div>
+    );
+  }
   if (loading) {
     return (
       <div className="rounded-xl border border-siyah/10 bg-siyah/5 p-6 text-center text-sm text-siyah/70">
@@ -169,15 +211,25 @@ export function KoltukSecimi({
   };
 
   const blockMaxColumn = useMemo(() => {
-    const out: Record<string, number> = {};
-    BLOCK_ORDER.forEach((sec) => {
-      const sectionSeats = seats.filter((s) => (s.section || "").toUpperCase() === sec);
-      const max = sectionSeats.length > 0
-        ? Math.max(...sectionSeats.map((s) => Number(s.seat_in_row) || 0))
-        : 0;
-      out[sec] = Math.max(1, max);
-    });
-    return out;
+    try {
+      const out: Record<string, number> = {};
+      const list = Array.isArray(seats) ? seats : [];
+      BLOCK_ORDER.forEach((sec) => {
+        const sectionSeats = list.filter((s) => s && String(s.section != null ? s.section : "").toUpperCase() === sec);
+        const max =
+          sectionSeats.length > 0
+            ? Math.max(...sectionSeats.map((s) => Number(s.seat_in_row) || 0))
+            : 0;
+        out[sec] = Math.max(1, max);
+      });
+      return out;
+    } catch {
+      const out: Record<string, number> = {};
+      BLOCK_ORDER.forEach((sec) => {
+        out[sec] = 24;
+      });
+      return out;
+    }
   }, [seats]);
 
   const renderBlockSeats = (section: string) => {
