@@ -24,6 +24,9 @@ export function BoardMemberForm({ member }: { member?: Row | null }) {
       setError(res.error);
       return;
     }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("admin-toast", { detail: { message: member ? "Üye güncellendi." : "Üye kaydedildi." } }));
+    }
     router.push("/admin/yonetim-kurulu");
     router.refresh();
   }

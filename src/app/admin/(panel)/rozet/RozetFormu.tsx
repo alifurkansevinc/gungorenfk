@@ -31,6 +31,9 @@ export function RozetFormu({ level }: { level: FanLevelRow }) {
       setError(res.error);
       return;
     }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("admin-toast", { detail: { message: "Rozet kuralı güncellendi." } }));
+    }
     router.push("/admin/rozet");
     router.refresh();
   }

@@ -27,19 +27,30 @@ type NewsRow = {
 export function HaberFormu({ news }: { news?: NewsRow | null }) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
-    const form = e.currentTarget;
-    const formData = new FormData(form);
-    const res = news ? await updateNews(news.id, formData) : await createNews(formData);
-    if (res.error) {
-      setError(res.error);
-      return;
+    setLoading(true);
+    try {
+      const form = e.currentTarget;
+      const formData = new FormData(form);
+      const res = news ? await updateNews(news.id, formData) : await createNews(formData);
+      if (res?.error) {
+        setError(res.error);
+        setLoading(false);
+        return;
+      }
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new CustomEvent("admin-toast", { detail: { message: news ? "Etkinlik güncellendi." : "Etkinlik kaydedildi." } }));
+      }
+      router.push("/admin/haberler");
+      router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Bir hata oluştu.");
+      setLoading(false);
     }
-    router.push("/admin/haberler"); // route aynı, menüde Etkinlikler
-    router.refresh();
   }
 
   const pubDate = news?.published_at ? new Date(news.published_at).toISOString().slice(0, 16) : "";
@@ -126,8 +137,12 @@ export function HaberFormu({ news }: { news?: NewsRow | null }) {
         <input name="image_url" type="url" defaultValue={news?.image_url ?? ""} placeholder="https://..." className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
       </div>
       <div className="flex gap-3 pt-4">
-        <button type="submit" className="rounded bg-bordo px-4 py-2 font-semibold text-beyaz hover:bg-bordo/90">
-          {news ? "Güncelle" : "Etkinlik ekle"}
+        <button
+          type="submit"
+          disabled={loading}
+          className="rounded bg-bordo px-4 py-2 font-semibold text-beyaz hover:bg-bordo/90 disabled:opacity-60 disabled:cursor-not-allowed"
+        >
+          {loading ? "Kaydediliyor..." : news ? "Güncelle" : "Etkinlik ekle"}
         </button>
         <Link href="/admin/haberler" className="rounded border border-siyah/20 px-4 py-2 font-medium text-siyah hover:bg-siyah/5">
           İptal

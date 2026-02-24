@@ -50,6 +50,9 @@ export function TransferFormu({ transfer }: { transfer?: TransferRow | null }) {
       setError(res.error);
       return;
     }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("admin-toast", { detail: { message: transfer ? "Transfer güncellendi." : "Transfer kaydedildi." } }));
+    }
     const id = !transfer && res && "id" in res ? (res as { id?: string }).id : undefined;
     if (id) router.push(`/admin/transferler/duzenle/${id}`);
     else router.push("/admin/transferler");

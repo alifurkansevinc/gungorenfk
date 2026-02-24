@@ -124,6 +124,7 @@ export async function deleteSquadMember(id: string) {
 export async function createNews(formData: FormData) {
   const s = await supabase();
   const title = (formData.get("title") as string)?.trim();
+  if (!title) return { error: "Etkinlik başlığı zorunludur." };
   const slug = (formData.get("slug") as string)?.trim() || title.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
   const eventDate = (formData.get("event_date") as string)?.trim() || null;
   const eventEndDate = (formData.get("event_end_date") as string)?.trim() || null;

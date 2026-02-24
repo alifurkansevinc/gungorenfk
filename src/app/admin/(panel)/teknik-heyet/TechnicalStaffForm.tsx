@@ -24,6 +24,9 @@ export function TechnicalStaffForm({ member }: { member?: Row | null }) {
       setError(res.error);
       return;
     }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("admin-toast", { detail: { message: member ? "Teknik heyet üyesi güncellendi." : "Teknik heyet üyesi kaydedildi." } }));
+    }
     router.push("/admin/teknik-heyet");
     router.refresh();
   }

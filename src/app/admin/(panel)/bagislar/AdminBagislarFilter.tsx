@@ -24,7 +24,7 @@ export function AdminBagislarFilter({ currentAy }: { currentAy?: string }) {
 
   return (
     <div className="w-full">
-      <label className="block text-sm font-medium text-gray-500 mb-1">Dönem filtresi</label>
+      <label className="mb-1 block text-sm font-medium text-siyah/70">Dönem filtresi</label>
       <select
         value={currentAy ?? ""}
         onChange={(e) => {
@@ -34,7 +34,7 @@ export function AdminBagislarFilter({ currentAy }: { currentAy?: string }) {
           else next.delete("ay");
           router.push(`/admin/bagislar${next.toString() ? `?${next}` : ""}`);
         }}
-        className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 focus:border-bordo focus:outline-none focus:ring-1 focus:ring-bordo"
+        className="w-full rounded-lg border border-siyah/20 bg-beyaz px-3 py-2 text-sm text-siyah focus:border-bordo focus:outline-none focus:ring-1 focus:ring-bordo"
       >
         {options.map((o) => (
           <option key={o.value || "all"} value={o.value}>{o.label}</option>

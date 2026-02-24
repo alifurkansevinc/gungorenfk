@@ -26,6 +26,9 @@ export function GaleriFormu({ gallery }: { gallery?: GalleryRow | null }) {
       setError(res.error);
       return;
     }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("admin-toast", { detail: { message: gallery ? "Galeri güncellendi." : "Galeri kaydedildi." } }));
+    }
     const id = !gallery && res && "id" in res ? (res as { id?: string }).id : undefined;
     if (id) router.push(`/admin/galeriler/duzenle/${id}`);
     else router.push("/admin/galeriler");

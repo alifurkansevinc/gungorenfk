@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getAdminSupabase } from "../../actions";
 import { HaberSilButton } from "./HaberSilButton";
+import { YeniEtkinlikButton } from "./YeniEtkinlikButton";
 
 export default async function AdminHaberlerPage() {
   const supabase = await getAdminSupabase();
@@ -16,9 +17,7 @@ export default async function AdminHaberlerPage() {
           <h1 className="text-2xl font-bold text-siyah">Etkinlikler</h1>
           <p className="mt-1 text-siyah/70">Etkinlik ekle, düzenle veya sil. Sitede Etkinlikler sayfasında listelenir.</p>
         </div>
-        <Link href="/admin/haberler/yeni" className="rounded-lg bg-bordo px-4 py-2 text-sm font-semibold text-beyaz hover:bg-bordo-dark">
-          + Yeni etkinlik
-        </Link>
+        <YeniEtkinlikButton />
       </div>
       <div className="mt-6 overflow-hidden rounded-xl border border-siyah/10">
         <table className="w-full min-w-[560px] text-left text-sm">

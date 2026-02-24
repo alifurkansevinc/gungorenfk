@@ -33,6 +33,9 @@ export function OneCikanEditForm({
       setError(res.error);
       return;
     }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("admin-toast", { detail: { message: "Öne çıkan güncellendi." } }));
+    }
     router.push("/admin/one-cikan");
     router.refresh();
   }

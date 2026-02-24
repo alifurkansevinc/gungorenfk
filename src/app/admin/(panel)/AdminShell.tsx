@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { AdminToast } from "./AdminToast";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -189,6 +190,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </header>
         <main className="p-4 lg:p-8">{children}</main>
       </div>
+      <AdminToast />
     </div>
   );
 }

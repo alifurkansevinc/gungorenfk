@@ -48,6 +48,9 @@ export function UrunFormu({ product }: { product?: Product }) {
       setError(res.error);
       return;
     }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("admin-toast", { detail: { message: product ? "Ürün güncellendi." : "Ürün kaydedildi." } }));
+    }
     router.push("/admin/magaza");
     router.refresh();
   }

@@ -57,6 +57,9 @@ export function MacForm({ match }: { match?: MatchRow | null }) {
       setError(res.error);
       return;
     }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("admin-toast", { detail: { message: match ? "Maç güncellendi." : "Maç kaydedildi." } }));
+    }
     router.push("/admin/maclar");
     router.refresh();
   }

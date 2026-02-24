@@ -44,6 +44,9 @@ export function SquadForm({ member }: { member?: SquadRow | null }) {
       setError(res.error);
       return;
     }
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("admin-toast", { detail: { message: member ? "Kadro üyesi güncellendi." : "Kadro üyesi kaydedildi." } }));
+    }
     router.push("/admin/kadro");
     router.refresh();
   }
