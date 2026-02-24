@@ -399,7 +399,8 @@ export default async function BenimKosemPage() {
                     {pendingGifts.map((g) => {
                       const qrData = `${baseUrl}/admin/teslim-al?code=${encodeURIComponent((g as { qr_code: string }).qr_code)}`;
                       const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(qrData)}`;
-                      const productName = (g as { store_products?: { name: string } | null }).store_products?.name ?? "Ürün";
+                      const sp = (g as { store_products?: { name: string } | { name: string }[] | null }).store_products;
+                      const productName = (Array.isArray(sp) ? sp[0]?.name : sp?.name) ?? "Ürün";
                       return (
                         <div key={g.id} className="flex items-center gap-4 rounded-xl border border-bordo/20 bg-gradient-to-br from-bordo/5 to-siyah/5 p-4">
                           <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz">
