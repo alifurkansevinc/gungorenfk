@@ -38,7 +38,7 @@ export default async function BenimKosemPage() {
 
   const { data: profile } = await supabase
     .from("fan_profiles")
-    .select("*, fan_levels(id, name, slug, min_points, sort_order, description, target_store_spend, target_tickets, target_donation)")
+    .select("*, fan_levels(id, name, slug, min_points, sort_order, description, target_store_spend, target_tickets, target_donation, advantages)")
     .eq("user_id", user.id)
     .single();
 
@@ -46,7 +46,8 @@ export default async function BenimKosemPage() {
 
   const [squad, levels] = await Promise.all([getSquad(), getFanLevels()]);
   const level = profile.fan_levels as FanLevel | null;
-  const currentLevel = level ?? levels[0] ?? { id: 1, name: "As Oyuncu", slug: "as-oyuncu", min_points: 0, sort_order: 1, description: null, target_store_spend: null, target_tickets: null, target_donation: null };
+  const currentLevel: FanLevel = level ?? levels[0] ?? { id: 1, name: "As Oyuncu", slug: "as-oyuncu", min_points: 0, sort_order: 1, description: null, target_store_spend: null, target_tickets: null, target_donation: null, advantages: null };
+  const currentLevelWithAdvantages = levels.find((l) => l.id === currentLevel.id) ?? currentLevel;
   const nextLevel = levels.find((l) => l.sort_order === currentLevel.sort_order + 1);
   const favoritePlayerId = (profile as { favorite_player_id?: string | null }).favorite_player_id ?? null;
   const favoritePlayer = favoritePlayerId ? squad.find((p) => p.id === favoritePlayerId) : null;
@@ -82,6 +83,17 @@ export default async function BenimKosemPage() {
       .single();
     if (inserted) rozetTicket = { id: inserted.id, qr_code: inserted.qr_code };
   }
+
+  // Mağazadan teslim alınacak siparişler (Store cüzdanım)
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+  const { data: storePickupOrders } = await supabase
+    .from("orders")
+    .select("id, order_number, pickup_code, pickup_date, status, created_at")
+    .eq("user_id", user.id)
+    .eq("delivery_method", "store_pickup")
+    .not("pickup_code", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(20);
 
   const ticketsCount = new Set((myTickets ?? []).filter((t) => (t as { match_id: string | null }).match_id).map((t) => (t as { match_id: string }).match_id)).size;
 
@@ -129,7 +141,10 @@ export default async function BenimKosemPage() {
   const barDonation = nextTargetDonation > 0 ? Math.min(100, (donationTotal / nextTargetDonation) * 100) : 0;
   const overallBar = nextLevel ? (barStore + barTickets + barDonation) / 3 : 100;
 
-  const hakKazandiklarim = getHakKazandiklarim(currentLevel.slug);
+  const mevcutAvantajlarListe =
+    currentLevelWithAdvantages.advantages?.trim()
+      ? currentLevelWithAdvantages.advantages.split(/\r?\n/).map((l) => l.trim()).filter(Boolean)
+      : getHakKazandiklarim(currentLevel.slug);
 
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
@@ -147,7 +162,7 @@ export default async function BenimKosemPage() {
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="lg:col-span-2 space-y-6">
-            {/* Rozet + açıklama */}
+            {/* Rozet + mevcut rütbenin avantajları */}
             <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
               <h2 className="font-display text-lg font-bold text-siyah">Güngören BFK Rozeti</h2>
               <div className="mt-4 flex flex-wrap items-center gap-4">
@@ -156,23 +171,40 @@ export default async function BenimKosemPage() {
               {currentLevel.description && (
                 <p className="mt-4 text-sm text-siyah/80 leading-relaxed">{currentLevel.description}</p>
               )}
+              {(currentLevelWithAdvantages.advantages?.trim() || getHakKazandiklarim(currentLevel.slug).length > 0) && (
+                <>
+                  <h3 className="mt-4 text-sm font-semibold text-siyah/80">Mevcut rütbenin avantajları</h3>
+                  <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-siyah/80">
+                    {currentLevelWithAdvantages.advantages?.trim()
+                      ? currentLevelWithAdvantages.advantages
+                          .split(/\r?\n/)
+                          .map((line) => line.trim())
+                          .filter(Boolean)
+                          .map((madde, i) => <li key={i}>{madde}</li>)
+                      : getHakKazandiklarim(currentLevel.slug).map((h, i) => <li key={i}>{h}</li>)}
+                  </ul>
+                </>
+              )}
             </section>
 
-            {/* Sonraki rozetin için — avantajlar + 3 barem */}
+            {/* Sonraki rozetin için — sonraki rütbenin avantajları + 3 barem */}
             {nextLevel && (
               <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
                 <h2 className="font-display text-lg font-bold text-siyah">Sonraki rozetin için</h2>
                 <p className="mt-1 text-sm text-siyah/70">Sonraki kademe: <strong>{nextLevel.name}</strong>.</p>
                 {nextLevel.advantages?.trim() && (
-                  <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-siyah/80">
-                    {nextLevel.advantages
-                      .split(/\r?\n/)
-                      .map((line) => line.trim())
-                      .filter(Boolean)
-                      .map((madde, i) => (
-                        <li key={i}>{madde}</li>
-                      ))}
-                  </ul>
+                  <>
+                    <h3 className="mt-3 text-sm font-semibold text-siyah/80">Sonraki rütbenin avantajları</h3>
+                    <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-siyah/80">
+                      {nextLevel.advantages
+                        .split(/\r?\n/)
+                        .map((line) => line.trim())
+                        .filter(Boolean)
+                        .map((madde, i) => (
+                          <li key={i}>{madde}</li>
+                        ))}
+                    </ul>
+                  </>
                 )}
                 <div className="mt-4 space-y-4">
                   <div>
@@ -284,6 +316,52 @@ export default async function BenimKosemPage() {
               )}
             </section>
 
+            {/* Store cüzdanım — mağazadan teslim alınacak siparişler, QR ile */}
+            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
+              <h2 className="font-display text-lg font-bold text-siyah">Store cüzdanım</h2>
+              <p className="mt-1 text-sm text-siyah/70">Mağazadan teslim alacağınız siparişler. Teslim alırken bu QR kodunu gösterin.</p>
+              {(!storePickupOrders || storePickupOrders.length === 0) ? (
+                <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
+                  <p className="text-sm text-siyah/60">Mağazadan teslim alacağınız siparişiniz yok.</p>
+                  <Link href="/magaza" className="mt-3 inline-block text-sm font-medium text-bordo hover:underline">Mağaza →</Link>
+                </div>
+              ) : (
+                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  {storePickupOrders.map((o) => {
+                    const pickupCode = (o as { pickup_code: string }).pickup_code;
+                    const qrData = `${baseUrl}/admin/teslim-al?code=${encodeURIComponent(pickupCode)}`;
+                    const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(qrData)}`;
+                    const pickupDate = (o as { pickup_date: string | null }).pickup_date;
+                    const status = (o as { status: string }).status;
+                    const isDelivered = status === "DELIVERED";
+                    return (
+                      <div
+                        key={o.id}
+                        className={`flex items-center gap-4 rounded-xl border p-4 ${isDelivered ? "border-siyah/10 bg-siyah/[0.02]" : "border-siyah/10 bg-gradient-to-br from-siyah/5 to-bordo/5"}`}
+                      >
+                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz">
+                          <img src={qrImgUrl} alt="Teslim QR" width={64} height={64} className="h-full w-full object-contain" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-semibold text-siyah">Sipariş {o.order_number}</p>
+                          {pickupDate && (
+                            <p className="text-xs text-siyah/60 mt-0.5">
+                              Teslim tarihi: {new Date(pickupDate + "T12:00:00").toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+                            </p>
+                          )}
+                          <p className="mt-0.5 font-mono text-xs text-siyah/70">Kod: {pickupCode}</p>
+                          {isDelivered && <span className="mt-1 inline-block rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">Teslim alındı</span>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+              {storePickupOrders && storePickupOrders.length > 0 && (
+                <Link href="/magaza" className="mt-4 block text-center text-sm font-medium text-bordo hover:underline">Mağaza →</Link>
+              )}
+            </section>
+
             {/* Favori oyuncu */}
             <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
               <h2 className="font-display text-lg font-bold text-siyah">Favori Oyuncum</h2>
@@ -307,14 +385,18 @@ export default async function BenimKosemPage() {
           </div>
 
           <div className="space-y-6">
-            {/* Hak kazandıklarım */}
+            {/* Mevcut rütbenin avantajları (sidebar) */}
             <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
-              <h2 className="font-display text-lg font-bold text-siyah">Hak kazandıklarım</h2>
-              <ul className="mt-3 list-inside list-disc space-y-2 text-sm text-siyah/80">
-                {hakKazandiklarim.map((h, i) => (
-                  <li key={i}>{h}</li>
-                ))}
-              </ul>
+              <h2 className="font-display text-lg font-bold text-siyah">Mevcut rütbenin avantajları</h2>
+              {mevcutAvantajlarListe.length > 0 ? (
+                <ul className="mt-3 list-inside list-disc space-y-2 text-sm text-siyah/80">
+                  {mevcutAvantajlarListe.map((h, i) => (
+                    <li key={i}>{h}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="mt-3 text-sm text-siyah/60">Admin panelinden bu kademenin avantajları tanımlanabilir.</p>
+              )}
             </section>
 
             {/* Hızlı işlemler + Ayarlar */}

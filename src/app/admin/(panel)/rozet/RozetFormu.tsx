@@ -52,6 +52,7 @@ export function RozetFormu({ level }: { level: FanLevelRow }) {
       </div>
       <div>
         <label className="block text-sm font-medium text-siyah">Min puan</label>
+        <p className="mt-0.5 text-xs text-siyah/60">Bu kademeye ait puan eşiği. Şu an seviye atlama mağaza / bilet / bağış baremleri ile yapılıyor; min puan ileride birleşik puan sistemi kullanıldığında devreye alınabilir.</p>
         <input name="min_points" type="number" min={0} defaultValue={level.min_points} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
       </div>
       <div>
