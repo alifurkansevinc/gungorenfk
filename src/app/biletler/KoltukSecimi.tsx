@@ -96,6 +96,15 @@ export function KoltukSecimi({
     return out;
   }, [blocks]);
 
+  const emptyCountByBlock = useMemo(() => {
+    const out: Record<string, number> = { Taraftar: 0 };
+    BLOCK_ORDER.forEach((sec) => {
+      const blockSeats = seats.filter((s) => s.section === sec);
+      out[sec] = blockSeats.filter((s) => !takenIds.has(s.id)).length;
+    });
+    return out;
+  }, [seats, takenIds]);
+
   const selectedSeat = seats.find((s) => s.id === selectedSeatId);
 
   if (loading) {
@@ -134,35 +143,39 @@ export function KoltukSecimi({
           return (
             <div
               key={`${section}-${rowNum}`}
-              className="flex flex-wrap items-center justify-center gap-0.5"
+              className="flex flex-nowrap items-center gap-0.5"
             >
-              <span className="mr-2 w-6 shrink-0 text-right text-xs font-medium text-siyah/60">
+              <span className="w-8 shrink-0 text-right text-sm font-bold text-siyah">
                 {rowNum}
               </span>
-              {rowSeats.map((seat) => {
-                const taken = takenIds.has(seat.id);
-                const selected = selectedSeatId === seat.id;
-                return (
-                  <button
-                    key={seat.id}
-                    type="button"
-                    disabled={taken}
-                    onClick={() =>
-                      onSelect(taken ? null : seat.id, taken ? null : seat.seat_code)
-                    }
-                    title={taken ? "Dolu" : seat.seat_code}
-                    className={`h-7 w-7 min-w-[1.75rem] rounded text-[10px] font-medium transition-all ${
-                      taken
-                        ? "cursor-not-allowed bg-bordo text-beyaz/90"
-                        : selected
-                          ? "border-2 border-bordo bg-bordo/25 text-bordo ring-2 ring-bordo/40"
-                          : "border border-siyah/20 bg-beyaz text-siyah/70 hover:border-bordo/50 hover:bg-bordo/10 hover:text-bordo"
-                    }`}
-                  >
-                    {seat.seat_in_row}
-                  </button>
-                );
-              })}
+              <div className="min-w-0 flex-1 overflow-x-auto">
+                <div className="flex flex-nowrap items-center justify-start gap-0.5 py-0.5">
+                  {rowSeats.map((seat) => {
+                    const taken = takenIds.has(seat.id);
+                    const selected = selectedSeatId === seat.id;
+                    return (
+                      <button
+                        key={seat.id}
+                        type="button"
+                        disabled={taken}
+                        onClick={() =>
+                          onSelect(taken ? null : seat.id, taken ? null : seat.seat_code)
+                        }
+                        title={taken ? "Dolu" : seat.seat_code}
+                        className={`h-6 w-6 shrink-0 rounded text-[10px] font-medium transition-all min-w-[1.5rem] ${
+                          taken
+                            ? "cursor-not-allowed bg-bordo text-beyaz/90"
+                            : selected
+                              ? "border-2 border-bordo bg-bordo/25 text-bordo ring-2 ring-bordo/40"
+                              : "border border-siyah/20 bg-beyaz text-siyah/70 hover:border-bordo/50 hover:bg-bordo/10 hover:text-bordo"
+                        }`}
+                      >
+                        {seat.seat_in_row}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           );
         })}
@@ -199,22 +212,30 @@ export function KoltukSecimi({
                 Stadyum planı — 6 bölüm (tek tribün)
               </p>
             </div>
-            <div className="grid grid-cols-2 gap-2 p-4 sm:grid-cols-3">
-              {SECTIONS.map((sec, idx) => (
-                <button
-                  key={sec.key}
-                  type="button"
-                  onClick={() => setExpandedBlock(sec.key)}
-                  className="flex flex-col items-center justify-center rounded-xl border-2 border-siyah/15 bg-beyaz/90 py-6 shadow-sm transition-all hover:border-bordo/40 hover:bg-bordo/5 hover:shadow-md"
-                >
-                  <span className="text-[10px] font-medium text-siyah/50">
-                    {idx + 1}
-                  </span>
-                  <span className="mt-1 text-sm font-bold uppercase text-siyah">
-                    {sec.label}
-                  </span>
-                </button>
-              ))}
+            <div className="overflow-x-auto border-b border-siyah/10 p-2 sm:p-3">
+              <div className="flex min-w-max flex-nowrap items-stretch justify-center gap-1 sm:gap-2">
+              {SECTIONS.map((sec, idx) => {
+                const emptyCount = emptyCountByBlock[sec.key] ?? 0;
+                return (
+                  <button
+                    key={sec.key}
+                    type="button"
+                    onClick={() => setExpandedBlock(sec.key)}
+                    className="flex min-w-0 flex-1 flex-col items-center justify-center rounded-lg border-2 border-siyah/15 bg-beyaz/90 py-3 shadow-sm transition-all hover:border-bordo/40 hover:bg-bordo/5 hover:shadow-md sm:py-4"
+                  >
+                    <span className="text-[10px] font-medium text-siyah/50">
+                      {idx + 1}
+                    </span>
+                    <span className="mt-0.5 text-xs font-bold uppercase text-siyah sm:text-sm">
+                      {sec.label}
+                    </span>
+                    <span className="mt-1 text-xs font-semibold text-bordo">
+                      {sec.hasSeats ? `${emptyCount} boş` : "—"}
+                    </span>
+                  </button>
+                );
+              })}
+              </div>
             </div>
             <div className="flex items-center justify-center bg-[#2d5a27] px-4 py-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-white/90">
