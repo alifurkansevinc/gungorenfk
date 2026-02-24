@@ -54,28 +54,47 @@ export default async function BenimKosemPage() {
 
   const { data: myTickets } = await supabase
     .from("match_tickets")
-    .select("id, qr_code, match_id, stadium_seats(seat_code), matches(opponent_name, match_date, match_time, venue, home_away)")
+    .select("id, qr_code, match_id, event_id, stadium_seats(seat_code), matches(opponent_name, match_date, match_time, venue, home_away), news(title, event_date, event_time, event_place)")
     .eq("user_id", user.id)
     .eq("payment_status", "PAID")
     .order("created_at", { ascending: false })
     .limit(20);
 
-  const ticketsCount = new Set((myTickets ?? []).map((t) => (t as { match_id: string }).match_id)).size;
+  const ticketsCount = new Set((myTickets ?? []).filter((t) => (t as { match_id: string | null }).match_id).map((t) => (t as { match_id: string }).match_id)).size;
 
   type MatchRow = { opponent_name: string; match_date: string; match_time: string | null; venue: string | null; home_away: string };
+  type NewsRow = { title: string; event_date: string | null; event_time: string | null; event_place: string | null };
   const ticketsWithMatch = (myTickets ?? []).map((t) => {
-    const raw = t as unknown as { matches?: MatchRow | MatchRow[] | null; stadium_seats?: { seat_code: string } | { seat_code: string }[] | null };
+    const raw = t as unknown as {
+      matches?: MatchRow | MatchRow[] | null;
+      stadium_seats?: { seat_code: string } | { seat_code: string }[] | null;
+      news?: NewsRow | NewsRow[] | null;
+      event_id?: string | null;
+    };
     const m = Array.isArray(raw.matches) ? raw.matches[0] : raw.matches;
     const seat = Array.isArray(raw.stadium_seats) ? raw.stadium_seats[0] : raw.stadium_seats;
+    const newsItem = Array.isArray(raw.news) ? raw.news[0] : raw.news;
+    const isEvent = !!raw.event_id;
+    const macLabel = m && !isEvent
+      ? (m.home_away === "home" ? `Güngören FK - ${m.opponent_name}` : `${m.opponent_name} - Güngören FK`)
+      : null;
+    const eventTitle = newsItem?.title ?? "Etkinlik";
+    const eventDate = newsItem?.event_date;
+    const eventTime = newsItem?.event_time;
+    const eventPlace = newsItem?.event_place;
     return {
       id: t.id,
       qr_code: t.qr_code,
       seat_code: seat?.seat_code ?? null,
-      opponent_name: m?.opponent_name ?? "Maç",
+      isEvent,
+      label: isEvent ? eventTitle : macLabel ?? "Maç",
       match_date: m?.match_date,
       match_time: m?.match_time,
       venue: m?.venue,
       home_away: m?.home_away,
+      event_date: eventDate,
+      event_time: eventTime,
+      event_place: eventPlace,
     };
   });
 
@@ -171,23 +190,25 @@ export default async function BenimKosemPage() {
             {/* Bilet cüzdanı */}
             <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
               <h2 className="font-display text-lg font-bold text-siyah">Bilet cüzdanım</h2>
-              <p className="mt-1 text-sm text-siyah/70">Aldığınız maç biletleri. Maç günü QR kodu girişte göstermeniz yeterli.</p>
+              <p className="mt-1 text-sm text-siyah/70">Aldığınız maç ve etkinlik biletleri. Girişte QR kodu göstermeniz yeterli.</p>
               {ticketsWithMatch.length === 0 ? (
                 <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
                   <p className="text-sm text-siyah/60">Henüz biletiniz yok.</p>
-                  <Link href="/biletler" className="mt-3 inline-block text-sm font-medium text-bordo hover:underline">Maç Biletleri →</Link>
+                  <Link href="/biletler" className="mt-3 inline-block text-sm font-medium text-bordo hover:underline">Biletler →</Link>
                 </div>
               ) : (
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {ticketsWithMatch.map((t) => {
-                    const macLabel = t.home_away === "home" ? `Güngören FK - ${t.opponent_name}` : `${t.opponent_name} - Güngören FK`;
                     const qrUrl = t.qr_code
                       ? `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(t.qr_code)}`
                       : null;
+                    const subLine = t.isEvent
+                      ? [t.event_date ? new Date(t.event_date + "T12:00:00").toLocaleDateString("tr-TR") : "", t.event_time, t.event_place].filter(Boolean).join(" · ")
+                      : `${t.match_date ? new Date(t.match_date + "T12:00:00").toLocaleDateString("tr-TR") : ""}${t.match_time ? ` · ${t.match_time}` : ""}${t.venue ? ` · ${t.venue}` : ""}`;
                     return (
                       <Link
                         key={t.id}
-                        href={`/biletler/basarili?qrCode=${t.qr_code}`}
+                        href={`/biletler/basarili?qrCode=${t.qr_code}${t.isEvent ? "&type=event" : ""}`}
                         className="flex items-center gap-4 rounded-xl border border-siyah/10 bg-gradient-to-br from-siyah/5 to-bordo/5 p-4 transition-shadow hover:shadow-md"
                       >
                         {qrUrl && (
@@ -196,12 +217,9 @@ export default async function BenimKosemPage() {
                           </div>
                         )}
                         <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-siyah truncate">{macLabel}</p>
-                          <p className="text-xs text-siyah/60">
-                            {t.match_date ? new Date(t.match_date + "T12:00:00").toLocaleDateString("tr-TR") : ""}
-                            {t.match_time ? ` · ${t.match_time}` : ""}
-                            {t.venue ? ` · ${t.venue}` : ""}
-                          </p>
+                          <p className="font-semibold text-siyah truncate">{t.label}</p>
+                          {t.isEvent && <span className="text-[10px] font-medium text-bordo/80 uppercase tracking-wide">Etkinlik</span>}
+                          <p className="text-xs text-siyah/60 mt-0.5">{subLine}</p>
                           {t.seat_code && <p className="mt-0.5 text-xs font-medium text-bordo">Koltuk: {t.seat_code}</p>}
                         </div>
                         <span className="shrink-0 text-xs font-medium text-bordo">Göster</span>

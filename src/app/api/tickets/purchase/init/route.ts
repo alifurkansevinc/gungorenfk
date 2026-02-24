@@ -16,13 +16,116 @@ function generateQrCode(): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { matchId, seatId } = body as { matchId?: string; seatId?: string };
-    if (!matchId) return NextResponse.json({ success: false, error: "matchId gerekli" }, { status: 400 });
+    const { matchId, eventId, seatId } = body as { matchId?: string; eventId?: string; seatId?: string };
+    const isEventTicket = !!eventId && !matchId;
+    if (!matchId && !eventId) {
+      return NextResponse.json({ success: false, error: "matchId veya eventId gerekli" }, { status: 400 });
+    }
 
     const supabaseAuth = await createClient();
     const { data: { user } } = await supabaseAuth.auth.getUser();
     const supabase = createServiceRoleClient();
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const isFree = TICKET_PRICE === 0;
+    const guestEmail = user ? null : (body.email as string)?.trim() || null;
+    const guestName = (user ? null : (body.name as string)?.trim() || "Bilet alıcı") ?? "Bilet alıcı";
 
+    // ——— Biletli etkinlik (koltuk yok) ———
+    if (isEventTicket) {
+      const { data: event, error: eventError } = await supabase
+        .from("news")
+        .select("id, title, event_date, is_ticketed")
+        .eq("id", eventId)
+        .single();
+      if (eventError || !event) {
+        return NextResponse.json({ success: false, error: "Etkinlik bulunamadı." }, { status: 404 });
+      }
+      if (!(event as { is_ticketed?: boolean }).is_ticketed) {
+        return NextResponse.json({ success: false, error: "Bu etkinlik biletli değil." }, { status: 400 });
+      }
+      if (user?.id) {
+        const { data: existing } = await supabase
+          .from("match_tickets")
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("event_id", eventId)
+          .eq("payment_status", "PAID")
+          .maybeSingle();
+        if (existing) {
+          return NextResponse.json(
+            { success: false, error: "Bu etkinlik için zaten biletiniz var." },
+            { status: 400 }
+          );
+        }
+      }
+      let qrCode = generateQrCode();
+      for (let attempt = 0; attempt < 5; attempt++) {
+        const { data: existing } = await supabase.from("match_tickets").select("id").eq("qr_code", qrCode).maybeSingle();
+        if (!existing) break;
+        qrCode = generateQrCode();
+      }
+      const { data: ticket, error: insertError } = await supabase
+        .from("match_tickets")
+        .insert({
+          event_id: eventId,
+          user_id: user?.id ?? null,
+          guest_email: guestEmail,
+          guest_name: guestName,
+          qr_code: qrCode,
+          status: "active",
+          payment_status: isFree ? "PAID" : "PENDING",
+        })
+        .select("id")
+        .single();
+      if (insertError || !ticket) {
+        console.error("Event ticket insert error:", insertError);
+        return NextResponse.json({ success: false, error: "Bilet kaydı oluşturulamadı." }, { status: 500 });
+      }
+      const eventLabel = (event as { title: string }).title;
+      if (isFree) {
+        const params = new URLSearchParams({ qrCode, type: "event" });
+        return NextResponse.json({
+          success: true,
+          data: { qrCode, redirectUrl: `${baseUrl}/biletler/basarili?${params.toString()}`, eventTitle: eventLabel },
+        });
+      }
+      const result = await initializeCheckoutForm({
+        orderId: ticket.id,
+        orderNumber: `EVT-${qrCode}`,
+        price: TICKET_PRICE,
+        paidPrice: TICKET_PRICE,
+        shippingCost: 0,
+        buyer: {
+          id: user?.id || `guest_${ticket.id}`,
+          name: guestName.split(" ")[0]?.trim() || "Bilet",
+          surname: guestName.split(" ").slice(1).join(" ").trim() || "Alıcı",
+          email: user?.email || guestEmail || "bilet@gungorenfk.com",
+          phone: "0000000000",
+          registrationAddress: "Etkinlik bileti",
+          city: "İstanbul",
+          country: "Turkey",
+          zipCode: "34000",
+        },
+        shippingAddress: { contactName: guestName, city: "İstanbul", address: "Etkinlik bileti", zipCode: "34000" },
+        billingAddress: { contactName: guestName, city: "İstanbul", address: "Etkinlik bileti", zipCode: "34000" },
+        basketItems: [{ id: ticket.id, name: `Etkinlik Bileti: ${eventLabel}`, category: "Bilet", price: TICKET_PRICE, quantity: 1 }],
+        callbackUrl: `${baseUrl}/api/tickets/purchase/callback`,
+      });
+      if (result.status === "success" && result.token) {
+        await supabase.from("match_tickets").update({ payment_token: result.token }).eq("id", ticket.id);
+        return NextResponse.json({
+          success: true,
+          data: { ticketId: ticket.id, qrCode, paymentPageUrl: result.paymentPageUrl },
+        });
+      }
+      await supabase.from("match_tickets").update({ payment_status: "FAILED" }).eq("id", ticket.id);
+      return NextResponse.json(
+        { success: false, error: result.errorMessage || "Ödeme başlatılamadı." },
+        { status: 400 }
+      );
+    }
+
+    // ——— Maç bileti (koltuk seçimi) ———
     const { data: match, error: matchError } = await supabase
       .from("matches")
       .select("id, opponent_name, match_date")
@@ -54,12 +157,6 @@ export async function POST(req: NextRequest) {
       if (!existing) break;
       qrCode = generateQrCode();
     }
-
-    const guestEmail = user ? null : (body.email as string)?.trim() || null;
-    const guestName = (user ? null : (body.name as string)?.trim() || "Bilet alıcı") ?? "Bilet alıcı";
-
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-    const isFree = TICKET_PRICE === 0;
 
     const { data: takenSeats } = await supabase
       .from("match_tickets")

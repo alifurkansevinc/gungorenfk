@@ -10,7 +10,7 @@ const NAV_BASE = [
   { href: "/maclar", label: "Sıralama & Maçlar" },
   { href: "/magaza", label: "Mağaza" },
   { href: "/bagis", label: "Bağış Yap" },
-  { href: "/biletler", label: "Maç Biletleri" },
+  { href: "/biletler", label: "Biletler" },
   { href: "/kadro", label: "Kadro" },
   { href: "/transferler", label: "Transferler" },
   { href: "/kulup/teknik-heyet", label: "Teknik Heyet" },

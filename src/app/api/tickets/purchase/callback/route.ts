@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
 
     const { data: ticket, error: findError } = await supabase
       .from("match_tickets")
-      .select("id, user_id, match_id, qr_code, seat_id")
+      .select("id, user_id, match_id, event_id, qr_code, seat_id")
       .eq("payment_token", token)
       .single();
 
@@ -68,7 +68,9 @@ export async function POST(req: NextRequest) {
       }
 
       let redirectUrl = `/biletler/basarili?qrCode=${ticket.qr_code}`;
-      if ((ticket as { seat_id?: string }).seat_id) {
+      if ((ticket as { event_id?: string }).event_id) {
+        redirectUrl += "&type=event";
+      } else if ((ticket as { seat_id?: string }).seat_id) {
         const { data: seat } = await supabase.from("stadium_seats").select("seat_code").eq("id", (ticket as { seat_id: string }).seat_id).single();
         if (seat?.seat_code) redirectUrl += `&seatCode=${encodeURIComponent(seat.seat_code)}`;
       }

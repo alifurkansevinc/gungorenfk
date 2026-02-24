@@ -9,6 +9,7 @@ function BasariliContent() {
   const searchParams = useSearchParams();
   const qrCode = searchParams.get("qrCode") || "";
   const levelUp = searchParams.get("levelUp") === "1";
+  const isEvent = searchParams.get("type") === "event";
   const seatFromUrl = searchParams.get("seatCode") || "";
   const [seatCode, setSeatCode] = useState(seatFromUrl);
   const qrUrl =
@@ -18,13 +19,13 @@ function BasariliContent() {
 
   useEffect(() => {
     if (seatFromUrl) setSeatCode(seatFromUrl);
-    else if (qrCode) {
+    else if (qrCode && !isEvent) {
       fetch(`/api/tickets/by-qr?qrCode=${encodeURIComponent(qrCode)}`)
         .then((r) => r.json())
         .then((d) => d.seatCode && setSeatCode(d.seatCode))
         .catch(() => {});
     }
-  }, [qrCode, seatFromUrl]);
+  }, [qrCode, seatFromUrl, isEvent]);
 
   return (
     <div className="min-h-screen bg-[#f5f5f5] flex flex-col items-center justify-center px-4">
@@ -32,7 +33,9 @@ function BasariliContent() {
         <CheckCircle className="mx-auto h-16 w-16 text-green-600" />
         <h1 className="mt-4 font-display text-2xl font-bold text-siyah">Biletiniz hazır</h1>
         <p className="mt-2 text-siyah/70">
-          Maç günü stadyum girişinde aşağıdaki QR kodu göstermeniz yeterli.
+          {isEvent
+            ? "Etkinlik girişinde aşağıdaki QR kodu göstermeniz yeterli."
+            : "Maç günü stadyum girişinde aşağıdaki QR kodu göstermeniz yeterli."}
         </p>
         {qrCode && (
           <div className="mt-6 rounded-xl border-2 border-bordo/20 bg-bordo/5 p-6">

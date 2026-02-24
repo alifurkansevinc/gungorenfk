@@ -22,6 +22,7 @@ type NewsRow = {
   registration_url: string | null;
   is_online: boolean | null;
   external_link: string | null;
+  is_ticketed: boolean | null;
 };
 
 export function HaberFormu({ news }: { news?: NewsRow | null }) {
@@ -99,10 +100,14 @@ export function HaberFormu({ news }: { news?: NewsRow | null }) {
           <label className="block text-sm font-medium text-siyah">Mekan / Adres</label>
           <input name="event_place" type="text" defaultValue={news?.event_place ?? ""} placeholder="Örn: Kulüp binası" className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
         </div>
-        <div className="flex items-end gap-2">
+        <div className="flex flex-col gap-2 items-end">
           <label className="flex items-center gap-2">
             <input name="is_online" type="checkbox" defaultChecked={!!news?.is_online} className="rounded border-siyah/30" />
             <span className="text-sm font-medium text-siyah">Çevrimiçi etkinlik</span>
+          </label>
+          <label className="flex items-center gap-2">
+            <input name="is_ticketed" type="checkbox" defaultChecked={!!news?.is_ticketed} className="rounded border-siyah/30" />
+            <span className="text-sm font-medium text-siyah">Biletli etkinlik</span>
           </label>
         </div>
       </div>

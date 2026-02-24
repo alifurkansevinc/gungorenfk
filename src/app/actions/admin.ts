@@ -149,6 +149,7 @@ export async function createNews(formData: FormData) {
     capacity: capacityVal ? parseInt(capacityVal as string, 10) : null,
     registration_url: (formData.get("registration_url") as string)?.trim() || null,
     is_online: formData.get("is_online") === "on",
+    is_ticketed: formData.get("is_ticketed") === "on",
     external_link: (formData.get("external_link") as string)?.trim() || null,
   });
   if (error) return { error: error.message };
@@ -184,6 +185,7 @@ export async function updateNews(id: string, formData: FormData) {
     capacity: capacityVal ? parseInt(capacityVal as string, 10) : null,
     registration_url: (formData.get("registration_url") as string)?.trim() || null,
     is_online: formData.get("is_online") === "on",
+    is_ticketed: formData.get("is_ticketed") === "on",
     external_link: (formData.get("external_link") as string)?.trim() || null,
     updated_at: new Date().toISOString(),
   }).eq("id", id);

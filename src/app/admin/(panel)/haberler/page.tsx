@@ -7,7 +7,7 @@ export default async function AdminHaberlerPage() {
   const supabase = await getAdminSupabase();
   const { data: news } = await supabase
     .from("news")
-    .select("id, title, slug, published_at, created_at")
+    .select("id, title, slug, published_at, created_at, is_ticketed")
     .order("created_at", { ascending: false });
 
   return (
@@ -25,18 +25,20 @@ export default async function AdminHaberlerPage() {
             <tr>
               <th className="px-4 py-3 font-semibold text-siyah/70">Başlık</th>
               <th className="px-4 py-3 font-semibold text-siyah/70">Slug</th>
+              <th className="px-4 py-3 font-semibold text-siyah/70">Bilet</th>
               <th className="px-4 py-3 font-semibold text-siyah/70">Yayın</th>
               <th className="px-4 py-3 font-semibold text-siyah/70">İşlem</th>
             </tr>
           </thead>
           <tbody>
             {(!news || news.length === 0) ? (
-              <tr><td colSpan={4} className="px-4 py-8 text-center text-siyah/60">Henüz etkinlik yok. &quot;Yeni etkinlik&quot; ile ekleyin.</td></tr>
+              <tr><td colSpan={5} className="px-4 py-8 text-center text-siyah/60">Henüz etkinlik yok. &quot;Yeni etkinlik&quot; ile ekleyin.</td></tr>
             ) : (
               news.map((n) => (
                 <tr key={n.id} className="border-t border-siyah/5 hover:bg-siyah/[0.02]">
                   <td className="px-4 py-3 font-medium text-siyah">{n.title}</td>
                   <td className="px-4 py-3 text-siyah/70">{n.slug}</td>
+                  <td className="px-4 py-3">{(n as { is_ticketed?: boolean }).is_ticketed ? <span className="rounded bg-bordo/15 px-2 py-0.5 text-xs font-semibold text-bordo">Biletli</span> : "—"}</td>
                   <td className="px-4 py-3 text-siyah/80">{n.published_at ? new Date(n.published_at).toLocaleDateString("tr-TR") : "—"}</td>
                   <td className="px-4 py-3 flex gap-3">
                     <Link href={`/admin/haberler/duzenle/${n.id}`} className="text-bordo font-medium hover:underline">Düzenle</Link>
