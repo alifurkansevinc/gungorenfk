@@ -66,9 +66,13 @@ export default async function TransferlerPage({ searchParams }: { searchParams: 
         {list.length === 0 ? (
           <div className="mt-8 rounded-2xl border-2 border-dashed border-siyah/15 bg-beyaz p-12 text-center text-siyah/60">
             <p className="font-medium">
-              {activeTab === "incoming" ? "Henüz gelen transfer kaydı yok." : "Henüz giden transfer kaydı yok."}
+              {(transfers ?? []).length === 0
+                ? "Transfer tahtasını açmamıza çok az kaldı."
+                : activeTab === "incoming"
+                  ? "Henüz gelen transfer kaydı yok."
+                  : "Henüz giden transfer kaydı yok."}
             </p>
-            <p className="mt-1 text-sm">Yakında burada listelenecektir.</p>
+            {(transfers ?? []).length > 0 && <p className="mt-1 text-sm">Yakında burada listelenecektir.</p>}
           </div>
         ) : (
           <ul className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
