@@ -275,7 +275,7 @@ export function KoltukSecimi({
                       onClick={() =>
                         onSelect(taken ? null : seat.id, taken ? null : seat.seat_code)
                       }
-                      title={taken ? "Dolu" : seat.seat_code}
+                      title={taken ? "Dolu" : (seat?.seat_code ?? seat?.id ?? "")}
                       className={`h-7 w-7 min-w-[1.75rem] max-w-[1.75rem] shrink-0 rounded text-[10px] font-medium transition-all ${
                         taken
                           ? "cursor-not-allowed bg-bordo text-beyaz/90"
