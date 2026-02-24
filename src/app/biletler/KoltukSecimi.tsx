@@ -72,9 +72,10 @@ export function KoltukSecimi({
       byBlock[sec] = {};
     });
     seats.forEach((s) => {
-      if (!byBlock[s.section]) byBlock[s.section] = {};
-      if (!byBlock[s.section][s.row_number]) byBlock[s.section][s.row_number] = [];
-      byBlock[s.section][s.row_number].push(s);
+      const sec = (s.section || "").toUpperCase();
+      if (!byBlock[sec]) byBlock[sec] = {};
+      if (!byBlock[sec][s.row_number]) byBlock[sec][s.row_number] = [];
+      byBlock[sec][s.row_number].push(s);
     });
     BLOCK_ORDER.forEach((sec) => {
       Object.keys(byBlock[sec] || {}).forEach((r) => {
@@ -99,7 +100,7 @@ export function KoltukSecimi({
   const emptyCountByBlock = useMemo(() => {
     const out: Record<string, number> = { Taraftar: 0 };
     BLOCK_ORDER.forEach((sec) => {
-      const blockSeats = seats.filter((s) => s.section === sec);
+      const blockSeats = seats.filter((s) => (s.section || "").toUpperCase() === sec);
       out[sec] = blockSeats.filter((s) => !takenIds.has(s.id)).length;
     });
     return out;
