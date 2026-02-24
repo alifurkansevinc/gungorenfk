@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export default function TaraftarGirisPage() {
+function TaraftarGirisContent() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -87,5 +87,13 @@ export default function TaraftarGirisPage() {
         </Link>
       </p>
     </div>
+  );
+}
+
+export default function TaraftarGirisPage() {
+  return (
+    <Suspense fallback={<div className="mx-auto max-w-xl px-4 py-12 sm:px-6 lg:px-8"><p className="text-siyah/70">Yükleniyor...</p></div>}>
+      <TaraftarGirisContent />
+    </Suspense>
   );
 }
