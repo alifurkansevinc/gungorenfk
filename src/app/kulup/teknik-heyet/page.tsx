@@ -7,8 +7,15 @@ import type { PersonGalleryItem } from "@/components/PersonGallery";
 import type { TechnicalStaffMember } from "@/types/db";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 
+const ROLE_ORDER = Object.keys(TECHNICAL_STAFF_ROLE_LABELS);
+
 function toGalleryItems(members: TechnicalStaffMember[]): PersonGalleryItem[] {
-  return members.map((m) => ({
+  const roleOrderMap = new Map(ROLE_ORDER.map((s, i) => [s, i]));
+  const sorted = [...members].sort((a, b) => {
+    if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+    return (roleOrderMap.get(a.role_slug) ?? 99) - (roleOrderMap.get(b.role_slug) ?? 99);
+  });
+  return sorted.map((m) => ({
     id: m.id,
     name: m.name,
     roleLabel: TECHNICAL_STAFF_ROLE_LABELS[m.role_slug] ?? m.role_slug,
