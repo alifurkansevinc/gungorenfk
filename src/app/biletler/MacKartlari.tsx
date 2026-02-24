@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import { SITE_LOGO_URL } from "@/lib/demo-images";
 import { BiletAlButton } from "./BiletAlButton";
 import { KoltukSecimi } from "./KoltukSecimi";
 import { Ticket, ChevronDown, ChevronUp, Calendar, MapPin, Clock } from "lucide-react";
@@ -65,7 +66,7 @@ export function MacKartlari({ matches }: { matches: Match[] }) {
                 {/* Logolar — daha büyük ve vurgulu */}
                 <div className="flex items-center justify-center gap-5 sm:gap-8 shrink-0">
                   <div className="relative h-20 w-20 rounded-2xl overflow-hidden border-2 border-siyah/10 bg-bordo shadow-lg sm:h-24 sm:w-24">
-                    <Image src="/logogbfk.png" alt="Güngören FK" fill className="object-contain p-2.5" unoptimized />
+                    <Image src={SITE_LOGO_URL} alt="Güngören FK" fill className="object-contain p-2.5" unoptimized />
                   </div>
                   <span className="text-xl font-black text-siyah/30 sm:text-2xl">VS</span>
                   <div className="relative h-20 w-20 rounded-2xl overflow-hidden border-2 border-siyah/10 bg-siyah/5 shadow-lg sm:h-24 sm:w-24">

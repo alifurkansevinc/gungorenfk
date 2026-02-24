@@ -4,6 +4,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { SITE_LOGO_URL } from "@/lib/demo-images";
 
 const NAV_BASE = [
   { href: "/maclar", label: "Sıralama & Maçlar" },
@@ -79,7 +80,7 @@ export function Header() {
         >
           {!logoError ? (
             <Image
-              src="/logogbfk.png"
+              src={SITE_LOGO_URL}
               alt="Güngören FK"
               width={120}
               height={48}

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { SITE_LOGO_URL } from "@/lib/demo-images";
 
 type NextMatch = {
   id: string;
@@ -64,7 +65,7 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
               {isHome ? (
                 <>
                   <div className="relative h-20 w-20 overflow-hidden rounded-full border-2 border-beyaz/30 bg-bordo shadow-lg sm:h-24 sm:w-24">
-                    <Image src="/logogbfk.png" alt="Güngören FK" fill className="object-contain p-2" unoptimized />
+                    <Image src={SITE_LOGO_URL} alt="Güngören FK" fill className="object-contain p-2" unoptimized />
                   </div>
                   <p className="mt-3 font-display text-lg font-bold text-beyaz sm:text-xl">Güngören FK</p>
                 </>
@@ -106,7 +107,7 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
               ) : (
                 <>
                   <div className="relative h-20 w-20 overflow-hidden rounded-full border-2 border-beyaz/30 bg-bordo shadow-lg sm:h-24 sm:w-24">
-                    <Image src="/logogbfk.png" alt="Güngören FK" fill className="object-contain p-2" unoptimized />
+                    <Image src={SITE_LOGO_URL} alt="Güngören FK" fill className="object-contain p-2" unoptimized />
                   </div>
                   <p className="mt-3 font-display text-lg font-bold text-beyaz sm:text-xl">Güngören FK</p>
                 </>

@@ -1,3 +1,7 @@
+/** Site logosu (Supabase Storage). */
+export const SITE_LOGO_URL =
+  "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/Futbolcular/logobordo-01.png";
+
 /** Demo görseller: Unsplash (gerçek fotoğraflar) + placehold.co ürün için. */
 const U = (id: string, w: number, h: number) =>
   `https://images.unsplash.com/photo-${id}?w=${w}&h=${h}&fit=crop&q=80`;
