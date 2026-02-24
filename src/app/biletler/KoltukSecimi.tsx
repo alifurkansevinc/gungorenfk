@@ -143,16 +143,25 @@ export function KoltukSecimi({
     return parts.length > 0 ? parts[parts.length - 1] : String(seat.seat_in_row);
   };
 
+  const blockMaxColumn = useMemo(() => {
+    const out: Record<string, number> = {};
+    BLOCK_ORDER.forEach((sec) => {
+      const sectionSeats = seats.filter((s) => (s.section || "").toUpperCase() === sec);
+      out[sec] = sectionSeats.length > 0 ? Math.max(...sectionSeats.map((s) => s.seat_in_row)) : 0;
+    });
+    return out;
+  }, [seats]);
+
   const renderBlockSeats = (section: string) => {
     const rows = rowNumbersByBlock[section] ?? [];
     if (rows.length === 0) return null;
+    const totalCols = blockMaxColumn[section] ?? 24;
     return (
       <div className="flex flex-col gap-1">
         {rows.map((rowNum) => {
           const rowSeats = (blocks[section]?.[rowNum] ?? []).sort(
             (a, b) => a.seat_in_row - b.seat_in_row
           );
-          const maxPos = rowSeats.length > 0 ? Math.max(...rowSeats.map((s) => s.seat_in_row)) : 0;
           const seatsByPos = new Map(rowSeats.map((s) => [s.seat_in_row, s]));
           return (
             <div
@@ -162,44 +171,42 @@ export function KoltukSecimi({
               <span className="w-8 shrink-0 text-right text-sm font-bold text-siyah">
                 {rowNum}
               </span>
-              <div className="min-w-0 flex-1 overflow-x-auto">
-                <div className="flex flex-nowrap items-center justify-start gap-0.5 py-0.5">
-                  {Array.from({ length: maxPos }, (_, i) => i + 1).map((pos) => {
-                    const seat = seatsByPos.get(pos);
-                    if (!seat) {
-                      return (
-                        <span
-                          key={`gap-${section}-${rowNum}-${pos}`}
-                          className="h-6 w-6 min-w-[1.5rem] shrink-0 rounded bg-siyah/10"
-                          title="Koridor"
-                          aria-hidden
-                        />
-                      );
-                    }
-                    const taken = takenIds.has(seat.id);
-                    const selected = selectedSeatId === seat.id;
+              <div className="flex flex-nowrap items-center justify-start gap-0.5 py-0.5">
+                {Array.from({ length: totalCols }, (_, i) => i + 1).map((pos) => {
+                  const seat = seatsByPos.get(pos);
+                  if (!seat) {
                     return (
-                      <button
-                        key={seat.id}
-                        type="button"
-                        disabled={taken}
-                        onClick={() =>
-                          onSelect(taken ? null : seat.id, taken ? null : seat.seat_code)
-                        }
-                        title={taken ? "Dolu" : seat.seat_code}
-                        className={`h-6 w-6 shrink-0 rounded text-[10px] font-medium transition-all min-w-[1.5rem] ${
-                          taken
-                            ? "cursor-not-allowed bg-bordo text-beyaz/90"
-                            : selected
-                              ? "border-2 border-bordo bg-bordo/25 text-bordo ring-2 ring-bordo/40"
-                              : "border border-siyah/20 bg-beyaz text-siyah/70 hover:border-bordo/50 hover:bg-bordo/10 hover:text-bordo"
-                        }`}
-                      >
-                        {seatLabel(seat)}
-                      </button>
+                      <span
+                        key={`gap-${section}-${rowNum}-${pos}`}
+                        className="h-7 w-7 min-w-[1.75rem] max-w-[1.75rem] shrink-0 rounded bg-siyah/10"
+                        title="Koridor / Merdiven"
+                        aria-hidden
+                      />
                     );
-                  })}
-                </div>
+                  }
+                  const taken = takenIds.has(seat.id);
+                  const selected = selectedSeatId === seat.id;
+                  return (
+                    <button
+                      key={seat.id}
+                      type="button"
+                      disabled={taken}
+                      onClick={() =>
+                        onSelect(taken ? null : seat.id, taken ? null : seat.seat_code)
+                      }
+                      title={taken ? "Dolu" : seat.seat_code}
+                      className={`h-7 w-7 min-w-[1.75rem] max-w-[1.75rem] shrink-0 rounded text-[10px] font-medium transition-all ${
+                        taken
+                          ? "cursor-not-allowed bg-bordo text-beyaz/90"
+                          : selected
+                            ? "border-2 border-bordo bg-bordo/25 text-bordo ring-2 ring-bordo/40"
+                            : "border border-siyah/20 bg-beyaz text-siyah/70 hover:border-bordo/50 hover:bg-bordo/10 hover:text-bordo"
+                      }`}
+                    >
+                      {seatLabel(seat)}
+                    </button>
+                  );
+                })}
               </div>
             </div>
           );
@@ -312,8 +319,10 @@ export function KoltukSecimi({
               </p>
             </div>
           ) : (
-            <div className="max-h-[60vh] overflow-y-auto p-4">
-              {renderBlockSeats(expandedBlock)}
+            <div className="max-h-[70vh] overflow-y-auto overflow-x-hidden p-4">
+              <div className="w-max min-w-full max-w-6xl mx-auto">
+                {renderBlockSeats(expandedBlock)}
+              </div>
             </div>
           )}
         </div>
