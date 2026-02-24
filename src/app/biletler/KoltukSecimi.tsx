@@ -48,15 +48,33 @@ export function KoltukSecimi({
       .then((r) => r.json())
       .then((data) => {
         if (cancelled) return;
-        if (data.error) {
-          setError(data.error);
-          setSeats([]);
-          setTakenIds(new Set());
-        } else {
-          setSeats(data.seats ?? []);
-          setTakenIds(new Set(data.takenIds ?? []));
-          setTaraftarCapacity(data.taraftarCapacity ?? 1000);
-          setTaraftarSold(data.taraftarSold ?? 0);
+        try {
+          if (data && data.error) {
+            setError(String(data.error));
+            setSeats([]);
+            setTakenIds(new Set());
+            return;
+          }
+          const rawSeats = Array.isArray(data?.seats) ? data.seats : [];
+          const safeSeats: Seat[] = rawSeats
+            .filter((s: unknown) => s && typeof s === "object" && typeof (s as Seat).id === "string")
+            .map((s: unknown) => {
+              const x = s as Record<string, unknown>;
+              return {
+                id: String(x.id),
+                seat_code: typeof x.seat_code === "string" ? x.seat_code : String(x.id),
+                section: typeof x.section === "string" ? x.section : "",
+                row_number: Number(x.row_number) || 0,
+                seat_in_row: Number(x.seat_in_row) || 0,
+              } as Seat;
+            });
+          setSeats(safeSeats);
+          const rawTaken = Array.isArray(data?.takenIds) ? data.takenIds : [];
+          setTakenIds(new Set(rawTaken.filter((id: unknown) => typeof id === "string")));
+          setTaraftarCapacity(Number(data?.taraftarCapacity) || 1000);
+          setTaraftarSold(Number(data?.taraftarSold) || 0);
+        } catch (e) {
+          if (!cancelled) setError("Koltuk verisi işlenirken hata oluştu.");
         }
       })
       .catch(() => {
@@ -76,15 +94,18 @@ export function KoltukSecimi({
       byBlock[sec] = {};
     });
     seats.forEach((s) => {
-      const sec = (s.section || "").toUpperCase();
-      if (!byBlock[sec]) byBlock[sec] = {};
-      if (!byBlock[sec][s.row_number]) byBlock[sec][s.row_number] = [];
-      byBlock[sec][s.row_number].push(s);
+      if (!s || typeof s.id !== "string") return;
+      const sec = String(s.section || "").toUpperCase();
+      if (!BLOCK_ORDER.includes(sec)) return;
+      const row = Number(s.row_number);
+      if (Number.isNaN(row)) return;
+      if (!byBlock[sec][row]) byBlock[sec][row] = [];
+      byBlock[sec][row].push(s);
     });
     BLOCK_ORDER.forEach((sec) => {
       Object.keys(byBlock[sec] || {}).forEach((r) => {
         const row = Number(r);
-        byBlock[sec][row].sort((a, b) => a.seat_in_row - b.seat_in_row);
+        if (Array.isArray(byBlock[sec][row])) byBlock[sec][row].sort((a, b) => (a.seat_in_row || 0) - (b.seat_in_row || 0));
       });
     });
     return byBlock;
@@ -93,8 +114,10 @@ export function KoltukSecimi({
   const rowNumbersByBlock = useMemo(() => {
     const out: Record<string, number[]> = {};
     BLOCK_ORDER.forEach((sec) => {
-      const rows = Object.keys(blocks[sec] || {})
-        .map(Number)
+      const keys = Object.keys(blocks[sec] || {});
+      const rows = keys
+        .map((r) => Number(r))
+        .filter((n) => !Number.isNaN(n))
         .sort((a, b) => b - a);
       out[sec] = rows;
     });
@@ -106,8 +129,8 @@ export function KoltukSecimi({
       Taraftar: Math.max(0, taraftarCapacity - taraftarSold),
     };
     BLOCK_ORDER.forEach((sec) => {
-      const blockSeats = seats.filter((s) => (s.section || "").toUpperCase() === sec);
-      out[sec] = blockSeats.filter((s) => !takenIds.has(s.id)).length;
+      const blockSeats = seats.filter((s) => s && String(s.section || "").toUpperCase() === sec);
+      out[sec] = blockSeats.filter((s) => s && !takenIds.has(s.id)).length;
     });
     return out;
   }, [seats, takenIds, taraftarCapacity, taraftarSold]);
@@ -159,15 +182,15 @@ export function KoltukSecimi({
   }, [seats]);
 
   const renderBlockSeats = (section: string) => {
+    if (!BLOCK_ORDER.includes(section)) return null;
     const rows = rowNumbersByBlock[section] ?? [];
     if (rows.length === 0) return null;
     const totalCols = Math.max(1, blockMaxColumn[section] ?? 24);
     return (
       <div className="flex flex-col gap-1">
         {rows.map((rowNum) => {
-          const rowSeats = (blocks[section]?.[rowNum] ?? []).sort(
-            (a, b) => a.seat_in_row - b.seat_in_row
-          );
+          const raw = blocks[section]?.[rowNum] ?? [];
+          const rowSeats = Array.isArray(raw) ? [...raw].sort((a, b) => (a.seat_in_row || 0) - (b.seat_in_row || 0)) : [];
           const seatsByPos = new Map(rowSeats.map((s) => [s.seat_in_row, s]));
           return (
             <div

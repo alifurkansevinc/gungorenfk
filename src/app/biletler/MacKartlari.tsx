@@ -123,10 +123,14 @@ export function MacKartlari({ matches, isGuest }: { matches: Match[]; isGuest?: 
               <div className="border-t-2 border-bordo/20 bg-gradient-to-br from-bordo/5 via-beyaz to-bordo/5 px-6 pb-7 pt-6">
                 {isGuest ? (
                   <BiletIcinGirisCTA variant="inline" />
+                ) : typeof m.id !== "string" || !m.id.trim() ? (
+                  <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+                    Bu maç için bilet bilgisi yüklenemiyor.
+                  </div>
                 ) : (
                   <div className="space-y-5">
                     <KoltukSecimi
-                      matchId={m.id}
+                      matchId={m.id.trim()}
                       selectedSeatId={seciliMacId === m.id ? seciliKoltukId : null}
                       onSelect={(id, code) => {
                         setSeciliKoltukId(id);
