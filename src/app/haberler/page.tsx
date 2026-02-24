@@ -12,8 +12,8 @@ export default async function HaberlerPage() {
   const { data: news } = await supabase
     .from("news")
     .select("id, title, slug, excerpt, image_url, published_at, event_date, event_time, event_place, event_type")
-    .not("published_at", "is", null)
-    .order("published_at", { ascending: false })
+    .or("published_at.not.is.null,event_date.not.is.null")
+    .order("published_at", { ascending: false, nullsFirst: false })
     .limit(20);
 
   return (

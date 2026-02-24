@@ -129,12 +129,17 @@ export async function createNews(formData: FormData) {
   const eventDate = (formData.get("event_date") as string)?.trim() || null;
   const eventEndDate = (formData.get("event_end_date") as string)?.trim() || null;
   const capacityVal = formData.get("capacity");
+  const rawPublished = (formData.get("published_at") as string)?.trim() || null;
+  const published_at =
+    rawPublished ||
+    (eventDate ? `${eventDate}T12:00:00.000Z` : null) ||
+    new Date().toISOString();
   const { error } = await s.from("news").insert({
     title,
     slug,
     excerpt: (formData.get("excerpt") as string)?.trim() || null,
     body: (formData.get("body") as string)?.trim() || null,
-    published_at: (formData.get("published_at") as string) || null,
+    published_at,
     image_url: (formData.get("image_url") as string)?.trim() || null,
     event_date: eventDate || null,
     event_end_date: eventEndDate || null,
@@ -159,12 +164,17 @@ export async function updateNews(id: string, formData: FormData) {
   const eventDate = (formData.get("event_date") as string)?.trim() || null;
   const eventEndDate = (formData.get("event_end_date") as string)?.trim() || null;
   const capacityVal = formData.get("capacity");
+  const rawPublished = (formData.get("published_at") as string)?.trim() || null;
+  const published_at =
+    rawPublished ||
+    (eventDate ? `${eventDate}T12:00:00.000Z` : null) ||
+    new Date().toISOString();
   const { error } = await s.from("news").update({
     title,
     slug,
     excerpt: (formData.get("excerpt") as string)?.trim() || null,
     body: (formData.get("body") as string)?.trim() || null,
-    published_at: (formData.get("published_at") as string) || null,
+    published_at,
     image_url: (formData.get("image_url") as string)?.trim() || null,
     event_date: eventDate || null,
     event_end_date: eventEndDate || null,
