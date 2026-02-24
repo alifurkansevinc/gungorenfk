@@ -10,12 +10,12 @@ import { DEMO_IMAGES } from "@/lib/demo-images";
 const ROLE_ORDER = ["baskan", "baskan_vekili", "as_baskan", "yk_uyesi", "yuksek_istisare_heyeti", "danisman"] as const;
 
 function toGalleryItems(members: BoardMember[]): PersonGalleryItem[] {
-  const orderMap = new Map<string, number>(ROLE_ORDER.map((s, i) => [s, i]));
+  const roleOrderMap = new Map<string, number>(ROLE_ORDER.map((s, i) => [s, i]));
   const sorted = [...members].sort((a, b) => {
-    const ai = orderMap.get(a.role_slug) ?? 99;
-    const bi = orderMap.get(b.role_slug) ?? 99;
-    if (ai !== bi) return ai - bi;
-    return a.sort_order - b.sort_order;
+    if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
+    const ai = roleOrderMap.get(a.role_slug) ?? 99;
+    const bi = roleOrderMap.get(b.role_slug) ?? 99;
+    return ai - bi;
   });
   return sorted.map((m) => ({
     id: m.id,

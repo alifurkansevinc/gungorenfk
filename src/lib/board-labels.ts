@@ -2,7 +2,7 @@
 export const BOARD_ROLE_LABELS: Record<string, string> = {
   baskan: "Başkan",
   baskan_vekili: "Başkan Yardımcısı",
-  as_baskan: "As Başkan",
+  as_baskan: "Başkan Vekili",
   yk_uyesi: "Yönetim Kurulu Üyesi",
   yuksek_istisare_heyeti: "Yüksek İstişare Heyeti",
   danisman: "Danışman",
