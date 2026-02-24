@@ -5,6 +5,19 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createMatch, updateMatch } from "@/app/actions/admin";
 
+const LIG_OPTIONS = [
+  "Süper Lig",
+  "PTT 1.Lig",
+  "Nesine 2.Lig",
+  "Nesine 3.Lig",
+  "Bölgesel Amatör Lig",
+  "Süper Amatör Lig",
+  "1.Amatör Lig",
+  "2.Amatör Lig",
+] as const;
+
+const SEZON_OPTIONS = ["2025-26", "2026-27", "2027-28"] as const;
+
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Planlandı" },
   { value: "live", label: "Canlı" },
@@ -83,12 +96,22 @@ export function MacForm({ match }: { match?: MatchRow | null }) {
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-siyah">Müsabaka</label>
-          <input name="competition" defaultValue={match?.competition ?? ""} placeholder="Lig / Kupa" className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
+          <label className="block text-sm font-medium text-siyah">Müsabaka (Lig)</label>
+          <select name="competition" defaultValue={match?.competition ?? ""} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2">
+            <option value="">— Seçin —</option>
+            {LIG_OPTIONS.map((lig) => (
+              <option key={lig} value={lig}>{lig}</option>
+            ))}
+          </select>
         </div>
         <div>
           <label className="block text-sm font-medium text-siyah">Sezon</label>
-          <input name="season" defaultValue={match?.season ?? ""} placeholder="2024-25" className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
+          <select name="season" defaultValue={match?.season ?? ""} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2">
+            <option value="">— Seçin —</option>
+            {SEZON_OPTIONS.map((s) => (
+              <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
         </div>
       </div>
       <div>

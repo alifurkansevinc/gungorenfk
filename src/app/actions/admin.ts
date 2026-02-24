@@ -570,3 +570,22 @@ export async function updateShippingSettings(formData: FormData) {
   revalidatePath("/admin/ayarlar");
   return { ok: true };
 }
+
+// ——— Bağış makbuzu şablonu ———
+export async function updateDonationReceiptTemplate(formData: FormData) {
+  const s = await supabase();
+  const title = (formData.get("receipt_title") as string)?.trim() || "Bağış Makbuzu";
+  const body = (formData.get("receipt_body") as string)?.trim() || "";
+  const { error } = await s.from("site_settings").upsert(
+    {
+      key: "donation_receipt_template",
+      value: { title, body },
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "key" }
+  );
+  if (error) return { error: error.message };
+  revalidatePath("/admin/ayarlar");
+  revalidatePath("/bagis/basarili");
+  return { ok: true };
+}

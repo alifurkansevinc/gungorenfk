@@ -4,13 +4,17 @@ import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 const PRESETS = [1000, 5000, 10000, 50000, 100000];
+const DEFAULT_MESSAGE = "Spor için Bağış";
 
 export function BagisForm() {
   const [amount, setAmount] = useState<number>(1000);
   const [customAmount, setCustomAmount] = useState("");
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(DEFAULT_MESSAGE);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [donorType, setDonorType] = useState<"bireysel" | "sirket">("bireysel");
+  const [title, setTitle] = useState("");
+  const [address, setAddress] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [signedIn, setSignedIn] = useState(false);
@@ -33,6 +37,10 @@ export function BagisForm() {
       setError("Tutar 10 - 100.000 ₺ arasında olmalıdır.");
       return;
     }
+    if (!name.trim()) {
+      setError("Ad Soyad alanı zorunludur.");
+      return;
+    }
     setLoading(true);
     try {
       const res = await fetch("/api/donation/init", {
@@ -40,9 +48,12 @@ export function BagisForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           amount: finalAmount,
-          message: message.trim() || undefined,
+          message: message.trim() || DEFAULT_MESSAGE,
           email: email.trim() || undefined,
-          name: name.trim() || undefined,
+          name: name.trim(),
+          donor_type: donorType,
+          title: donorType === "sirket" ? title.trim() || undefined : undefined,
+          address: donorType === "sirket" ? address.trim() || undefined : undefined,
         }),
       });
       const data = await res.json();
@@ -94,46 +105,102 @@ export function BagisForm() {
           />
         </div>
       </div>
-      {!signedIn && (
+
+      <div className="mt-4">
+        <label className="block text-sm font-medium text-siyah">Bağışçı türü</label>
+        <div className="mt-2 flex gap-4">
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="radio"
+              name="donor_type"
+              checked={donorType === "bireysel"}
+              onChange={() => setDonorType("bireysel")}
+              className="rounded-full border-siyah/30 text-bordo"
+            />
+            <span className="text-sm">Bireysel</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2">
+            <input
+              type="radio"
+              name="donor_type"
+              checked={donorType === "sirket"}
+              onChange={() => setDonorType("sirket")}
+              className="rounded-full border-siyah/30 text-bordo"
+            />
+            <span className="text-sm">Şirket</span>
+          </label>
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <label className="block text-sm font-medium text-siyah">Adı Soyadı *</label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          required
+          placeholder="Adınız ve soyadınız"
+          className="mt-1 w-full rounded-xl border border-siyah/20 px-4 py-2.5 focus:border-bordo focus:outline-none focus:ring-1 focus:ring-bordo"
+        />
+      </div>
+
+      {donorType === "sirket" && (
         <>
           <div className="mt-4">
-            <label className="block text-sm font-medium text-siyah">Ad Soyad</label>
+            <label className="block text-sm font-medium text-siyah">Ünvan</label>
             <input
               type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Örn: Genel Müdür"
               className="mt-1 w-full rounded-xl border border-siyah/20 px-4 py-2.5"
             />
           </div>
           <div className="mt-4">
-            <label className="block text-sm font-medium text-siyah">E-posta *</label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+            <label className="block text-sm font-medium text-siyah">Adres</label>
+            <textarea
+              value={address}
+              onChange={(e) => setAddress(e.target.value)}
+              rows={2}
+              placeholder="Şirket adresi"
               className="mt-1 w-full rounded-xl border border-siyah/20 px-4 py-2.5"
             />
           </div>
         </>
       )}
+
+      {!signedIn && (
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-siyah">E-posta *</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="mt-1 w-full rounded-xl border border-siyah/20 px-4 py-2.5"
+          />
+        </div>
+      )}
+
       <div className="mt-4">
-        <label className="block text-sm font-medium text-siyah">Mesaj (isteğe bağlı)</label>
-        <textarea
+        <label className="block text-sm font-medium text-siyah">Açıklama / Mesaj</label>
+        <input
+          type="text"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          rows={2}
           className="mt-1 w-full rounded-xl border border-siyah/20 px-4 py-2.5"
-          placeholder="Bağışınızla ilgili kısa bir mesaj..."
+          placeholder={DEFAULT_MESSAGE}
         />
+        <p className="mt-1 text-xs text-siyah/50">Varsayılan: Spor için Bağış</p>
       </div>
+
       <div className="mt-6 flex items-center gap-4">
         <button
           type="submit"
           disabled={loading || !validAmount}
           className="rounded-xl bg-bordo px-6 py-3 font-bold text-beyaz shadow-sm hover:bg-bordo/90 disabled:opacity-50"
         >
-          {loading ? "Yönlendiriliyor..." : `${finalAmount} ₺ Bağış Yap`}
+          {loading ? "Yönlendiriliyor..." : "Kredi kartı ile bağış yap"}
         </button>
         <p className="text-sm text-siyah/60">Güvenli ödeme (iyzico) ile yönlendirileceksiniz.</p>
       </div>

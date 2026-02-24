@@ -29,11 +29,22 @@ export async function POST(req: NextRequest) {
     const base = req.nextUrl.origin;
 
     if (result.status === "success" && result.paymentStatus === "SUCCESS") {
+      const year = new Date().getFullYear();
+      const { count } = await supabase
+        .from("donations")
+        .select("id", { count: "exact", head: true })
+        .eq("payment_status", "PAID")
+        .gte("created_at", `${year}-01-01`)
+        .lt("created_at", `${year + 1}-01-01`);
+      const seq = (count ?? 0) + 1;
+      const receiptNumber = `BAGIS-${year}-${String(seq).padStart(5, "0")}`;
+
       await supabase
         .from("donations")
         .update({
           payment_status: "PAID",
           payment_id: result.paymentId || token,
+          receipt_number: receiptNumber,
           updated_at: new Date().toISOString(),
         })
         .eq("id", donation.id);
@@ -55,13 +66,13 @@ export async function POST(req: NextRequest) {
           const levelResult = await checkAndLevelUp(donation.user_id);
           if (levelResult.leveledUp && levelResult.newLevelId) {
             return NextResponse.redirect(
-              new URL(`/bagis/basarili?levelUp=1&newLevel=${levelResult.newLevelId}`, base)
+              new URL(`/bagis/basarili?id=${donation.id}&levelUp=1&newLevel=${levelResult.newLevelId}`, base)
             );
           }
         }
       }
 
-      return NextResponse.redirect(new URL("/bagis/basarili", base));
+      return NextResponse.redirect(new URL(`/bagis/basarili?id=${donation.id}`, base));
     }
 
     await supabase

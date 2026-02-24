@@ -9,11 +9,14 @@ const MAX_AMOUNT = 100_000;
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { amount: rawAmount, message, email: bodyEmail, name: bodyName } = body as {
+    const { amount: rawAmount, message, email: bodyEmail, name: bodyName, donor_type: donorType, title: bodyTitle, address: bodyAddress } = body as {
       amount?: number;
       message?: string;
       email?: string;
       name?: string;
+      donor_type?: "bireysel" | "sirket";
+      title?: string;
+      address?: string;
     };
 
     const amount = Math.round(Number(rawAmount) * 100) / 100;
@@ -44,6 +47,9 @@ export async function POST(req: NextRequest) {
         amount,
         payment_status: "PENDING",
         message: message?.trim() || null,
+        donor_type: donorType === "sirket" ? "sirket" : "bireysel",
+        title: donorType === "sirket" && bodyTitle?.trim() ? bodyTitle.trim() : null,
+        address: donorType === "sirket" && bodyAddress?.trim() ? bodyAddress.trim() : null,
       })
       .select("id")
       .single();
