@@ -82,9 +82,9 @@ export function Header() {
             <Image
               src={SITE_LOGO_URL}
               alt="Güngören FK"
-              width={120}
-              height={48}
-              className="h-10 w-auto object-contain sm:h-12"
+              width={140}
+              height={56}
+              className="h-11 w-auto object-contain sm:h-14"
               unoptimized
               onError={() => setLogoError(true)}
               priority

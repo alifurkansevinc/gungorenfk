@@ -1,6 +1,10 @@
-/** Site logosu (Supabase Storage). */
+/** Site logosu — header ve genel kullanım (Supabase Storage). */
 export const SITE_LOGO_URL =
-  "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/Futbolcular/logobordo-01.png";
+  "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/Futbolcular/logobordo-02.png";
+
+/** Ana sayfa sağ taraf slogan tasarım görseli — sadece ana sayfada. */
+export const HOMEPAGE_SLOGAN_IMAGE_URL =
+  "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/Futbolcular/logobordo-06.png";
 
 /** Demo görseller: Unsplash (gerçek fotoğraflar) + placehold.co ürün için. */
 const U = (id: string, w: number, h: number) =>
