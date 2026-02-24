@@ -12,6 +12,7 @@ type FanLevelRow = {
   min_points: number;
   sort_order: number;
   description: string | null;
+  advantages: string | null;
   target_store_spend: number | null;
   target_tickets: number | null;
   target_donation: number | null;
@@ -60,6 +61,11 @@ export function RozetFormu({ level }: { level: FanLevelRow }) {
       <div>
         <label className="block text-sm font-medium text-siyah">Açıklama</label>
         <textarea name="description" defaultValue={level.description ?? ""} rows={2} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
+      </div>
+      <div>
+        <label className="block text-sm font-medium text-siyah">Bu rütbenin avantajları</label>
+        <p className="mt-0.5 text-xs text-siyah/60">Her satır bir madde olarak Benim Köşem’de listelenir (sonraki rütbeye geçince bu avantajlar gösterilir).</p>
+        <textarea name="advantages" defaultValue={level.advantages ?? ""} rows={6} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="Örn:&#10;Koltuk numarası&#10;Mağazada %25 indirim&#10;General'a doğru ilerleme hakkı" />
       </div>
       <div className="grid grid-cols-3 gap-4">
         <div>

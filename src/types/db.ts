@@ -8,6 +8,8 @@ export type FanLevel = {
   target_store_spend: number | null;
   target_tickets: number | null;
   target_donation: number | null;
+  /** Bu rütbede kazanılan avantajlar (her satır bir madde) */
+  advantages: string | null;
 };
 
 export type City = {

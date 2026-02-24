@@ -549,18 +549,21 @@ export async function updateFanLevel(id: string, formData: FormData) {
   const target_store = formData.get("target_store_spend");
   const target_tickets = formData.get("target_tickets");
   const target_donation = formData.get("target_donation");
+  const advantagesRaw = (formData.get("advantages") as string)?.trim() || null;
   const { error } = await s.from("fan_levels").update({
     name: (formData.get("name") as string)?.trim(),
     slug: (formData.get("slug") as string)?.trim(),
     min_points: min_points != null ? parseInt(min_points as string, 10) : 0,
     sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
     description: (formData.get("description") as string)?.trim() || null,
+    advantages: advantagesRaw,
     target_store_spend: target_store ? parseFloat(target_store as string) : null,
     target_tickets: target_tickets ? parseInt(target_tickets as string, 10) : null,
     target_donation: target_donation ? parseFloat(target_donation as string) : null,
   }).eq("id", parseInt(id, 10));
   if (error) return { error: error.message };
   revalidatePath("/admin/rozet");
+  revalidatePath("/benim-kosem");
   revalidatePath("/");
   return { ok: true };
 }

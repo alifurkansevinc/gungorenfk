@@ -166,7 +166,7 @@ export async function getFanLevels(): Promise<FanLevel[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("fan_levels")
-    .select("id, name, slug, min_points, sort_order, description, target_store_spend, target_tickets, target_donation")
+    .select("id, name, slug, min_points, sort_order, description, target_store_spend, target_tickets, target_donation, advantages")
     .order("sort_order");
   return (data ?? []) as FanLevel[];
 }

@@ -16,6 +16,31 @@ export async function POST(req: NextRequest) {
   if (!qrCode) return NextResponse.json({ success: false, error: "qr_code gerekli" }, { status: 400 });
 
   const supabase = createServiceRoleClient();
+
+  // Rozet teslim bileti (RZ- ile başlayan QR): mağazada rozet teslim alırken kullanılır, kullanıldıktan sonra Benim Köşemden düşer
+  if (qrCode.startsWith("RZ-")) {
+    const { data: rozetRow, error: rozetFindError } = await supabase
+      .from("rozet_pickup_tickets")
+      .select("id")
+      .eq("qr_code", qrCode)
+      .is("used_at", null)
+      .single();
+
+    if (rozetFindError || !rozetRow) {
+      return NextResponse.json({ success: false, error: "Rozet teslim bileti bulunamadı veya zaten kullanılmış." }, { status: 404 });
+    }
+
+    const { error: rozetUpdateError } = await supabase
+      .from("rozet_pickup_tickets")
+      .update({ used_at: new Date().toISOString() })
+      .eq("id", rozetRow.id);
+
+    if (rozetUpdateError) {
+      return NextResponse.json({ success: false, error: rozetUpdateError.message }, { status: 500 });
+    }
+    return NextResponse.json({ success: true, message: "Rozet teslim bileti kullanıldı." });
+  }
+
   const { data: ticket, error: findError } = await supabase
     .from("match_tickets")
     .select("id, status, payment_status")

@@ -1,6 +1,8 @@
+import crypto from "crypto";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceRoleClient } from "@/lib/supabase/service";
 import { getSquad, getFanLevels } from "@/lib/data";
 import type { FanLevel } from "@/types/db";
 import { FanLevelBadge } from "@/app/taraftar/FanLevelBadge";
@@ -59,6 +61,27 @@ export default async function BenimKosemPage() {
     .eq("payment_status", "PAID")
     .order("created_at", { ascending: false })
     .limit(20);
+
+  // Taraftar rozet teslim bileti: yoksa bir tane oluştur (kullanıldıktan sonra listeden düşer)
+  let rozetTicket: { id: string; qr_code: string } | null = null;
+  const { data: rozetRows } = await supabase
+    .from("rozet_pickup_tickets")
+    .select("id, qr_code")
+    .eq("user_id", user.id)
+    .is("used_at", null)
+    .limit(1);
+  if (rozetRows && rozetRows.length > 0) {
+    rozetTicket = { id: rozetRows[0].id, qr_code: rozetRows[0].qr_code };
+  } else {
+    const serviceSupabase = createServiceRoleClient();
+    const newQr = "RZ-" + crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
+    const { data: inserted } = await serviceSupabase
+      .from("rozet_pickup_tickets")
+      .insert({ user_id: user.id, qr_code: newQr })
+      .select("id, qr_code")
+      .single();
+    if (inserted) rozetTicket = { id: inserted.id, qr_code: inserted.qr_code };
+  }
 
   const ticketsCount = new Set((myTickets ?? []).filter((t) => (t as { match_id: string | null }).match_id).map((t) => (t as { match_id: string }).match_id)).size;
 
@@ -135,11 +158,22 @@ export default async function BenimKosemPage() {
               )}
             </section>
 
-            {/* Sonraki rozetin için — 3 barem */}
+            {/* Sonraki rozetin için — avantajlar + 3 barem */}
             {nextLevel && (
               <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
                 <h2 className="font-display text-lg font-bold text-siyah">Sonraki rozetin için</h2>
-                <p className="mt-1 text-sm text-siyah/70">Sonraki kademe: <strong>{nextLevel.name}</strong>. Aşağıdaki üç barem backend tarafından ayarlanır.</p>
+                <p className="mt-1 text-sm text-siyah/70">Sonraki kademe: <strong>{nextLevel.name}</strong>.</p>
+                {nextLevel.advantages?.trim() && (
+                  <ul className="mt-3 list-inside list-disc space-y-1 text-sm text-siyah/80">
+                    {nextLevel.advantages
+                      .split(/\r?\n/)
+                      .map((line) => line.trim())
+                      .filter(Boolean)
+                      .map((madde, i) => (
+                        <li key={i}>{madde}</li>
+                      ))}
+                  </ul>
+                )}
                 <div className="mt-4 space-y-4">
                   <div>
                     <div className="flex justify-between text-sm">
@@ -190,13 +224,30 @@ export default async function BenimKosemPage() {
             {/* Bilet cüzdanı */}
             <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
               <h2 className="font-display text-lg font-bold text-siyah">Bilet cüzdanım</h2>
-              <p className="mt-1 text-sm text-siyah/70">Aldığınız maç ve etkinlik biletleri. Girişte QR kodu göstermeniz yeterli.</p>
-              {ticketsWithMatch.length === 0 ? (
+              <p className="mt-1 text-sm text-siyah/70">Aldığınız maç ve etkinlik biletleri. Taraftar rozeti teslim bileti mağazada kullanıldıktan sonra listeden düşer.</p>
+              {rozetTicket && (
+                <div className="mt-4 flex items-center gap-4 rounded-xl border-2 border-bordo/30 bg-gradient-to-br from-bordo/5 to-siyah/5 p-4">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(rozetTicket.qr_code)}`}
+                      alt="QR"
+                      width={56}
+                      height={56}
+                      className="h-full w-full object-contain"
+                    />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-siyah">Rozet teslim bileti</p>
+                    <p className="text-sm text-siyah/70 mt-0.5">Rozetini mağazadan alabilirsin.</p>
+                  </div>
+                </div>
+              )}
+              {ticketsWithMatch.length === 0 && !rozetTicket ? (
                 <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
                   <p className="text-sm text-siyah/60">Henüz biletiniz yok.</p>
                   <Link href="/biletler" className="mt-3 inline-block text-sm font-medium text-bordo hover:underline">Biletler →</Link>
                 </div>
-              ) : (
+              ) : ticketsWithMatch.length > 0 ? (
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
                   {ticketsWithMatch.map((t) => {
                     const qrUrl = t.qr_code
@@ -227,8 +278,8 @@ export default async function BenimKosemPage() {
                     );
                   })}
                 </div>
-              )}
-              {ticketsWithMatch.length > 0 && (
+              ) : null}
+              {(ticketsWithMatch.length > 0 || rozetTicket) && (
                 <Link href="/biletler" className="mt-4 block text-center text-sm font-medium text-bordo hover:underline">Yeni bilet al →</Link>
               )}
             </section>
