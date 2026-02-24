@@ -16,7 +16,7 @@ function generateQrCode(): string {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { matchId, eventId, seatId } = body as { matchId?: string; eventId?: string; seatId?: string };
+    const { matchId, eventId, seatId, taraftar } = body as { matchId?: string; eventId?: string; seatId?: string; taraftar?: boolean };
     const isEventTicket = !!eventId && !matchId;
     if (!matchId && !eventId) {
       return NextResponse.json({ success: false, error: "matchId veya eventId gerekli" }, { status: 400 });
@@ -165,6 +165,9 @@ export async function POST(req: NextRequest) {
       qrCode = generateQrCode();
     }
 
+    const TARAFTAR_CAPACITY = 1000;
+    const isTaraftar = !!taraftar;
+
     const { data: takenSeats } = await supabase
       .from("match_tickets")
       .select("seat_id")
@@ -172,8 +175,23 @@ export async function POST(req: NextRequest) {
       .not("seat_id", "is", null);
     const takenIds = new Set((takenSeats ?? []).map((r) => (r as { seat_id: string }).seat_id).filter(Boolean));
 
-    let seat: { id: string; seat_code: string } | null = null;
-    if (seatId) {
+    let seat: { id: string | null; seat_code: string } | null = null;
+    if (isTaraftar) {
+      const { data: taraftarTickets } = await supabase
+        .from("match_tickets")
+        .select("id")
+        .eq("match_id", matchId)
+        .is("seat_id", null)
+        .in("payment_status", ["PAID", "PENDING"]);
+      const taraftarSold = (taraftarTickets ?? []).length;
+      if (taraftarSold >= TARAFTAR_CAPACITY) {
+        return NextResponse.json(
+          { success: false, error: "Taraftar bölümü için bilet kalmadı (1000 kişilik kontenjan dolu)." },
+          { status: 400 }
+        );
+      }
+      seat = { id: null, seat_code: "Taraftar Bölümü" };
+    } else if (seatId) {
       const { data: chosen } = await supabase.from("stadium_seats").select("id, seat_code").eq("id", seatId).single();
       if (!chosen || takenIds.has(chosen.id)) {
         return NextResponse.json(
@@ -207,7 +225,7 @@ export async function POST(req: NextRequest) {
         qr_code: qrCode,
         status: "active",
         payment_status: isFree ? "PAID" : "PENDING",
-        seat_id: seat.id,
+        seat_id: seat.id ?? null,
       })
       .select("id")
       .single();

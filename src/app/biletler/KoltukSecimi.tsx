@@ -34,6 +34,8 @@ export function KoltukSecimi({
 }) {
   const [seats, setSeats] = useState<Seat[]>([]);
   const [takenIds, setTakenIds] = useState<Set<string>>(new Set());
+  const [taraftarCapacity, setTaraftarCapacity] = useState(1000);
+  const [taraftarSold, setTaraftarSold] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [expandedBlock, setExpandedBlock] = useState<string | null>(null);
@@ -53,6 +55,8 @@ export function KoltukSecimi({
         } else {
           setSeats(data.seats ?? []);
           setTakenIds(new Set(data.takenIds ?? []));
+          setTaraftarCapacity(data.taraftarCapacity ?? 1000);
+          setTaraftarSold(data.taraftarSold ?? 0);
         }
       })
       .catch(() => {
@@ -98,13 +102,15 @@ export function KoltukSecimi({
   }, [blocks]);
 
   const emptyCountByBlock = useMemo(() => {
-    const out: Record<string, number> = { Taraftar: 0 };
+    const out: Record<string, number> = {
+      Taraftar: Math.max(0, taraftarCapacity - taraftarSold),
+    };
     BLOCK_ORDER.forEach((sec) => {
       const blockSeats = seats.filter((s) => (s.section || "").toUpperCase() === sec);
       out[sec] = blockSeats.filter((s) => !takenIds.has(s.id)).length;
     });
     return out;
-  }, [seats, takenIds]);
+  }, [seats, takenIds, taraftarCapacity, taraftarSold]);
 
   const selectedSeat = seats.find((s) => s.id === selectedSeatId);
 
@@ -231,7 +237,7 @@ export function KoltukSecimi({
                       {sec.label}
                     </span>
                     <span className="mt-1 text-xs font-semibold text-bordo">
-                      {sec.hasSeats ? `${emptyCount} boş` : "—"}
+                      {sec.key === "Taraftar" ? `${emptyCountByBlock["Taraftar"]} boş` : sec.hasSeats ? `${emptyCount} boş` : "—"}
                     </span>
                   </button>
                 );
@@ -263,10 +269,27 @@ export function KoltukSecimi({
           </div>
 
           {expandedBlock === "Taraftar" ? (
+            <div className="p-6 text-center">
+              <p className="font-bold text-siyah">Taraftar Bölümü</p>
+              <p className="mt-2 text-sm text-siyah/70">
+                Sıra ve koltuk numarası yok; {taraftarCapacity} kişilik bölüm. Taraftar biletini seçmek için aşağıdaki butona tıklayın.
+              </p>
+              <p className="mt-2 text-sm font-medium text-bordo">
+                {Math.max(0, taraftarCapacity - taraftarSold)} bilet kaldı
+              </p>
+              <button
+                type="button"
+                onClick={() => onSelect(null, "TARAFTAR")}
+                className="mt-4 rounded-xl bg-bordo px-6 py-3 font-bold text-beyaz shadow-lg hover:bg-bordo-dark"
+              >
+                Taraftar biletini seç
+              </button>
+            </div>
+          ) : (rowNumbersByBlock[expandedBlock]?.length ?? 0) === 0 ? (
             <div className="p-8 text-center text-siyah/70">
-              <p className="font-medium">Taraftar Bölümü</p>
+              <p className="font-medium">{SECTIONS.find((s) => s.key === expandedBlock)?.label ?? expandedBlock}</p>
               <p className="mt-2 text-sm">
-                Bu bölüm için koltuk planı henüz tanımlı değil.
+                Bu blok için koltuk verisi bulunamadı. Lütfen daha sonra tekrar deneyin veya site yöneticisi ile iletişime geçin.
               </p>
             </div>
           ) : (

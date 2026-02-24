@@ -143,8 +143,10 @@ export function MacKartlari({ matches, isGuest }: { matches: Match[]; isGuest?: 
                           <p className="text-sm text-siyah/70">
                             {macLabel} — {tarihStr}
                             {saatStr ? ` · ${saatStr}` : ""}
-                            {seciliKoltukId && seciliMacId === m.id && seciliKoltukKod && (
-                              <span className="mt-1 block font-medium text-bordo">Koltuk: {seciliKoltukKod}</span>
+                            {seciliMacId === m.id && seciliKoltukKod && (
+                              <span className="mt-1 block font-medium text-bordo">
+                                {seciliKoltukKod === "TARAFTAR" ? "Taraftar Bölümü" : `Koltuk: ${seciliKoltukKod}`}
+                              </span>
                             )}
                           </p>
                         </div>
@@ -153,6 +155,7 @@ export function MacKartlari({ matches, isGuest }: { matches: Match[]; isGuest?: 
                         matchId={m.id}
                         matchName={m.opponent_name}
                         seatId={seciliMacId === m.id ? seciliKoltukId : null}
+                        isTaraftar={seciliMacId === m.id && seciliKoltukKod === "TARAFTAR"}
                       />
                     </div>
                   </div>
