@@ -116,7 +116,9 @@ export default async function MaclarPage() {
                         </td>
                         <td className="px-4 py-4 text-center">
                           {m.status === "finished" && m.goals_for != null && m.goals_against != null ? (
-                            <span className="font-bold text-bordo">{m.goals_for} - {m.goals_against}</span>
+                            <span className="font-bold text-bordo">
+                              {m.home_away === "home" ? `${m.goals_for} - ${m.goals_against}` : `${m.goals_against} - ${m.goals_for}`}
+                            </span>
                           ) : (
                             <span className="text-siyah/50">—</span>
                           )}
