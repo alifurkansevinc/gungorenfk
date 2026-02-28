@@ -33,31 +33,31 @@ export default async function MaclarPage() {
         {/* Önümüzdeki maç — admin panelinden belirlenir; tek büyük kart */}
         <NextMatchCard match={nextMatch} />
 
-        {/* Puan durumu (Mackolik kaynaklı) - sonraki maçın altında */}
+        {/* Puan durumu (Mackolik kaynaklı) - mobilde tam görünür, slider yok */}
         {standings.rows.length > 0 && (
           <section className="mb-14">
-            <h2 className="text-sm font-semibold uppercase tracking-wider text-siyah/60 mb-4">Puan durumu</h2>
-            <p className="text-sm text-siyah/70 mb-3">
+            <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-siyah/60 mb-2 sm:mb-4">Puan durumu</h2>
+            <p className="text-xs sm:text-sm text-siyah/70 mb-2 sm:mb-3">
               {standings.league_name} — {standings.season}
               {standings.updated_at && (
-                <span className="ml-2">(Son güncelleme: {new Date(standings.updated_at).toLocaleDateString("tr-TR")})</span>
+                <span className="ml-1 sm:ml-2">(Son güncelleme: {new Date(standings.updated_at).toLocaleDateString("tr-TR")})</span>
               )}
             </p>
             <div className="overflow-hidden rounded-xl border border-siyah/10 bg-beyaz">
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[520px] text-left text-sm">
+              <div className="overflow-x-auto overflow-y-visible">
+                <table className="w-full text-left text-[11px] sm:text-sm table-fixed">
                   <thead>
                     <tr className="border-b border-siyah/10 bg-siyah/5">
-                      <th className="px-4 py-3 font-semibold text-siyah/70">#</th>
-                      <th className="px-4 py-3 font-semibold text-siyah/70">Takım</th>
-                      <th className="px-4 py-3 font-semibold text-siyah/70 text-center">O</th>
-                      <th className="px-4 py-3 font-semibold text-siyah/70 text-center">G</th>
-                      <th className="px-4 py-3 font-semibold text-siyah/70 text-center">B</th>
-                      <th className="px-4 py-3 font-semibold text-siyah/70 text-center">M</th>
-                      <th className="px-4 py-3 font-semibold text-siyah/70 text-center">A</th>
-                      <th className="px-4 py-3 font-semibold text-siyah/70 text-center">Y</th>
-                      <th className="px-4 py-3 font-semibold text-siyah/70 text-center">Av</th>
-                      <th className="px-4 py-3 font-semibold text-siyah/70 text-center">P</th>
+                      <th className="w-6 sm:w-8 px-1 py-1.5 sm:px-2 sm:py-2 font-semibold text-siyah/70">#</th>
+                      <th className="min-w-0 px-1 py-1.5 sm:px-2 sm:py-2 font-semibold text-siyah/70 truncate">Takım</th>
+                      <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">O</th>
+                      <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">G</th>
+                      <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">B</th>
+                      <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">M</th>
+                      <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">A</th>
+                      <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">Y</th>
+                      <th className="w-7 sm:w-9 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">Av</th>
+                      <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">P</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -66,55 +66,55 @@ export default async function MaclarPage() {
                         key={r.position}
                         className={`border-b border-siyah/5 ${r.team_name.toLowerCase().includes("güngören") || r.team_name.toLowerCase().includes("gungoren") ? "bg-bordo/5 font-semibold" : "hover:bg-siyah/[0.02]"}`}
                       >
-                        <td className="px-4 py-3 text-siyah/80">{r.position}</td>
-                        <td className="px-4 py-3 font-medium text-siyah">{r.team_name}</td>
-                        <td className="px-4 py-3 text-center text-siyah/80">{r.played}</td>
-                        <td className="px-4 py-3 text-center text-siyah/80">{r.wins}</td>
-                        <td className="px-4 py-3 text-center text-siyah/80">{r.draws}</td>
-                        <td className="px-4 py-3 text-center text-siyah/80">{r.losses}</td>
-                        <td className="px-4 py-3 text-center text-siyah/80">{r.goals_for}</td>
-                        <td className="px-4 py-3 text-center text-siyah/80">{r.goals_against}</td>
-                        <td className="px-4 py-3 text-center text-siyah/80">{r.goal_diff >= 0 ? `+${r.goal_diff}` : r.goal_diff}</td>
-                        <td className="px-4 py-3 text-center font-bold text-bordo">{r.points}</td>
+                        <td className="px-1 py-1.5 sm:px-2 sm:py-2 text-siyah/80">{r.position}</td>
+                        <td className="min-w-0 px-1 py-1.5 sm:px-2 sm:py-2 font-medium text-siyah truncate" title={r.team_name}>{r.team_name}</td>
+                        <td className="px-0.5 py-1.5 sm:py-2 text-center text-siyah/80">{r.played}</td>
+                        <td className="px-0.5 py-1.5 sm:py-2 text-center text-siyah/80">{r.wins}</td>
+                        <td className="px-0.5 py-1.5 sm:py-2 text-center text-siyah/80">{r.draws}</td>
+                        <td className="px-0.5 py-1.5 sm:py-2 text-center text-siyah/80">{r.losses}</td>
+                        <td className="px-0.5 py-1.5 sm:py-2 text-center text-siyah/80">{r.goals_for}</td>
+                        <td className="px-0.5 py-1.5 sm:py-2 text-center text-siyah/80">{r.goals_against}</td>
+                        <td className="px-0.5 py-1.5 sm:py-2 text-center text-siyah/80">{r.goal_diff >= 0 ? `+${r.goal_diff}` : r.goal_diff}</td>
+                        <td className="px-0.5 py-1.5 sm:py-2 text-center font-bold text-bordo">{r.points}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </div>
             </div>
-            <p className="mt-2 text-xs text-siyah/50">Kaynak: Mackolik.com — günde bir kez güncellenir.</p>
+            <p className="mt-2 text-[10px] sm:text-xs text-siyah/50">Kaynak: Mackolik.com — günde bir kez güncellenir.</p>
           </section>
         )}
 
-        {/* Tüm maçlar: fikstür ve sonuçlar tablosu */}
+        {/* Fikstür ve sonuçlar — mobilde tek ekranda, Tarih/Müsabaka dar */}
         <section>
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-siyah/60 mb-1">Fikstür ve sonuçlar</h2>
-          <p className="text-xs text-siyah/50 mb-4">Sezon içi tüm karşılaşmalar ve skorlar.</p>
+          <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-siyah/60 mb-1">Fikstür ve sonuçlar</h2>
+          <p className="text-[10px] sm:text-xs text-siyah/50 mb-2 sm:mb-4">Sezon içi tüm karşılaşmalar ve skorlar.</p>
           <div className="overflow-hidden rounded-xl border border-siyah/10 bg-beyaz">
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[520px] text-left">
+            <div className="overflow-x-auto overflow-y-visible">
+              <table className="w-full text-left text-[11px] sm:text-sm table-fixed">
                 <thead>
                   <tr className="border-b border-siyah/10 bg-siyah/5">
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-siyah/70">Tarih</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-siyah/70">Müsabaka</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-siyah/70">Maç</th>
-                    <th className="px-4 py-3 text-xs font-semibold uppercase tracking-wider text-siyah/70 text-center">Sonuç</th>
+                    <th className="w-14 sm:w-20 px-1 py-1.5 sm:px-2 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-siyah/70">Tarih</th>
+                    <th className="w-16 sm:w-24 px-1 py-1.5 sm:px-2 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-siyah/70">Müsabaka</th>
+                    <th className="min-w-0 px-1 py-1.5 sm:px-2 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-siyah/70">Maç</th>
+                    <th className="w-12 sm:w-14 px-0.5 py-1.5 sm:py-2 text-[10px] sm:text-xs font-semibold uppercase tracking-wider text-siyah/70 text-center">Sonuç</th>
                   </tr>
                 </thead>
                 <tbody>
                   {matches.length === 0 ? (
-                    <tr><td colSpan={4} className="px-4 py-8 text-center text-siyah/60">Henüz maç eklenmedi.</td></tr>
+                    <tr><td colSpan={4} className="px-2 py-6 text-center text-siyah/60 text-xs">Henüz maç eklenmedi.</td></tr>
                   ) : (
                     [...scheduled, ...finished].map((m) => (
                       <tr key={m.id} className="border-b border-siyah/5 hover:bg-siyah/[0.02]">
-                        <td className="px-4 py-4 text-sm text-siyah/80">{new Date(m.match_date).toLocaleDateString("tr-TR")}</td>
-                        <td className="px-4 py-4 text-sm text-siyah/80">{m.competition || "—"}</td>
-                        <td className="px-4 py-4">
-                          <Link href={`/maclar/${m.id}`} className="font-medium text-siyah hover:text-bordo">
+                        <td className="px-1 py-2 sm:py-2.5 text-siyah/80 whitespace-nowrap">{new Date(m.match_date).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "2-digit" })}</td>
+                        <td className="px-1 py-2 sm:py-2.5 text-siyah/80 text-[10px] sm:text-xs truncate" title={m.competition || ""}>{m.competition || "—"}</td>
+                        <td className="min-w-0 px-1 py-2 sm:py-2.5">
+                          <Link href={`/maclar/${m.id}`} className="font-medium text-siyah hover:text-bordo text-[11px] sm:text-sm truncate block">
                             {m.home_away === "home" ? "Güngören FK" : m.opponent_name} - {m.home_away === "away" ? "Güngören FK" : m.opponent_name}
                           </Link>
                         </td>
-                        <td className="px-4 py-4 text-center">
+                        <td className="px-0.5 py-2 sm:py-2.5 text-center whitespace-nowrap">
                           {m.status === "finished" && m.goals_for != null && m.goals_against != null ? (
                             <span className="font-bold text-bordo">
                               {m.home_away === "home" ? `${m.goals_for} - ${m.goals_against}` : `${m.goals_against} - ${m.goals_for}`}
