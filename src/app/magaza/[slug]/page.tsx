@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getProductBySlug, getFeaturedProducts } from "@/lib/data";
+import { createClient } from "@/lib/supabase/server";
+import { getProductBySlug, getFeaturedProducts, getStoreDiscountForLevel, getEffectiveStorePrice } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { AddToCartButton } from "@/components/AddToCartButton";
@@ -18,11 +19,23 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
   const product = await getProductBySlug(slug);
   if (!product) notFound();
 
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  let discountPercent = 0;
+  if (user) {
+    const { data: profile } = await supabase.from("fan_profiles").select("fan_level_id").eq("user_id", user.id).single();
+    const levelId = (profile as { fan_level_id?: number } | null)?.fan_level_id ?? 1;
+    discountPercent = await getStoreDiscountForLevel(levelId);
+  }
+
+  const listPrice = Number(product.price);
+  const effectivePrice = getEffectiveStorePrice(listPrice, discountPercent);
+  const hasDiscount = discountPercent > 0 && effectivePrice < listPrice;
+
   const images = Array.isArray((product as { images?: string[] }).images) && (product as { images?: string[] }).images?.length
     ? (product as { images: string[] }).images
     : [product.image_url || DEMO_IMAGES.product];
   const mainImage = images[0];
-  const price = Number(product.price).toFixed(2);
   const allProducts = await getFeaturedProducts(20);
   const related = allProducts.filter((p) => p.slug !== slug).slice(0, 4);
 
@@ -55,7 +68,19 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
           {/* Bilgi alanı */}
           <div>
             <h1 className="font-display text-2xl font-bold text-siyah sm:text-3xl lg:text-4xl">{product.name}</h1>
-            <p className="mt-4 text-3xl font-bold text-bordo">{price} ₺</p>
+            {hasDiscount && (
+              <p className="mt-2 text-sm font-medium text-bordo">Üye indiriminiz %{discountPercent} uygulandı.</p>
+            )}
+            <div className="mt-2 flex flex-wrap items-baseline gap-3">
+              {hasDiscount ? (
+                <>
+                  <span className="text-xl text-siyah/50 line-through">{listPrice.toFixed(2)} ₺</span>
+                  <span className="text-3xl font-bold text-bordo">{effectivePrice.toFixed(2)} ₺</span>
+                </>
+              ) : (
+                <span className="text-3xl font-bold text-bordo">{listPrice.toFixed(2)} ₺</span>
+              )}
+            </div>
             <p className="mt-2 text-sm text-siyah/60">KDV dahil. iyzico ile güvenli ödeme.</p>
 
             {product.description && (
@@ -68,7 +93,7 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
             <AddToCartButton
               productId={product.id}
               name={product.name}
-              price={Number(product.price)}
+              price={effectivePrice}
               slug={product.slug}
             />
           </div>
@@ -79,28 +104,42 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
           <section className="mt-16 pt-12 border-t border-siyah/10">
             <h2 className="font-display text-xl font-bold text-siyah">Diğer ürünler</h2>
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {related.map((p) => (
-                <Link
-                  key={p.id}
-                  href={`/magaza/${p.slug}`}
-                  className="group overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5"
-                >
-                  <div className="relative aspect-[3/4] overflow-hidden">
-                    <Image
-                      src={p.image_url || DEMO_IMAGES.product}
-                      alt={p.name}
-                      fill
-                      className="object-cover transition-transform duration-300 group-hover:scale-105"
-                      sizes="25vw"
-                      unoptimized
-                    />
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-siyah line-clamp-2 group-hover:text-bordo transition-colors">{p.name}</h3>
-                    <p className="mt-1 font-bold text-bordo">{Number(p.price).toFixed(2)} ₺</p>
-                  </div>
-                </Link>
-              ))}
+              {related.map((p) => {
+                const pList = Number(p.price);
+                const pEffective = getEffectiveStorePrice(pList, discountPercent);
+                const pHasDiscount = discountPercent > 0 && pEffective < pList;
+                return (
+                  <Link
+                    key={p.id}
+                    href={`/magaza/${p.slug}`}
+                    className="group overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm transition-all hover:shadow-lg hover:-translate-y-0.5"
+                  >
+                    <div className="relative aspect-[3/4] overflow-hidden">
+                      <Image
+                        src={p.image_url || DEMO_IMAGES.product}
+                        alt={p.name}
+                        fill
+                        className="object-cover transition-transform duration-300 group-hover:scale-105"
+                        sizes="25vw"
+                        unoptimized
+                      />
+                    </div>
+                    <div className="p-4">
+                      <h3 className="font-semibold text-siyah line-clamp-2 group-hover:text-bordo transition-colors">{p.name}</h3>
+                      <div className="mt-1 flex items-baseline gap-2">
+                        {pHasDiscount ? (
+                          <>
+                            <span className="text-sm text-siyah/50 line-through">{pList.toFixed(2)} ₺</span>
+                            <span className="font-bold text-bordo">{pEffective.toFixed(2)} ₺</span>
+                          </>
+                        ) : (
+                          <span className="font-bold text-bordo">{pList.toFixed(2)} ₺</span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
             </div>
           </section>
         )}

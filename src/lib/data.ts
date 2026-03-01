@@ -286,6 +286,27 @@ export async function getGiftQuotaForLevel(levelId: number): Promise<number> {
   return row ? Math.max(0, Number(row.value)) : 0;
 }
 
+/** Rütbenin mağaza indirim oranı (0–100). Yoksa 0. */
+export async function getStoreDiscountForLevel(levelId: number): Promise<number> {
+  const supabase = await createClient();
+  const { data: mod } = await supabase.from("benefit_modules").select("id").eq("slug", "store_discount").maybeSingle();
+  if (!mod) return 0;
+  const { data: row } = await supabase
+    .from("fan_level_benefits")
+    .select("value")
+    .eq("fan_level_id", levelId)
+    .eq("benefit_module_id", mod.id)
+    .single();
+  return row ? Math.min(100, Math.max(0, Number(row.value))) : 0;
+}
+
+/** İndirimli mağaza fiyatı (indirim yüzdesi 0 ise liste fiyatı döner). */
+export function getEffectiveStorePrice(listPrice: number, discountPercent: number): number {
+  if (discountPercent <= 0) return listPrice;
+  const discounted = listPrice * (1 - discountPercent / 100);
+  return Math.round(discounted * 100) / 100;
+}
+
 /** Slug ile tek ürün (mağaza detay). DB'de yoksa demo ürünlerden döner. */
 export async function getProductBySlug(slug: string) {
   const supabase = await createClient();
