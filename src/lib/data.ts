@@ -41,14 +41,14 @@ export const DEMO_BOARD: BoardMember[] = [
   { id: "b-3", name: "Ali Demir", role_slug: "as_baskan", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 3, is_active: true },
   { id: "b-4", name: "Ayşe Özkan", role_slug: "as_baskan", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 4, is_active: true },
   { id: "b-5", name: "Fatma Çelik", role_slug: "yk_uyesi", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 5, is_active: true },
-  { id: "b-6", name: "Mustafa Arslan", role_slug: "yk_uyesi", photo_url: null, sort_order: 6, is_active: true },
-  { id: "b-7", name: "Zeynep Aydın", role_slug: "yk_uyesi", photo_url: null, sort_order: 7, is_active: true },
-  { id: "b-8", name: "Kemal Yıldız", role_slug: "yuksek_istisare_heyeti", photo_url: null, sort_order: 8, is_active: true },
-  { id: "b-9", name: "Selma Koç", role_slug: "yuksek_istisare_heyeti", photo_url: null, sort_order: 9, is_active: true },
-  { id: "b-10", name: "Cem Öztürk", role_slug: "yuksek_istisare_heyeti", photo_url: null, sort_order: 10, is_active: true },
-  { id: "b-11", name: "Deniz Şahin", role_slug: "yuksek_istisare_heyeti", photo_url: null, sort_order: 11, is_active: true },
-  { id: "b-12", name: "Emre Danışman", role_slug: "danisman", photo_url: null, sort_order: 12, is_active: true },
-  { id: "b-13", name: "Elif Danışman", role_slug: "danisman", photo_url: null, sort_order: 13, is_active: true },
+  { id: "b-6", name: "Mustafa Arslan", role_slug: "yk_uyesi", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 6, is_active: true },
+  { id: "b-7", name: "Zeynep Aydın", role_slug: "yk_uyesi", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 7, is_active: true },
+  { id: "b-8", name: "Kemal Yıldız", role_slug: "yuksek_istisare_heyeti", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 8, is_active: true },
+  { id: "b-9", name: "Selma Koç", role_slug: "yuksek_istisare_heyeti", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 9, is_active: true },
+  { id: "b-10", name: "Cem Öztürk", role_slug: "yuksek_istisare_heyeti", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 10, is_active: true },
+  { id: "b-11", name: "Deniz Şahin", role_slug: "yuksek_istisare_heyeti", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 11, is_active: true },
+  { id: "b-12", name: "Emre Danışman", role_slug: "danisman", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 12, is_active: true },
+  { id: "b-13", name: "Elif Danışman", role_slug: "danisman", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 13, is_active: true },
 ];
 
 /** Demo teknik heyet (veri yokken) */
