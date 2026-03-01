@@ -343,8 +343,11 @@ export function getEffectiveStorePrice(listPrice: number, discountPercent: numbe
 
 /** Maestro ve sonrası rozet sahipleri Be-Rozet / takım rozetini mağazadan %100 indirimli alabilir (kargo ücreti ayrı). */
 export const BE_ROZET_PRODUCT_SLUGS = ["be-rozet", "takim-rozeti"] as const;
+/** Stok kodu BE-ROZET olan ürün de rozet hakkıyla ücretsiz (slug farklı olsa bile). */
+export const BE_ROZET_SKU = "BE-ROZET";
 
-export function isBeRozetProduct(slug: string | null | undefined): boolean {
+export function isBeRozetProduct(slug: string | null | undefined, sku?: string | null): boolean {
+  if (sku != null && String(sku).trim().toUpperCase() === BE_ROZET_SKU) return true;
   return !!slug && BE_ROZET_PRODUCT_SLUGS.includes(slug as (typeof BE_ROZET_PRODUCT_SLUGS)[number]);
 }
 
