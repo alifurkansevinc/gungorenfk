@@ -341,6 +341,31 @@ export function getEffectiveStorePrice(listPrice: number, discountPercent: numbe
   return Math.round(discounted * 100) / 100;
 }
 
+/** Maestro ve sonrası rozet sahipleri Be-Rozet / takım rozetini mağazadan %100 indirimli alabilir (kargo ücreti ayrı). */
+export const BE_ROZET_PRODUCT_SLUGS = ["be-rozet", "takim-rozeti"] as const;
+
+export function isBeRozetProduct(slug: string | null | undefined): boolean {
+  return !!slug && BE_ROZET_PRODUCT_SLUGS.includes(slug as (typeof BE_ROZET_PRODUCT_SLUGS)[number]);
+}
+
+/** Rütbenin sıra numarası (Maestro = 2, sonrası 3,4,5). 2 ve üzeri rozet hakkıyla Be-Rozet ücretsiz. */
+export async function getLevelSortOrder(levelId: number): Promise<number> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("fan_levels").select("sort_order").eq("id", levelId).single();
+  return (data as { sort_order?: number } | null)?.sort_order ?? 1;
+}
+
+/** Ürün için geçerli fiyat: Be-Rozet ve Maestro+ ise 0, yoksa indirimli fiyat. */
+export function getEffectiveProductPrice(
+  listPrice: number,
+  discountPercent: number,
+  productSlug: string | null | undefined,
+  levelSortOrder: number
+): number {
+  if (isBeRozetProduct(productSlug) && levelSortOrder >= 2) return 0;
+  return getEffectiveStorePrice(listPrice, discountPercent);
+}
+
 /** Slug ile tek ürün (mağaza detay). DB'de yoksa demo ürünlerden döner. */
 export async function getProductBySlug(slug: string) {
   const supabase = await createClient();

@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
-import { getProductBySlug, getFeaturedProducts, getStoreDiscountForLevel, getEffectiveStorePrice } from "@/lib/data";
+import { getProductBySlug, getFeaturedProducts, getStoreDiscountForLevel, getEffectiveProductPrice, getLevelSortOrder, isBeRozetProduct } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { AddToCartButton } from "@/components/AddToCartButton";
@@ -22,15 +22,17 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   let discountPercent = 0;
+  let levelSortOrder = 1;
   if (user) {
     const { data: profile } = await supabase.from("fan_profiles").select("fan_level_id").eq("user_id", user.id).single();
     const levelId = (profile as { fan_level_id?: number } | null)?.fan_level_id ?? 1;
-    discountPercent = await getStoreDiscountForLevel(levelId);
+    [discountPercent, levelSortOrder] = await Promise.all([getStoreDiscountForLevel(levelId), getLevelSortOrder(levelId)]);
   }
 
   const listPrice = Number(product.price);
-  const effectivePrice = getEffectiveStorePrice(listPrice, discountPercent);
-  const hasDiscount = discountPercent > 0 && effectivePrice < listPrice;
+  const effectivePrice = getEffectiveProductPrice(listPrice, discountPercent, product.slug, levelSortOrder);
+  const isFreeBeRozet = isBeRozetProduct(product.slug) && levelSortOrder >= 2 && effectivePrice === 0;
+  const hasDiscount = (discountPercent > 0 && effectivePrice < listPrice) || isFreeBeRozet;
 
   const images = Array.isArray((product as { images?: string[] }).images) && (product as { images?: string[] }).images?.length
     ? (product as { images: string[] }).images
@@ -68,11 +70,19 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
           {/* Bilgi alanı */}
           <div>
             <h1 className="font-display text-2xl font-bold text-siyah sm:text-3xl lg:text-4xl">{product.name}</h1>
-            {hasDiscount && (
+            {isFreeBeRozet && (
+              <p className="mt-2 rounded-lg bg-bordo/10 px-3 py-2 text-sm font-medium text-bordo">Rozet hakkınızla bu ürün %100 indirimli. Kargo isterseniz kargo ücreti uygulanır.</p>
+            )}
+            {hasDiscount && !isFreeBeRozet && (
               <p className="mt-2 text-sm font-medium text-bordo">Üye indiriminiz %{discountPercent} uygulandı.</p>
             )}
             <div className="mt-2 flex flex-wrap items-baseline gap-3">
-              {hasDiscount ? (
+              {isFreeBeRozet ? (
+                <>
+                  <span className="text-xl text-siyah/50 line-through">{listPrice.toFixed(2)} ₺</span>
+                  <span className="text-3xl font-bold text-bordo">Ücretsiz</span>
+                </>
+              ) : hasDiscount ? (
                 <>
                   <span className="text-xl text-siyah/50 line-through">{listPrice.toFixed(2)} ₺</span>
                   <span className="text-3xl font-bold text-bordo">{effectivePrice.toFixed(2)} ₺</span>
@@ -81,7 +91,7 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
                 <span className="text-3xl font-bold text-bordo">{listPrice.toFixed(2)} ₺</span>
               )}
             </div>
-            <p className="mt-2 text-sm text-siyah/60">KDV dahil. iyzico ile güvenli ödeme.</p>
+            <p className="mt-2 text-sm text-siyah/60">KDV dahil. iyzico ile güvenli ödeme.{isFreeBeRozet && " Kargo seçeneğinde sadece kargo ücreti alınır."}</p>
 
             {product.description && (
               <div className="mt-6">
@@ -106,8 +116,9 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {related.map((p) => {
                 const pList = Number(p.price);
-                const pEffective = getEffectiveStorePrice(pList, discountPercent);
-                const pHasDiscount = discountPercent > 0 && pEffective < pList;
+                const pEffective = getEffectiveProductPrice(pList, discountPercent, p.slug, levelSortOrder);
+                const pIsFreeBeRozet = isBeRozetProduct(p.slug) && levelSortOrder >= 2 && pEffective === 0;
+                const pHasDiscount = (discountPercent > 0 && pEffective < pList) || pIsFreeBeRozet;
                 return (
                   <Link
                     key={p.id}
@@ -127,7 +138,9 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
                     <div className="p-4">
                       <h3 className="font-semibold text-siyah line-clamp-2 group-hover:text-bordo transition-colors">{p.name}</h3>
                       <div className="mt-1 flex items-baseline gap-2">
-                        {pHasDiscount ? (
+                        {pIsFreeBeRozet ? (
+                          <span className="font-bold text-bordo">Ücretsiz</span>
+                        ) : pHasDiscount ? (
                           <>
                             <span className="text-sm text-siyah/50 line-through">{pList.toFixed(2)} ₺</span>
                             <span className="font-bold text-bordo">{pEffective.toFixed(2)} ₺</span>

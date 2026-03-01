@@ -215,6 +215,16 @@ export default async function BenimKosemPage() {
                   </ul>
                 </>
               )}
+              {currentLevel.sort_order >= 2 && (
+                <div className="mt-4 rounded-xl border border-bordo/20 bg-bordo/5 p-4">
+                  <p className="text-sm font-medium text-siyah/90">
+                    Takım rozetini mağazadan <strong className="text-bordo">%100 indirimli</strong> olarak alabilirsin. Kargo istersen kargo ücreti uygulanır.
+                  </p>
+                  <Link href="/magaza" className="mt-2 inline-block text-sm font-semibold text-bordo hover:underline">
+                    Mağazaya git →
+                  </Link>
+                </div>
+              )}
             </section>
 
             {/* Sonraki rozetin için — sonraki rütbenin avantajları + 3 barem */}
