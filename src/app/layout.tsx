@@ -21,6 +21,10 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "Güngören FK | Resmi İnternet Sitesi",
   description: "Güngören Belediye Spor Kulübü resmi internet sitesi. Haberler, maçlar, kadro ve taraftar.",
+  icons: {
+    icon: "/logogbfk.png",
+    apple: "/logogbfk.png",
+  },
 };
 
 /** Mobil öncelikli: viewport ve tema rengi (status bar vb.) */
