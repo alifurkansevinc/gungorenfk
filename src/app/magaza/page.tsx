@@ -46,8 +46,9 @@ export default async function MagazaPage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {products.map((p) => {
             const listPrice = Number(p.price);
-            const effectivePrice = getEffectiveProductPrice(listPrice, discountPercent, p.slug, levelSortOrder);
-            const isFreeBeRozet = isBeRozetProduct(p.slug) && levelSortOrder >= 2 && effectivePrice === 0;
+            const sku = (p as { sku?: string }).sku;
+            const effectivePrice = getEffectiveProductPrice(listPrice, discountPercent, p.slug, levelSortOrder, sku);
+            const isFreeBeRozet = isBeRozetProduct(p.slug, sku) && levelSortOrder >= 2 && effectivePrice === 0;
             const hasDiscount = (discountPercent > 0 && effectivePrice < listPrice) || isFreeBeRozet;
             return (
               <Link

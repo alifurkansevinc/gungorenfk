@@ -1,10 +1,10 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
-import { Sparkles } from "lucide-react";
+import { Sparkles, Download } from "lucide-react";
 
 type PickupInfo = {
   deliveryMethod: string;
@@ -46,6 +46,34 @@ function OdemeBasariliContent() {
         )}`
       : "";
 
+  const handlePdfDownload = useCallback(() => {
+    if (!isStorePickup || !qrUrl || !pickupInfo?.pickupCode) return;
+    const w = window.open("", "_blank");
+    if (!w) return;
+    w.document.write(`
+      <!DOCTYPE html>
+      <html><head><meta charset="utf-8"><title>Teslim QR - ${orderNumber}</title>
+      <style>body{font-family:sans-serif;text-align:center;padding:2rem;max-width:400px;margin:0 auto}
+      h1{font-size:1.25rem;color:#333} p{margin:0.5rem 0;color:#555}
+      img{border:1px solid #ddd;border-radius:8px;margin:1rem 0}
+      .code{font-family:monospace;font-weight:bold;font-size:1rem}
+      .note{margin-top:2rem;font-size:12px;color:#666}</style>
+      </head><body>
+      <h1>Güngören Store – Mağazadan teslim</h1>
+      <p><strong>Sipariş no:</strong> ${orderNumber}</p>
+      <p><strong>Teslim tarihi:</strong> ${pickupDateFormatted}</p>
+      <img src="${qrUrl}" alt="QR" width="256" height="256" />
+      <p class="code">Kod: ${pickupInfo.pickupCode}</p>
+      <p class="note">Mağazada bu QR kodu gösterin. Yazdır penceresinden &quot;PDF olarak kaydet&quot; ile indirebilirsiniz.</p>
+      </body></html>
+    `);
+    w.document.close();
+    w.focus();
+    setTimeout(() => {
+      w.print();
+    }, 400);
+  }, [isStorePickup, qrUrl, pickupInfo?.pickupCode, orderNumber, pickupDateFormatted]);
+
   return (
     <div className="mx-auto max-w-xl px-4 py-16 sm:px-6">
       <div className="rounded-2xl border-2 border-green-200 bg-green-50 p-8 text-center">
@@ -57,7 +85,7 @@ function OdemeBasariliContent() {
 
         {isStorePickup && (
           <div className="mt-6 rounded-xl border-2 border-green-300 bg-beyaz p-6">
-            <p className="font-semibold text-siyah">Güngören Store&apos;dan teslim al</p>
+            <p className="font-semibold text-siyah">QR kod ile mağazadan teslim al</p>
             <p className="mt-1 text-sm text-siyah/70">Teslim tarihiniz: <strong>{pickupDateFormatted}</strong></p>
             <p className="mt-3 text-xs text-siyah/60">Mağazada bu QR kodu gösterin; personel okutunca sipariş tamamlanır.</p>
             {qrUrl && (
@@ -66,6 +94,15 @@ function OdemeBasariliContent() {
               </div>
             )}
             <p className="mt-3 font-mono text-sm font-bold text-siyah">Kod: {pickupInfo?.pickupCode}</p>
+            <button
+              type="button"
+              onClick={handlePdfDownload}
+              className="mt-4 inline-flex items-center gap-2 rounded-xl border-2 border-bordo bg-bordo/10 px-4 py-2.5 text-sm font-semibold text-bordo hover:bg-bordo/20"
+            >
+              <Download className="h-4 w-4" />
+              PDF olarak indir
+            </button>
+            <p className="mt-3 text-xs text-siyah/60">Taraftar iseniz bu QR kodu <Link href="/benim-kosem" className="font-medium text-bordo hover:underline">Benim Köşem</Link> sayfasında da görebilirsiniz.</p>
           </div>
         )}
 

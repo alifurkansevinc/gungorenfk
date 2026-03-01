@@ -30,8 +30,9 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
   }
 
   const listPrice = Number(product.price);
-  const effectivePrice = getEffectiveProductPrice(listPrice, discountPercent, product.slug, levelSortOrder);
-  const isFreeBeRozet = isBeRozetProduct(product.slug) && levelSortOrder >= 2 && effectivePrice === 0;
+  const productSku = (product as { sku?: string }).sku;
+  const effectivePrice = getEffectiveProductPrice(listPrice, discountPercent, product.slug, levelSortOrder, productSku);
+  const isFreeBeRozet = isBeRozetProduct(product.slug, productSku) && levelSortOrder >= 2 && effectivePrice === 0;
   const hasDiscount = (discountPercent > 0 && effectivePrice < listPrice) || isFreeBeRozet;
 
   const images = Array.isArray((product as { images?: string[] }).images) && (product as { images?: string[] }).images?.length
@@ -116,8 +117,9 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
             <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {related.map((p) => {
                 const pList = Number(p.price);
-                const pEffective = getEffectiveProductPrice(pList, discountPercent, p.slug, levelSortOrder);
-                const pIsFreeBeRozet = isBeRozetProduct(p.slug) && levelSortOrder >= 2 && pEffective === 0;
+                const pSku = (p as { sku?: string }).sku;
+                const pEffective = getEffectiveProductPrice(pList, discountPercent, p.slug, levelSortOrder, pSku);
+                const pIsFreeBeRozet = isBeRozetProduct(p.slug, pSku) && levelSortOrder >= 2 && pEffective === 0;
                 const pHasDiscount = (discountPercent > 0 && pEffective < pList) || pIsFreeBeRozet;
                 return (
                   <Link

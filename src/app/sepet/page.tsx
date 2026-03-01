@@ -1,29 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
 
-const defaultShipping = { freeThreshold: 500, cost: 29.9 };
-
 export default function SepetPage() {
   const { items, removeItem, updateQuantity, totalPrice, totalCount } = useCart();
-  const [shipping, setShipping] = useState(defaultShipping);
-  useEffect(() => {
-    fetch("/api/settings/public")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d.success && d.data) {
-          setShipping({
-            freeThreshold: d.data.freeShippingThreshold ?? defaultShipping.freeThreshold,
-            cost: d.data.standardShippingCost ?? defaultShipping.cost,
-          });
-        }
-      })
-      .catch(() => {});
-  }, []);
-  const shippingCost = totalPrice >= shipping.freeThreshold ? 0 : shipping.cost;
-  const total = totalPrice + shippingCost;
 
   if (items.length === 0) {
     return (
@@ -86,8 +67,8 @@ export default function SepetPage() {
         <div className="rounded-2xl border border-siyah/10 bg-beyaz p-6">
           <p className="text-sm text-siyah/70">Ara toplam ({totalCount} ürün)</p>
           <p className="mt-1 text-xl font-bold text-siyah">{totalPrice.toFixed(2)} ₺</p>
-          <p className="mt-2 text-sm text-siyah/70">Kargo {totalPrice >= shipping.freeThreshold ? "ücretsiz" : `${shipping.cost.toFixed(2)} ₺`}</p>
-          <p className="mt-2 text-lg font-bold text-bordo">Toplam {total.toFixed(2)} ₺</p>
+          <p className="mt-2 text-sm text-siyah/60">Teslimat seçimi (Kargo veya QR ile mağazadan teslim) ödeme adımında yapılır. Mağazadan teslimde ek ücret yok.</p>
+          <p className="mt-3 text-lg font-bold text-bordo">Toplam {totalPrice.toFixed(2)} ₺</p>
           <Link
             href="/odeme"
             className="mt-6 block w-full rounded-xl bg-bordo py-3.5 text-center font-bold text-beyaz hover:bg-bordo-dark"

@@ -34,7 +34,7 @@ export default function OdemePage() {
   const iyzicoFormRef = useRef<HTMLDivElement>(null);
   const [shippingSettings, setShippingSettings] = useState<ShippingSettings>(defaultShipping);
 
-  const [deliveryMethod, setDeliveryMethod] = useState<"shipping" | "store_pickup">("shipping");
+  const [deliveryMethod, setDeliveryMethod] = useState<"shipping" | "store_pickup">("store_pickup");
 
   const freeThreshold = shippingSettings.freeShippingThreshold;
   const standardCost = shippingSettings.standardShippingCost;
@@ -363,10 +363,11 @@ export default function OdemePage() {
               </div>
             )}
 
-            {/* Adım 3: Kargo */}
+            {/* Adım 3: Teslimat — Kargo veya QR ile mağazadan teslim */}
             {currentStep === 3 && (
               <div className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm sm:p-8">
                 <h2 className="font-display text-xl font-bold text-siyah">Teslimat seçeneği</h2>
+                <p className="mt-1 text-sm text-siyah/60">Kargo veya mağazadan teslim alabilirsiniz. Mağazadan teslimde ek ücret yok.</p>
                 <div className="mt-6 space-y-3">
                   <button
                     type="button"
@@ -377,7 +378,7 @@ export default function OdemePage() {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-semibold text-siyah">Kargo ile teslim</p>
+                        <p className="font-semibold text-siyah">a) Kargo ile teslim</p>
                         <p className="text-sm text-siyah/60">{shippingSettings.estimatedDeliveryDays} iş gününde kargoya verilir</p>
                       </div>
                       <p className="font-bold text-siyah">
@@ -398,8 +399,8 @@ export default function OdemePage() {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-semibold text-siyah">Güngören Store&apos;dan teslim al</p>
-                        <p className="text-sm text-siyah/60">Siparişten 3 iş günü sonra mağazadan teslim, QR kod ile</p>
+                        <p className="font-semibold text-siyah">b) QR kod ile mağazadan teslim al</p>
+                        <p className="text-sm text-siyah/60">Siparişten 3 iş günü sonra mağazadan teslim. Ek ücret yok. QR kod sipariş sonrası gösterilir ve PDF indirilebilir.</p>
                       </div>
                       <p className="font-bold text-green-700">Ücretsiz</p>
                     </div>
@@ -491,8 +492,8 @@ export default function OdemePage() {
                   <span>{totalPrice.toFixed(2)} ₺</span>
                 </div>
                 <div className="flex justify-between text-siyah/70">
-                  <span>Kargo</span>
-                  <span>{shippingCost === 0 ? "Ücretsiz" : `${shippingCost.toFixed(2)} ₺`}</span>
+                  <span>Teslimat</span>
+                  <span>{deliveryMethod === "store_pickup" ? "Mağazadan (ücretsiz)" : shippingCost === 0 ? "Ücretsiz" : `${shippingCost.toFixed(2)} ₺`}</span>
                 </div>
                 <div className="flex justify-between font-bold text-siyah text-base pt-2">
                   <span>Toplam</span>

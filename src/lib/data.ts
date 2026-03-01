@@ -355,14 +355,15 @@ export async function getLevelSortOrder(levelId: number): Promise<number> {
   return (data as { sort_order?: number } | null)?.sort_order ?? 1;
 }
 
-/** Ürün için geçerli fiyat: Be-Rozet ve Maestro+ ise 0, yoksa indirimli fiyat. */
+/** Ürün için geçerli fiyat: Be-Rozet (slug veya sku BE-ROZET) ve Maestro+ ise 0, yoksa indirimli fiyat. */
 export function getEffectiveProductPrice(
   listPrice: number,
   discountPercent: number,
   productSlug: string | null | undefined,
-  levelSortOrder: number
+  levelSortOrder: number,
+  productSku?: string | null
 ): number {
-  if (isBeRozetProduct(productSlug) && levelSortOrder >= 2) return 0;
+  if (isBeRozetProduct(productSlug, productSku) && levelSortOrder >= 2) return 0;
   return getEffectiveStorePrice(listPrice, discountPercent);
 }
 
