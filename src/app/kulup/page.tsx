@@ -60,9 +60,13 @@ export default async function KulupPage() {
         <section id="kupa-muzesi" className="scroll-mt-8 border-b border-siyah/10 bg-siyah py-14 sm:py-20">
           <div className="mx-auto max-w-7xl px-6">
             {aboutContent.trim() ? (
-              <div className="max-w-3xl">
-                <div className="whitespace-pre-line text-beyaz/90 leading-relaxed">
-                  {aboutContent.trim()}
+              <div className="mx-auto max-w-3xl">
+                <div className="relative overflow-hidden rounded-2xl border border-beyaz/15 bg-gradient-to-b from-beyaz/5 to-beyaz/[0.02] px-6 py-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] sm:px-10 sm:py-10 md:px-12 md:py-12">
+                  <span className="absolute left-1/2 top-0 h-px w-24 -translate-x-1/2 bg-gradient-to-r from-transparent via-bordo/50 to-transparent" aria-hidden />
+                  <div className="whitespace-pre-line text-base leading-relaxed text-beyaz/95 sm:text-lg">
+                    {aboutContent.trim()}
+                  </div>
+                  <span className="absolute bottom-0 left-1/2 h-px w-16 -translate-x-1/2 bg-gradient-to-r from-transparent via-beyaz/20 to-transparent" aria-hidden />
                 </div>
               </div>
             ) : null}
