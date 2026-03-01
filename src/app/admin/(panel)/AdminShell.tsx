@@ -17,6 +17,7 @@ import {
   UsersRound,
   GraduationCap,
   Award,
+  Trophy,
   Image as ImageIcon,
   LogOut,
   Menu,
@@ -49,6 +50,7 @@ const menuItems = [
   { href: "/admin/rozet", label: "Rozet Kuralları", icon: Award },
   { href: "/admin/avantaj-modulleri", label: "Avantaj modülleri", icon: LayoutGrid },
   { href: "/admin/galeriler", label: "Galeriler", icon: ImageIcon },
+  { href: "/admin/kupa-muzesi", label: "Kupa Müzesi", icon: Trophy },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {

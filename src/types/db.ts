@@ -101,6 +101,16 @@ export type TechnicalStaffMember = {
   is_active: boolean;
 };
 
+export type ClubTrophy = {
+  id: string;
+  name: string;
+  year: number;
+  image_url: string | null;
+  description: string | null;
+  sort_order: number;
+  is_active: boolean;
+};
+
 export type NewsItem = {
   id: string;
   title: string;

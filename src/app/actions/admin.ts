@@ -256,6 +256,55 @@ export async function deleteBoardMember(id: string) {
   return { ok: true };
 }
 
+// ——— Tarihi ve Kupa Müzesi ———
+export async function createTrophy(formData: FormData) {
+  const s = await supabase();
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return { error: "Kupa ismi zorunludur." };
+  const year = parseInt((formData.get("year") as string) || "0", 10);
+  const { error } = await s.from("club_trophies").insert({
+    name,
+    year,
+    image_url: (formData.get("image_url") as string)?.trim() || null,
+    description: (formData.get("description") as string)?.trim() || null,
+    sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
+    is_active: formData.get("is_active") === "on",
+  });
+  if (error) return { error: error.message };
+  revalidatePath("/admin/kupa-muzesi");
+  revalidatePath("/kulup");
+  return { ok: true };
+}
+
+export async function updateTrophy(id: string, formData: FormData) {
+  const s = await supabase();
+  const name = (formData.get("name") as string)?.trim();
+  if (!name) return { error: "Kupa ismi zorunludur." };
+  const year = parseInt((formData.get("year") as string) || "0", 10);
+  const { error } = await s.from("club_trophies").update({
+    name,
+    year,
+    image_url: (formData.get("image_url") as string)?.trim() || null,
+    description: (formData.get("description") as string)?.trim() || null,
+    sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
+    is_active: formData.get("is_active") === "on",
+    updated_at: new Date().toISOString(),
+  }).eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/kupa-muzesi");
+  revalidatePath("/kulup");
+  return { ok: true };
+}
+
+export async function deleteTrophy(id: string) {
+  const s = await supabase();
+  const { error } = await s.from("club_trophies").delete().eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/kupa-muzesi");
+  revalidatePath("/kulup");
+  return { ok: true };
+}
+
 // ——— Teknik Heyet ———
 export async function createTechnicalStaff(formData: FormData) {
   const s = await supabase();

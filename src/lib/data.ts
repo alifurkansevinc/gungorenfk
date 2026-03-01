@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
-import type { MemleketCount, Match, SquadMember, BoardMember, TechnicalStaffMember, LeagueStandingRow } from "@/types/db";
+import type { MemleketCount, Match, SquadMember, BoardMember, TechnicalStaffMember, LeagueStandingRow, ClubTrophy } from "@/types/db";
 import type { FanLevel } from "@/types/db";
 
 const TARGET_PER_CITY = 1000;
@@ -223,6 +223,17 @@ export async function getBoardMembers(): Promise<BoardMember[]> {
     .order("sort_order");
   if (!data || data.length === 0) return DEMO_BOARD;
   return data as BoardMember[];
+}
+
+/** Tarihi ve Kupa Müzesi; aktif kupalar. */
+export async function getTrophies(): Promise<ClubTrophy[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("club_trophies")
+    .select("id, name, year, image_url, description, sort_order, is_active")
+    .eq("is_active", true)
+    .order("sort_order");
+  return (data ?? []) as ClubTrophy[];
 }
 
 /** Teknik heyet; veri yoksa demo döner. Öncelik sırası: teknik_direktor → fizyoterapist. */
