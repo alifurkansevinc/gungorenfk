@@ -83,7 +83,10 @@ export type SquadMember = {
 export type BoardMember = {
   id: string;
   name: string;
-  role_slug: string;
+  role_slug: string | null;
+  role_description: string | null;
+  role_custom: string | null;
+  biography: string | null;
   photo_url: string | null;
   sort_order: number;
   is_active: boolean;

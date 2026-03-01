@@ -36,11 +36,11 @@ export const DEMO_SQUAD: (SquadMember & { id: string })[] = [
 
 /** Demo yönetim kurulu (veri yokken) */
 export const DEMO_BOARD: BoardMember[] = [
-  { id: "b-1", name: "Ahmet Yılmaz", role_slug: "baskan", photo_url: null, sort_order: 1, is_active: true },
-  { id: "b-2", name: "Mehmet Kaya", role_slug: "baskan_vekili", photo_url: null, sort_order: 2, is_active: true },
-  { id: "b-3", name: "Ali Demir", role_slug: "as_baskan", photo_url: null, sort_order: 3, is_active: true },
-  { id: "b-4", name: "Ayşe Özkan", role_slug: "as_baskan", photo_url: null, sort_order: 4, is_active: true },
-  { id: "b-5", name: "Fatma Çelik", role_slug: "yk_uyesi", photo_url: null, sort_order: 5, is_active: true },
+  { id: "b-1", name: "Ahmet Yılmaz", role_slug: "baskan", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 1, is_active: true },
+  { id: "b-2", name: "Mehmet Kaya", role_slug: "baskan_vekili", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 2, is_active: true },
+  { id: "b-3", name: "Ali Demir", role_slug: "as_baskan", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 3, is_active: true },
+  { id: "b-4", name: "Ayşe Özkan", role_slug: "as_baskan", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 4, is_active: true },
+  { id: "b-5", name: "Fatma Çelik", role_slug: "yk_uyesi", role_description: null, role_custom: null, biography: null, photo_url: null, sort_order: 5, is_active: true },
   { id: "b-6", name: "Mustafa Arslan", role_slug: "yk_uyesi", photo_url: null, sort_order: 6, is_active: true },
   { id: "b-7", name: "Zeynep Aydın", role_slug: "yk_uyesi", photo_url: null, sort_order: 7, is_active: true },
   { id: "b-8", name: "Kemal Yıldız", role_slug: "yuksek_istisare_heyeti", photo_url: null, sort_order: 8, is_active: true },
@@ -218,7 +218,7 @@ export async function getBoardMembers(): Promise<BoardMember[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("board_members")
-    .select("id, name, role_slug, photo_url, sort_order, is_active")
+    .select("id, name, role_slug, role_description, role_custom, biography, photo_url, sort_order, is_active")
     .eq("is_active", true)
     .order("sort_order");
   if (!data || data.length === 0) return DEMO_BOARD;

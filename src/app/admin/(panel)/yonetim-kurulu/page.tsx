@@ -7,7 +7,7 @@ export default async function AdminYonetimKuruluPage() {
   const supabase = await getAdminSupabase();
   const { data: members } = await supabase
     .from("board_members")
-    .select("id, name, role_slug, sort_order, is_active")
+    .select("id, name, role_slug, role_custom, sort_order, is_active")
     .order("sort_order");
 
   return (
@@ -40,7 +40,7 @@ export default async function AdminYonetimKuruluPage() {
                 <tr key={m.id} className="border-t border-siyah/5 hover:bg-siyah/[0.02]">
                   <td className="px-4 py-3 text-siyah/80">{m.sort_order}</td>
                   <td className="px-4 py-3 font-medium text-siyah">{m.name}</td>
-                  <td className="px-4 py-3 text-siyah/70">{BOARD_ROLE_LABELS[m.role_slug] ?? m.role_slug}</td>
+                  <td className="px-4 py-3 text-siyah/70">{m.role_custom?.trim() || (m.role_slug ? (BOARD_ROLE_LABELS[m.role_slug] ?? m.role_slug) : "—")}</td>
                   <td className="px-4 py-3">{m.is_active ? <span className="text-green-600">Aktif</span> : <span className="text-siyah/50">Pasif</span>}</td>
                   <td className="px-4 py-3 flex gap-3">
                     <Link href={`/admin/yonetim-kurulu/duzenle/${m.id}`} className="text-bordo font-medium hover:underline">Düzenle</Link>

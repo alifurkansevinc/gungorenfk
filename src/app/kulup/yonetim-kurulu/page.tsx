@@ -13,14 +13,16 @@ function toGalleryItems(members: BoardMember[]): PersonGalleryItem[] {
   const roleOrderMap = new Map<string, number>(ROLE_ORDER.map((s, i) => [s, i]));
   const sorted = [...members].sort((a, b) => {
     if (a.sort_order !== b.sort_order) return a.sort_order - b.sort_order;
-    const ai = roleOrderMap.get(a.role_slug) ?? 99;
-    const bi = roleOrderMap.get(b.role_slug) ?? 99;
+    const ai = roleOrderMap.get(a.role_slug ?? "") ?? 99;
+    const bi = roleOrderMap.get(b.role_slug ?? "") ?? 99;
     return ai - bi;
   });
   return sorted.map((m) => ({
     id: m.id,
     name: m.name,
-    roleLabel: BOARD_ROLE_LABELS[m.role_slug] ?? m.role_slug,
+    roleLabel: m.role_custom?.trim() || (m.role_slug ? (BOARD_ROLE_LABELS[m.role_slug] ?? m.role_slug) : ""),
+    roleDescription: m.role_description?.trim() || null,
+    biography: m.biography?.trim() || null,
     photo_url: m.photo_url,
   }));
 }

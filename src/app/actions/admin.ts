@@ -208,9 +208,14 @@ export async function deleteNews(id: string) {
 // ——— Yönetim Kurulu ———
 export async function createBoardMember(formData: FormData) {
   const s = await supabase();
+  const roleSlug = (formData.get("role_slug") as string)?.trim() || null;
+  const roleCustom = (formData.get("role_custom") as string)?.trim() || null;
   const { error } = await s.from("board_members").insert({
     name: (formData.get("name") as string)?.trim(),
-    role_slug: formData.get("role_slug") as string,
+    role_slug: roleSlug || null,
+    role_description: (formData.get("role_description") as string)?.trim() || null,
+    role_custom: roleCustom || null,
+    biography: (formData.get("biography") as string)?.trim() || null,
     photo_url: (formData.get("photo_url") as string)?.trim() || null,
     sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
     is_active: formData.get("is_active") === "on",
@@ -223,9 +228,14 @@ export async function createBoardMember(formData: FormData) {
 
 export async function updateBoardMember(id: string, formData: FormData) {
   const s = await supabase();
+  const roleSlug = (formData.get("role_slug") as string)?.trim() || null;
+  const roleCustom = (formData.get("role_custom") as string)?.trim() || null;
   const { error } = await s.from("board_members").update({
     name: (formData.get("name") as string)?.trim(),
-    role_slug: formData.get("role_slug") as string,
+    role_slug: roleSlug || null,
+    role_description: (formData.get("role_description") as string)?.trim() || null,
+    role_custom: roleCustom || null,
+    biography: (formData.get("biography") as string)?.trim() || null,
     photo_url: (formData.get("photo_url") as string)?.trim() || null,
     sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
     is_active: formData.get("is_active") === "on",

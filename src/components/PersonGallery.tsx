@@ -7,6 +7,8 @@ export type PersonGalleryItem = {
   id: string;
   name: string;
   roleLabel: string;
+  roleDescription?: string | null;
+  biography?: string | null;
   photo_url: string | null;
 };
 
@@ -92,14 +94,22 @@ export function PersonGallery({
         </div>
       </div>
 
-      {/* Görev + isim: tam genişlik, resim kutularının altında, minimal */}
+      {/* Görev + isim + açıklama + biyografi */}
       <div className="mt-3 w-full border-t border-beyaz/10 py-3 sm:mt-4 sm:py-4">
-        <p className="text-xs font-semibold uppercase tracking-wider text-bordo sm:text-sm">
-          {active.roleLabel}
-        </p>
+        {active.roleLabel && (
+          <p className="text-xs font-semibold uppercase tracking-wider text-bordo sm:text-sm">
+            {active.roleLabel}
+          </p>
+        )}
+        {active.roleDescription && (
+          <p className="mt-0.5 text-sm text-beyaz/80">{active.roleDescription}</p>
+        )}
         <p className="mt-1 font-display text-lg font-semibold text-beyaz sm:text-xl">
           {active.name}
         </p>
+        {active.biography && (
+          <p className="mt-2 text-sm text-beyaz/70 leading-relaxed whitespace-pre-line">{active.biography}</p>
+        )}
       </div>
     </div>
   );
