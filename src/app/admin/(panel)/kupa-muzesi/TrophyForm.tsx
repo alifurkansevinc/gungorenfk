@@ -56,6 +56,13 @@ export function TrophyForm({ trophy }: { trophy?: ClubTrophy | null }) {
           <span className="text-sm text-siyah">Aktif (sitede göster)</span>
         </label>
       </div>
+      <div>
+        <label className="flex items-center gap-2">
+          <input name="is_alt_yapi" type="checkbox" defaultChecked={trophy?.is_alt_yapi ?? false} className="rounded" />
+          <span className="text-sm text-siyah">Altyapı kupası</span>
+        </label>
+        <p className="mt-0.5 text-xs text-siyah/60">İşaretlenirse kupa ana müzede değil, ileride açılacak altyapı sayfasında sezon sezon gösterilir.</p>
+      </div>
       <div className="flex gap-3 pt-4">
         <button type="submit" className="rounded bg-bordo px-4 py-2 font-semibold text-beyaz hover:bg-bordo/90">{trophy ? "Güncelle" : "Ekle"}</button>
         <Link href="/admin/kupa-muzesi" className="rounded border border-siyah/20 px-4 py-2 font-medium text-siyah hover:bg-siyah/5">İptal</Link>

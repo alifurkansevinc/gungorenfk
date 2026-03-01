@@ -233,12 +233,28 @@ export async function getClubAbout(): Promise<string> {
 }
 
 /** Tarihi ve Kupa Müzesi; aktif kupalar. */
+/** Ana kupa müzesi: sadece is_alt_yapi = false olanlar, en yeni yıl önce (soldan sağa). */
 export async function getTrophies(): Promise<ClubTrophy[]> {
   const supabase = await createClient();
   const { data } = await supabase
     .from("club_trophies")
-    .select("id, name, year, image_url, description, sort_order, is_active")
+    .select("id, name, year, image_url, description, sort_order, is_active, is_alt_yapi")
     .eq("is_active", true)
+    .or("is_alt_yapi.is.null,is_alt_yapi.eq.false")
+    .order("year", { ascending: false })
+    .order("sort_order");
+  return (data ?? []) as ClubTrophy[];
+}
+
+/** Altyapı kupaları: ileride /altyapi vb. sayfada sezon sezon gösterilebilir. */
+export async function getAcademyTrophies(): Promise<ClubTrophy[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("club_trophies")
+    .select("id, name, year, image_url, description, sort_order, is_active, is_alt_yapi")
+    .eq("is_active", true)
+    .eq("is_alt_yapi", true)
+    .order("year", { ascending: false })
     .order("sort_order");
   return (data ?? []) as ClubTrophy[];
 }

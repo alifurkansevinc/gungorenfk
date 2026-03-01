@@ -109,6 +109,8 @@ export type ClubTrophy = {
   description: string | null;
   sort_order: number;
   is_active: boolean;
+  /** Altyapı kupası ise altyapı sayfasında gösterilir; ana kupa müzesinde gösterilmez */
+  is_alt_yapi?: boolean;
 };
 
 export type NewsItem = {

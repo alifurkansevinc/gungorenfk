@@ -7,7 +7,7 @@ export default async function AdminKupaMuzesiPage() {
   const supabase = await getAdminSupabase();
   const [{ data: aboutRow }, { data: trophies }] = await Promise.all([
     supabase.from("club_about").select("content").eq("id", 1).single(),
-    supabase.from("club_trophies").select("id, name, year, image_url, sort_order, is_active").order("sort_order"),
+    supabase.from("club_trophies").select("id, name, year, image_url, sort_order, is_active, is_alt_yapi").order("year", { ascending: false }).order("sort_order"),
   ]);
   const aboutContent = (aboutRow as { content?: string } | null)?.content ?? "";
 
@@ -36,13 +36,14 @@ export default async function AdminKupaMuzesiPage() {
               <th className="px-4 py-3 font-semibold text-siyah/70">Sıra</th>
               <th className="px-4 py-3 font-semibold text-siyah/70">Kupa</th>
               <th className="px-4 py-3 font-semibold text-siyah/70">Yıl</th>
+              <th className="px-4 py-3 font-semibold text-siyah/70">Tür</th>
               <th className="px-4 py-3 font-semibold text-siyah/70">Durum</th>
-              <th className="px-4 py-3 font-semibold text-siyah/70">İşlem</th>
+              <th className="px-4 py-3 font-semibold text-siyah/70 w-32">İşlem</th>
             </tr>
           </thead>
           <tbody>
             {(!trophies || trophies.length === 0) ? (
-              <tr><td colSpan={5} className="px-4 py-8 text-center text-siyah/60">Henüz kupa yok. &quot;Yeni kupa&quot; ile ekleyin.</td></tr>
+              <tr><td colSpan={6} className="px-4 py-8 text-center text-siyah/60">Henüz kupa yok. &quot;Yeni kupa&quot; ile ekleyin.</td></tr>
             ) : (
               trophies.map((t) => (
                 <tr key={t.id} className="border-t border-siyah/5 hover:bg-siyah/[0.02]">
@@ -56,6 +57,7 @@ export default async function AdminKupaMuzesiPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3 text-siyah/80">{t.year}</td>
+                  <td className="px-4 py-3">{t.is_alt_yapi ? <span className="rounded bg-amber-100 px-2 py-0.5 text-xs font-medium text-amber-800">Altyapı</span> : <span className="text-siyah/50">Ana müze</span>}</td>
                   <td className="px-4 py-3">{t.is_active ? <span className="text-green-600">Aktif</span> : <span className="text-siyah/50">Pasif</span>}</td>
                   <td className="px-4 py-3 flex gap-3">
                     <Link href={`/admin/kupa-muzesi/duzenle/${t.id}`} className="text-bordo font-medium hover:underline">Düzenle</Link>

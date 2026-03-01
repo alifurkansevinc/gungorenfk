@@ -269,6 +269,7 @@ export async function createTrophy(formData: FormData) {
     description: (formData.get("description") as string)?.trim() || null,
     sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
     is_active: formData.get("is_active") === "on",
+    is_alt_yapi: formData.get("is_alt_yapi") === "on",
   });
   if (error) return { error: error.message };
   revalidatePath("/admin/kupa-muzesi");
@@ -288,6 +289,7 @@ export async function updateTrophy(id: string, formData: FormData) {
     description: (formData.get("description") as string)?.trim() || null,
     sort_order: parseInt((formData.get("sort_order") as string) || "0", 10),
     is_active: formData.get("is_active") === "on",
+    is_alt_yapi: formData.get("is_alt_yapi") === "on",
     updated_at: new Date().toISOString(),
   }).eq("id", id);
   if (error) return { error: error.message };
