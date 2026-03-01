@@ -225,6 +225,13 @@ export async function getBoardMembers(): Promise<BoardMember[]> {
   return data as BoardMember[];
 }
 
+/** Kulüp sayfası Hakkımızda metni (admin'den düzenlenir). */
+export async function getClubAbout(): Promise<string> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("club_about").select("content").eq("id", 1).single();
+  return (data as { content?: string } | null)?.content ?? "";
+}
+
 /** Tarihi ve Kupa Müzesi; aktif kupalar. */
 export async function getTrophies(): Promise<ClubTrophy[]> {
   const supabase = await createClient();

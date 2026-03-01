@@ -50,7 +50,7 @@ const menuItems = [
   { href: "/admin/rozet", label: "Rozet Kuralları", icon: Award },
   { href: "/admin/avantaj-modulleri", label: "Avantaj modülleri", icon: LayoutGrid },
   { href: "/admin/galeriler", label: "Galeriler", icon: ImageIcon },
-  { href: "/admin/kupa-muzesi", label: "Kupa Müzesi", icon: Trophy },
+  { href: "/admin/kupa-muzesi", label: "Hakkımızda & Kupa Müzesi", icon: Trophy },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {

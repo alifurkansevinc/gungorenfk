@@ -305,6 +305,17 @@ export async function deleteTrophy(id: string) {
   return { ok: true };
 }
 
+/** Kulüp sayfası Hakkımızda metnini günceller. */
+export async function updateClubAbout(formData: FormData) {
+  const s = await supabase();
+  const content = (formData.get("content") as string)?.trim() ?? "";
+  const { error } = await s.from("club_about").update({ content, updated_at: new Date().toISOString() }).eq("id", 1);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/kupa-muzesi");
+  revalidatePath("/kulup");
+  return { ok: true };
+}
+
 // ——— Teknik Heyet ———
 export async function createTechnicalStaff(formData: FormData) {
   const s = await supabase();

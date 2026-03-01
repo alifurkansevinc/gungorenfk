@@ -1,11 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { FadeInSection } from "@/components/FadeInSection";
-import { getTrophies } from "@/lib/data";
+import { getClubAbout, getTrophies } from "@/lib/data";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 
 export default async function KulupPage() {
-  const trophies = await getTrophies();
+  const [aboutContent, trophies] = await Promise.all([getClubAbout(), getTrophies()]);
 
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
@@ -17,25 +17,6 @@ export default async function KulupPage() {
           </h1>
         </div>
       </section>
-
-      <FadeInSection>
-        <section className="border-b border-siyah/10 bg-beyaz py-14 sm:py-20">
-          <div className="mx-auto max-w-3xl px-6">
-            <h2 className="font-display text-2xl font-bold text-siyah">Hakkımızda</h2>
-            <div className="mt-6 space-y-4 text-siyah/85 leading-relaxed">
-              <p>
-                Güngören Belediye Spor Kulübü, İstanbul Güngören ilçesinin resmi futbol takımıdır. 
-                Bölgesel Amatör Lig ve alt kategorilerde mücadele eden kulübümüz, bölge sporuna ve 
-                taraftar ailesine güç katmak için çalışmaktadır.
-              </p>
-              <p>
-                Kulüp olarak amacımız; genç yeteneklere fırsat sunmak, taraftarımızla birlikte 
-                büyümek ve Güngören&apos;i Türk futbolunda temsil etmektir.
-              </p>
-            </div>
-          </div>
-        </section>
-      </FadeInSection>
 
       <FadeInSection>
         <section className="border-b border-siyah/10 bg-[#f8f8f8] py-14 sm:py-20">
@@ -67,8 +48,8 @@ export default async function KulupPage() {
                   </svg>
                 </div>
                 <div>
-                  <h3 className="font-display font-semibold text-siyah group-hover:text-bordo transition-colors">Tarihi ve Kupa Müzesi</h3>
-                  <p className="mt-1 text-sm text-siyah/60">Kulüp kupaları ve tarihi</p>
+                  <h3 className="font-display font-semibold text-siyah group-hover:text-bordo transition-colors">Hakkımızda & Tarihi ve Kupa Müzesi</h3>
+                  <p className="mt-1 text-sm text-siyah/60">Kulüp tanıtımı ve kupalar</p>
                 </div>
                 <span className="ml-auto text-bordo opacity-0 transition-opacity group-hover:opacity-100">→</span>
               </Link>
@@ -77,11 +58,21 @@ export default async function KulupPage() {
         </section>
       </FadeInSection>
 
-      {/* Tarihi ve Kupa Müzesi */}
+      {/* Hakkımızda & Tarihi ve Kupa Müzesi */}
       <FadeInSection>
         <section id="kupa-muzesi" className="scroll-mt-8 border-b border-siyah/10 bg-siyah py-14 sm:py-20">
           <div className="mx-auto max-w-7xl px-6">
-            <h2 className="font-display text-2xl font-bold text-beyaz sm:text-3xl">Tarihi ve Kupa Müzesi</h2>
+            {aboutContent.trim() ? (
+              <div className="max-w-3xl">
+                <h2 className="font-display text-2xl font-bold text-beyaz sm:text-3xl">Hakkımızda</h2>
+                <div className="mt-4 whitespace-pre-line text-beyaz/90 leading-relaxed">
+                  {aboutContent.trim()}
+                </div>
+              </div>
+            ) : null}
+            <h2 className={`font-display text-2xl font-bold text-beyaz sm:text-3xl ${aboutContent.trim() ? "mt-12" : ""}`}>
+              Tarihi ve Kupa Müzesi
+            </h2>
             <p className="mt-2 text-beyaz/70">Kulübümüzün kazandığı kupalar ve anılar.</p>
             {trophies.length === 0 ? (
               <div className="mt-12 rounded-2xl border border-beyaz/10 bg-beyaz/5 py-16 text-center">
