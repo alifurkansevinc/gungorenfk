@@ -1,5 +1,6 @@
-/** Site logosu — header ve genel kullanım. Değiştirmek için bu URL'i güncelleyin veya /public içine logo koyup /logogbfk.png gibi kullanın. */
-export const SITE_LOGO_URL = "/logogbfk.png";
+/** Site logosu — header ve genel kullanım (Supabase Storage). */
+export const SITE_LOGO_URL =
+  "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/Futbolcular/logobordo-02.png";
 
 /** Ana sayfa sağ taraf slogan tasarım görseli — sadece ana sayfada. */
 export const HOMEPAGE_SLOGAN_IMAGE_URL =

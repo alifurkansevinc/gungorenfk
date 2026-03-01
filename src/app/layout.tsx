@@ -22,8 +22,8 @@ export const metadata: Metadata = {
   title: "Güngören FK | Resmi İnternet Sitesi",
   description: "Güngören Belediye Spor Kulübü resmi internet sitesi. Haberler, maçlar, kadro ve taraftar.",
   icons: {
-    icon: "/logogbfk.png",
-    apple: "/logogbfk.png",
+    icon: "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/Futbolcular/logobordo-02.png",
+    apple: "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/Futbolcular/logobordo-02.png",
   },
 };
 
