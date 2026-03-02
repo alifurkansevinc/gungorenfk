@@ -213,6 +213,39 @@ export async function getSquad() {
   })) as SquadMember[];
 }
 
+export type SquadMemberWithStats = SquadMember & { goals: number; assists: number; appearances: number };
+
+/** Kadro + oynanan maçlardan gol, asist, maça çıkma istatistikleri (sadece biten maçlar). */
+export async function getSquadWithStats(): Promise<SquadMemberWithStats[]> {
+  const squad = await getSquad();
+  const supabase = await createClient();
+  const { data: finishedMatches } = await supabase.from("matches").select("id").eq("status", "finished");
+  const matchIds = (finishedMatches ?? []).map((m) => m.id);
+  if (matchIds.length === 0) {
+    return squad.map((p) => ({ ...p, goals: 0, assists: 0, appearances: 0 }));
+  }
+  const [{ data: goalsData }, { data: lineupsData }] = await Promise.all([
+    supabase.from("match_goals").select("scorer_squad_id, assist_squad_id").in("match_id", matchIds),
+    supabase.from("match_lineups").select("squad_member_id").in("match_id", matchIds).eq("role", "starter"),
+  ]);
+  const goalsMap: Record<string, number> = {};
+  const assistsMap: Record<string, number> = {};
+  const appearancesMap: Record<string, number> = {};
+  (goalsData ?? []).forEach((r: { scorer_squad_id: string; assist_squad_id: string | null }) => {
+    goalsMap[r.scorer_squad_id] = (goalsMap[r.scorer_squad_id] ?? 0) + 1;
+    if (r.assist_squad_id) assistsMap[r.assist_squad_id] = (assistsMap[r.assist_squad_id] ?? 0) + 1;
+  });
+  (lineupsData ?? []).forEach((r: { squad_member_id: string }) => {
+    appearancesMap[r.squad_member_id] = (appearancesMap[r.squad_member_id] ?? 0) + 1;
+  });
+  return squad.map((p) => ({
+    ...p,
+    goals: goalsMap[p.id] ?? 0,
+    assists: assistsMap[p.id] ?? 0,
+    appearances: appearancesMap[p.id] ?? 0,
+  }));
+}
+
 /** Yönetim kurulu; veri yoksa demo döner. */
 export async function getBoardMembers(): Promise<BoardMember[]> {
   const supabase = await createClient();

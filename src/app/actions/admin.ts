@@ -14,47 +14,112 @@ function matchesClient() {
 }
 
 // ——— Maçlar ———
+function parseMatchGoals(formData: FormData): { minute: number; scorer_squad_id: string; assist_squad_id: string | null }[] {
+  const minutes = formData.getAll("goal_minute").map((v) => parseInt(String(v), 10));
+  const scorers = formData.getAll("goal_scorer") as string[];
+  const assists = formData.getAll("goal_assist") as string[];
+  const goals: { minute: number; scorer_squad_id: string; assist_squad_id: string | null }[] = [];
+  for (let i = 0; i < Math.min(minutes.length, scorers.length); i++) {
+    if (!Number.isNaN(minutes[i]) && scorers[i]?.trim()) {
+      goals.push({
+        minute: minutes[i],
+        scorer_squad_id: scorers[i].trim(),
+        assist_squad_id: assists[i]?.trim() || null,
+      });
+    }
+  }
+  return goals;
+}
+
+function parseMatchLineup(formData: FormData): { starters: string[]; substitutes: string[] } {
+  const starters = (formData.getAll("starter") as string[]).filter((id) => id?.trim());
+  const substitutes = (formData.getAll("substitute") as string[]).filter((id) => id?.trim());
+  return { starters, substitutes };
+}
+
 export async function createMatch(formData: FormData) {
   const s = matchesClient();
-  const { error } = await s.from("matches").insert({
-    opponent_name: (formData.get("opponent_name") as string)?.trim(),
-    home_away: formData.get("home_away") as "home" | "away",
-    venue: (formData.get("venue") as string)?.trim() || null,
-    match_date: formData.get("match_date") as string,
-    match_time: (formData.get("match_time") as string)?.trim() || null,
-    opponent_logo_url: (formData.get("opponent_logo_url") as string)?.trim() || null,
-    competition: (formData.get("competition") as string)?.trim() || null,
-    season: (formData.get("season") as string)?.trim() || null,
-    goals_for: formData.get("goals_for") ? parseInt(formData.get("goals_for") as string, 10) : null,
-    goals_against: formData.get("goals_against") ? parseInt(formData.get("goals_against") as string, 10) : null,
-    status: (formData.get("status") as string) || "scheduled",
-  });
-  if (error) return { error: error.message };
+  const manOfTheMatch = (formData.get("man_of_the_match_id") as string)?.trim() || null;
+  const { data: match, error: matchErr } = await s
+    .from("matches")
+    .insert({
+      opponent_name: (formData.get("opponent_name") as string)?.trim(),
+      home_away: formData.get("home_away") as "home" | "away",
+      venue: (formData.get("venue") as string)?.trim() || null,
+      match_date: formData.get("match_date") as string,
+      match_time: (formData.get("match_time") as string)?.trim() || null,
+      opponent_logo_url: (formData.get("opponent_logo_url") as string)?.trim() || null,
+      competition: (formData.get("competition") as string)?.trim() || null,
+      season: (formData.get("season") as string)?.trim() || null,
+      goals_for: formData.get("goals_for") ? parseInt(formData.get("goals_for") as string, 10) : null,
+      goals_against: formData.get("goals_against") ? parseInt(formData.get("goals_against") as string, 10) : null,
+      status: (formData.get("status") as string) || "scheduled",
+      man_of_the_match_id: manOfTheMatch || null,
+    })
+    .select("id")
+    .single();
+  if (matchErr || !match?.id) return { error: matchErr?.message ?? "Maç eklenemedi." };
+
+  const goals = parseMatchGoals(formData);
+  if (goals.length > 0) {
+    await s.from("match_goals").insert(goals.map((g) => ({ ...g, match_id: match.id })));
+  }
+  const { starters, substitutes } = parseMatchLineup(formData);
+  const lineupRows: { match_id: string; squad_member_id: string; role: "starter" | "substitute"; sort_order: number }[] = [];
+  starters.forEach((id, i) => lineupRows.push({ match_id: match.id, squad_member_id: id, role: "starter", sort_order: i }));
+  substitutes.forEach((id, i) => lineupRows.push({ match_id: match.id, squad_member_id: id, role: "substitute", sort_order: i }));
+  if (lineupRows.length > 0) {
+    await s.from("match_lineups").insert(lineupRows);
+  }
+
   revalidatePath("/admin/maclar");
   revalidatePath("/maclar");
+  revalidatePath("/kadro");
   return { ok: true };
 }
 
 export async function updateMatch(id: string, formData: FormData) {
   const s = matchesClient();
-  const { error } = await s.from("matches").update({
-    opponent_name: (formData.get("opponent_name") as string)?.trim(),
-    home_away: formData.get("home_away") as "home" | "away",
-    venue: (formData.get("venue") as string)?.trim() || null,
-    match_date: formData.get("match_date") as string,
-    match_time: (formData.get("match_time") as string)?.trim() || null,
-    opponent_logo_url: (formData.get("opponent_logo_url") as string)?.trim() || null,
-    competition: (formData.get("competition") as string)?.trim() || null,
-    season: (formData.get("season") as string)?.trim() || null,
-    goals_for: formData.get("goals_for") ? parseInt(formData.get("goals_for") as string, 10) : null,
-    goals_against: formData.get("goals_against") ? parseInt(formData.get("goals_against") as string, 10) : null,
-    status: (formData.get("status") as string) || "scheduled",
-    updated_at: new Date().toISOString(),
-  }).eq("id", id);
+  const manOfTheMatch = (formData.get("man_of_the_match_id") as string)?.trim() || null;
+  const { error } = await s
+    .from("matches")
+    .update({
+      opponent_name: (formData.get("opponent_name") as string)?.trim(),
+      home_away: formData.get("home_away") as "home" | "away",
+      venue: (formData.get("venue") as string)?.trim() || null,
+      match_date: formData.get("match_date") as string,
+      match_time: (formData.get("match_time") as string)?.trim() || null,
+      opponent_logo_url: (formData.get("opponent_logo_url") as string)?.trim() || null,
+      competition: (formData.get("competition") as string)?.trim() || null,
+      season: (formData.get("season") as string)?.trim() || null,
+      goals_for: formData.get("goals_for") ? parseInt(formData.get("goals_for") as string, 10) : null,
+      goals_against: formData.get("goals_against") ? parseInt(formData.get("goals_against") as string, 10) : null,
+      status: (formData.get("status") as string) || "scheduled",
+      man_of_the_match_id: manOfTheMatch || null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
   if (error) return { error: error.message };
+
+  await s.from("match_goals").delete().eq("match_id", id);
+  await s.from("match_lineups").delete().eq("match_id", id);
+
+  const goals = parseMatchGoals(formData);
+  if (goals.length > 0) {
+    await s.from("match_goals").insert(goals.map((g) => ({ ...g, match_id: id })));
+  }
+  const { starters, substitutes } = parseMatchLineup(formData);
+  const lineupRows: { match_id: string; squad_member_id: string; role: "starter" | "substitute"; sort_order: number }[] = [];
+  starters.forEach((sid, i) => lineupRows.push({ match_id: id, squad_member_id: sid, role: "starter", sort_order: i }));
+  substitutes.forEach((sid, i) => lineupRows.push({ match_id: id, squad_member_id: sid, role: "substitute", sort_order: i }));
+  if (lineupRows.length > 0) {
+    await s.from("match_lineups").insert(lineupRows);
+  }
+
   revalidatePath("/admin/maclar");
   revalidatePath("/maclar");
   revalidatePath(`/maclar/${id}`);
+  revalidatePath("/kadro");
   return { ok: true };
 }
 

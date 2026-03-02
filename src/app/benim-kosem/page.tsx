@@ -1,8 +1,6 @@
-import crypto from "crypto";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { createServiceRoleClient } from "@/lib/supabase/service";
 import { getSquad, getFanLevels, getLevelBenefits, getGiftQuotaForLevel } from "@/lib/data";
 import type { FanLevel } from "@/types/db";
 import { FanLevelBadge } from "@/app/taraftar/FanLevelBadge";
@@ -87,30 +85,9 @@ export default async function BenimKosemPage() {
     .eq("user_id", user.id)
     .eq("payment_status", "PAID")
     .order("created_at", { ascending: false })
-    .limit(20);
+    .limit(50);
 
-  // Taraftar rozet teslim bileti: yoksa bir tane oluştur (kullanıldıktan sonra listeden düşer)
-  let rozetTicket: { id: string; qr_code: string } | null = null;
-  const { data: rozetRows } = await supabase
-    .from("rozet_pickup_tickets")
-    .select("id, qr_code")
-    .eq("user_id", user.id)
-    .is("used_at", null)
-    .limit(1);
-  if (rozetRows && rozetRows.length > 0) {
-    rozetTicket = { id: rozetRows[0].id, qr_code: rozetRows[0].qr_code };
-  } else {
-    const serviceSupabase = createServiceRoleClient();
-    const newQr = "RZ-" + crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase();
-    const { data: inserted } = await serviceSupabase
-      .from("rozet_pickup_tickets")
-      .insert({ user_id: user.id, qr_code: newQr })
-      .select("id, qr_code")
-      .single();
-    if (inserted) rozetTicket = { id: inserted.id, qr_code: inserted.qr_code };
-  }
-
-  // Mağazadan teslim alınacak siparişler (Store cüzdanım)
+  // Mağazadan teslim alınacak siparişler (Store cüzdanım) — sadece mağaza siparişleri
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
   const { data: storePickupOrders } = await supabase
     .from("orders")
@@ -120,6 +97,24 @@ export default async function BenimKosemPage() {
     .not("pickup_code", "is", null)
     .order("created_at", { ascending: false })
     .limit(20);
+
+  const { data: pastOrders } = await supabase
+    .from("orders")
+    .select("id, order_number, status, created_at")
+    .eq("user_id", user.id)
+    .in("status", ["DELIVERED", "SHIPPED"])
+    .order("created_at", { ascending: false })
+    .limit(30);
+
+  let motmCount = 0;
+  if (favoritePlayerId) {
+    const { count } = await supabase
+      .from("matches")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "finished")
+      .eq("man_of_the_match_id", favoritePlayerId);
+    motmCount = count ?? 0;
+  }
 
   const ticketsCount = new Set((myTickets ?? []).filter((t) => (t as { match_id: string | null }).match_id).map((t) => (t as { match_id: string }).match_id)).size;
 
@@ -159,13 +154,24 @@ export default async function BenimKosemPage() {
     };
   });
 
+  const today = new Date().toISOString().slice(0, 10);
+  const activeTickets = ticketsWithMatch.filter((t) => {
+    const date = t.isEvent ? t.event_date : t.match_date;
+    return date && date >= today;
+  });
+  const pastMatchTickets = ticketsWithMatch.filter((t) => !t.isEvent && t.match_date && t.match_date < today);
+  const pastEventTickets = ticketsWithMatch.filter((t) => t.isEvent && t.event_date && t.event_date < today);
+
   const nextTargetStore = nextLevel?.target_store_spend != null ? Number(nextLevel.target_store_spend) : 500;
   const nextTargetTickets = nextLevel?.target_tickets ?? 5;
   const nextTargetDonation = nextLevel?.target_donation != null ? Number(nextLevel.target_donation) : 100;
   const barStore = nextTargetStore > 0 ? Math.min(100, (storeSpend / nextTargetStore) * 100) : 0;
   const barTickets = nextTargetTickets > 0 ? Math.min(100, (ticketsCount / nextTargetTickets) * 100) : 0;
   const barDonation = nextTargetDonation > 0 ? Math.min(100, (donationTotal / nextTargetDonation) * 100) : 0;
-  const overallBar = nextLevel ? (barStore + barTickets + barDonation) / 3 : 100;
+  const favoriteMotmBonus = Math.min(2, motmCount) * 5;
+  const overallBar = nextLevel
+    ? Math.min(100, (barStore + barTickets + barDonation) / 3 + favoriteMotmBonus)
+    : 100;
 
   const mevcutAvantajlarListe = [
     ...currentLevelBenefitsFiltered,
@@ -270,6 +276,11 @@ export default async function BenimKosemPage() {
                       <div className="progress-fill h-full rounded-full bg-bordo" style={{ width: `${barDonation}%` }} />
                     </div>
                   </div>
+                  {favoriteMotmBonus > 0 && (
+                    <p className="text-xs text-siyah/60">
+                      Favori oyuncun {motmCount} kez maçın oyuncusu seçildi: <span className="font-medium text-bordo">+{favoriteMotmBonus}%</span>
+                    </p>
+                  )}
                   <div className="pt-2">
                     <div className="flex justify-between text-sm">
                       <span className="font-semibold text-siyah">Toplam ilerleme (sonraki rozet)</span>
@@ -289,35 +300,18 @@ export default async function BenimKosemPage() {
               </section>
             )}
 
-            {/* Bilet cüzdanı */}
+            {/* Bilet cüzdanı — sadece maç ve etkinlik biletleri (rozet teslim bileti yok) */}
             <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
               <h2 className="font-display text-lg font-bold text-siyah">Bilet cüzdanım</h2>
-              <p className="mt-1 text-sm text-siyah/70">Aldığınız maç ve etkinlik biletleri. Taraftar rozeti teslim bileti mağazada kullanıldıktan sonra listeden düşer.</p>
-              {rozetTicket && (
-                <div className="mt-4 flex items-center gap-4 rounded-xl border-2 border-bordo/30 bg-gradient-to-br from-bordo/5 to-siyah/5 p-4">
-                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(rozetTicket.qr_code)}`}
-                      alt="QR"
-                      width={56}
-                      height={56}
-                      className="h-full w-full object-contain"
-                    />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="font-semibold text-siyah">Rozet teslim bileti</p>
-                    <p className="text-sm text-siyah/70 mt-0.5">Rozetini mağazadan alabilirsin.</p>
-                  </div>
-                </div>
-              )}
-              {ticketsWithMatch.length === 0 && !rozetTicket ? (
+              <p className="mt-1 text-sm text-siyah/70">Aldığınız maç ve etkinlik biletleri.</p>
+              {activeTickets.length === 0 ? (
                 <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
                   <p className="text-sm text-siyah/60">Henüz biletiniz yok.</p>
                   <Link href="/biletler" className="mt-3 inline-block text-sm font-medium text-bordo hover:underline">Biletler →</Link>
                 </div>
-              ) : ticketsWithMatch.length > 0 ? (
+              ) : (
                 <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {ticketsWithMatch.map((t) => {
+                  {activeTickets.map((t) => {
                     const qrUrl = t.qr_code
                       ? `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(t.qr_code)}`
                       : null;
@@ -346,9 +340,75 @@ export default async function BenimKosemPage() {
                     );
                   })}
                 </div>
-              ) : null}
-              {(ticketsWithMatch.length > 0 || rozetTicket) && (
+              )}
+              {activeTickets.length > 0 && (
                 <Link href="/biletler" className="mt-4 block text-center text-sm font-medium text-bordo hover:underline">Yeni bilet al →</Link>
+              )}
+            </section>
+
+            {/* Geçmiş biletler (maç) */}
+            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
+              <h2 className="font-display text-lg font-bold text-siyah">Geçmiş biletler</h2>
+              <p className="mt-1 text-sm text-siyah/70">Oynanmış maçlara ait biletleriniz.</p>
+              {pastMatchTickets.length === 0 ? (
+                <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
+                  <p className="text-sm text-siyah/60">Geçmiş maç biletiniz yok.</p>
+                </div>
+              ) : (
+                <ul className="mt-4 space-y-2">
+                  {pastMatchTickets.map((t) => (
+                    <li key={t.id} className="flex items-center justify-between rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-3">
+                      <span className="font-medium text-siyah">{t.label}</span>
+                      <span className="text-sm text-siyah/60">
+                        {t.match_date ? new Date(t.match_date + "T12:00:00").toLocaleDateString("tr-TR") : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            {/* Geçmiş etkinlikler */}
+            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
+              <h2 className="font-display text-lg font-bold text-siyah">Geçmiş etkinlikler</h2>
+              <p className="mt-1 text-sm text-siyah/70">Katıldığınız geçmiş etkinlikler.</p>
+              {pastEventTickets.length === 0 ? (
+                <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
+                  <p className="text-sm text-siyah/60">Geçmiş etkinlik biletiniz yok.</p>
+                </div>
+              ) : (
+                <ul className="mt-4 space-y-2">
+                  {pastEventTickets.map((t) => (
+                    <li key={t.id} className="flex items-center justify-between rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-3">
+                      <span className="font-medium text-siyah">{t.label}</span>
+                      <span className="text-sm text-siyah/60">
+                        {t.event_date ? new Date(t.event_date + "T12:00:00").toLocaleDateString("tr-TR") : ""}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </section>
+
+            {/* Geçmiş siparişler */}
+            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
+              <h2 className="font-display text-lg font-bold text-siyah">Geçmiş siparişler</h2>
+              <p className="mt-1 text-sm text-siyah/70">Teslim edilmiş siparişleriniz.</p>
+              {(!pastOrders || pastOrders.length === 0) ? (
+                <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
+                  <p className="text-sm text-siyah/60">Henüz teslim edilmiş siparişiniz yok.</p>
+                </div>
+              ) : (
+                <ul className="mt-4 space-y-2">
+                  {pastOrders.map((o) => (
+                    <li key={o.id} className="flex items-center justify-between rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-3">
+                      <span className="font-medium text-siyah">Sipariş {(o as { order_number: string }).order_number}</span>
+                      <span className="text-sm text-siyah/60">
+                        {new Date((o as { created_at: string }).created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
               )}
             </section>
 

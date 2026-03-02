@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Image from "next/image";
 import type { SquadMember } from "@/types/db";
+import type { SquadMemberWithStats } from "@/lib/data";
 import type { PersonGalleryItem } from "@/components/PersonGallery";
 import { PersonGallery } from "@/components/PersonGallery";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-function toGalleryItems(squad: SquadMember[]): PersonGalleryItem[] {
+function toGalleryItems(squad: (SquadMember | SquadMemberWithStats)[]): PersonGalleryItem[] {
   const sorted = [...squad].sort((a, b) => a.sort_order - b.sort_order);
   return sorted.map((p) => {
     const parts: string[] = [];
@@ -15,11 +16,19 @@ function toGalleryItems(squad: SquadMember[]): PersonGalleryItem[] {
     if (p.position) parts.push(p.position);
     if (p.shirt_number != null) parts.push(`#${p.shirt_number}`);
     const roleLabel = parts.length > 0 ? parts.join(" · ") : "Oyuncu";
+    const withStats = p as SquadMemberWithStats;
+    const statsLine =
+      typeof withStats.goals === "number" || typeof withStats.assists === "number" || typeof withStats.appearances === "number"
+        ? [withStats.goals > 0 ? `${withStats.goals} gol` : "", withStats.assists > 0 ? `${withStats.assists} asist` : "", withStats.appearances > 0 ? `${withStats.appearances} maç` : ""]
+            .filter(Boolean)
+            .join(" · ") || null
+        : null;
     return {
       id: p.id,
       name: p.name,
       roleLabel,
       photo_url: p.photo_url,
+      statsLine: statsLine ?? undefined,
     };
   });
 }
@@ -28,7 +37,7 @@ export function KadroSezonModulu({
   squad,
   placeholderImage,
 }: {
-  squad: SquadMember[];
+  squad: (SquadMember | SquadMemberWithStats)[];
   placeholderImage: string;
 }) {
   const groups = (() => {

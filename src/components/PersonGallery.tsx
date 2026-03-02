@@ -10,6 +10,8 @@ export type PersonGalleryItem = {
   roleDescription?: string | null;
   biography?: string | null;
   photo_url: string | null;
+  /** İstatistik satırı (örn. "5 gol · 3 asist · 12 maç") */
+  statsLine?: string | null;
 };
 
 export function PersonGallery({
@@ -107,6 +109,9 @@ export function PersonGallery({
         <p className="mt-1 font-display text-lg font-semibold text-beyaz sm:text-xl">
           {active.name}
         </p>
+        {active.statsLine && (
+          <p className="mt-1 text-sm text-beyaz/70">{active.statsLine}</p>
+        )}
         {active.biography && (
           <p className="mt-2 text-sm text-beyaz/70 leading-relaxed whitespace-pre-line">{active.biography}</p>
         )}

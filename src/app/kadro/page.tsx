@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getSquad } from "@/lib/data";
+import { getSquadWithStats } from "@/lib/data";
 import { KadroSezonModulu } from "./KadroSezonModulu";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 
@@ -10,7 +10,7 @@ export const metadata = {
 };
 
 export default async function KadroPage() {
-  const squad = await getSquad();
+  const squad = await getSquadWithStats();
 
   return (
     <div className="min-h-screen bg-siyah">
