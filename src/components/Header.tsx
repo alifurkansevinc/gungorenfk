@@ -41,13 +41,22 @@ export function Header() {
       <div className="border-b border-beyaz/10">
         <div className="mx-auto flex h-9 max-w-7xl items-center justify-end gap-4 px-4 sm:px-6 lg:px-8">
           {signedIn ? (
-            <Link
-              href="/benim-kosem"
-              className="text-xs font-semibold uppercase tracking-wider text-bordo hover:text-beyaz transition-colors"
-              onClick={() => setMobileOpen(false)}
-            >
-              Benim Köşem
-            </Link>
+            <>
+              <Link
+                href="/benim-kosem"
+                className="text-xs font-semibold uppercase tracking-wider text-bordo hover:text-beyaz transition-colors"
+                onClick={() => setMobileOpen(false)}
+              >
+                Benim Köşem
+              </Link>
+              <Link
+                href="/sepet"
+                className="text-xs font-semibold uppercase tracking-wider text-beyaz/90 hover:text-beyaz transition-colors"
+                onClick={() => setMobileOpen(false)}
+              >
+                Sepetim
+              </Link>
+            </>
           ) : (
             <>
               <Link
@@ -143,13 +152,22 @@ export function Header() {
               </Link>
             ))}
             {signedIn ? (
-              <Link
-                href="/benim-kosem"
-                className="mt-2 rounded-sm bg-bordo py-4 text-center text-sm font-bold uppercase tracking-wider text-beyaz"
-                onClick={() => setMobileOpen(false)}
-              >
-                Benim Köşem
-              </Link>
+              <>
+                <Link
+                  href="/sepet"
+                  className="border-b border-beyaz/5 py-4 text-sm font-semibold uppercase tracking-wider text-beyaz hover:bg-beyaz/10"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Sepetim
+                </Link>
+                <Link
+                  href="/benim-kosem"
+                  className="mt-2 rounded-sm bg-bordo py-4 text-center text-sm font-bold uppercase tracking-wider text-beyaz"
+                  onClick={() => setMobileOpen(false)}
+                >
+                  Benim Köşem
+                </Link>
+              </>
             ) : (
               <>
                 <Link
