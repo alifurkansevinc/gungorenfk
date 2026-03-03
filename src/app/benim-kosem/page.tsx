@@ -187,43 +187,43 @@ export default async function BenimKosemPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#f8f8f8]">
+    <div className="min-h-screen min-w-0 overflow-x-hidden bg-[#f8f8f8]">
       <div className="border-b border-siyah/10 bg-siyah text-beyaz">
-        <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8">
-          <nav className="text-sm text-beyaz/60">
+        <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8 min-w-0">
+          <nav className="text-sm text-beyaz/60 truncate">
             <Link href="/" className="hover:text-beyaz">Anasayfa</Link>
             <span className="mx-2">/</span>
             <span className="text-beyaz">Benim Köşem</span>
           </nav>
-          <h1 className="font-display mt-2 text-2xl font-bold sm:text-3xl">Benim Köşem</h1>
+          <h1 className="font-display mt-2 text-2xl font-bold sm:text-3xl break-words">Benim Köşem</h1>
         </div>
       </div>
 
-      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="grid gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2 space-y-6">
+      <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8 min-w-0">
+        <div className="grid gap-6 sm:gap-8 lg:grid-cols-3">
+          <div className="min-w-0 lg:col-span-2 space-y-6">
             {/* Rozet + mevcut rütbenin avantajları */}
-            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
-              <h2 className="font-display text-lg font-bold text-siyah">Güngören BFK Rozeti</h2>
+            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+              <h2 className="font-display text-lg font-bold text-siyah break-words">Güngören BFK Rozeti</h2>
               <div className="mt-4 flex flex-wrap items-center gap-4">
                 <FanLevelBadge levelSlug={currentLevel.slug} levelName={currentLevel.name} />
               </div>
               {currentLevel.description && (
-                <p className="mt-4 text-sm text-siyah/80 leading-relaxed">{currentLevel.description}</p>
+                <p className="mt-4 text-sm text-siyah/80 leading-relaxed break-words">{currentLevel.description}</p>
               )}
               {mevcutAvantajlarListe.length > 0 && (
                 <>
                   <h3 className="mt-4 text-sm font-semibold text-siyah/80">Mevcut rütbenin avantajları</h3>
-                  <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-siyah/80">
+                  <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-siyah/80 break-words">
                     {mevcutAvantajlarListe.map((madde, i) => (
-                      <li key={i}>{madde}</li>
+                      <li key={i} className="break-words">{madde}</li>
                     ))}
                   </ul>
                 </>
               )}
               {currentLevel.sort_order >= 2 && (
                 <div className="mt-4 rounded-xl border border-bordo/20 bg-bordo/5 p-4">
-                  <p className="text-sm font-medium text-siyah/90">
+                  <p className="text-sm font-medium text-siyah/90 break-words">
                     Takım rozetini mağazadan <strong className="text-bordo">%100 indirimli</strong> olarak alabilirsin. Kargo istersen kargo ücreti uygulanır.
                   </p>
                   <Link href="/magaza" className="mt-2 inline-block text-sm font-semibold text-bordo hover:underline">
@@ -235,58 +235,58 @@ export default async function BenimKosemPage() {
 
             {/* Sonraki rozetin için — sonraki rütbenin avantajları + 3 barem */}
             {nextLevel && (
-              <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
-                <h2 className="font-display text-lg font-bold text-siyah">Sonraki rozetin için</h2>
-                <p className="mt-1 text-sm text-siyah/70">Sonraki kademe: <strong>{nextLevel.name}</strong>.</p>
+              <section className="rounded-2xl border border-siyah/10 bg-beyaz p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+                <h2 className="font-display text-lg font-bold text-siyah break-words">Sonraki rozetin için</h2>
+                <p className="mt-1 text-sm text-siyah/70 break-words">Sonraki kademe: <strong>{nextLevel.name}</strong>.</p>
                 {sonrakiAvantajlarListe.length > 0 && (
                   <>
                     <h3 className="mt-3 text-sm font-semibold text-siyah/80">Sonraki rütbenin avantajları</h3>
-                    <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-siyah/80">
+                    <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-siyah/80 break-words">
                       {sonrakiAvantajlarListe.map((madde, i) => (
-                        <li key={i}>{madde}</li>
+                        <li key={i} className="break-words">{madde}</li>
                       ))}
                     </ul>
                   </>
                 )}
-                <div className="mt-4 space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium text-siyah/80">Mağaza alışveriş baremi</span>
-                      <span className="tabular-nums text-siyah/70">{storeSpend.toFixed(0)} ₺ / {nextTargetStore} ₺</span>
+                <div className="mt-4 space-y-4 min-w-0">
+                  <div className="min-w-0">
+                    <div className="flex flex-col gap-0.5 sm:flex-row sm:flex-nowrap sm:justify-between sm:items-center">
+                      <span className="font-medium text-siyah/80 text-sm break-words min-w-0">Mağaza alışveriş baremi</span>
+                      <span className="tabular-nums text-siyah/70 text-sm shrink-0">{storeSpend.toFixed(0)} ₺ / {nextTargetStore} ₺</span>
                     </div>
-                    <div className="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-siyah/10">
+                    <div className="mt-1 h-2.5 w-full min-w-0 overflow-hidden rounded-full bg-siyah/10">
                       <div className="progress-fill h-full rounded-full bg-bordo" style={{ width: `${barStore}%` }} />
                     </div>
                   </div>
-                  <div>
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium text-siyah/80">Maç biletleri baremi</span>
-                      <span className="tabular-nums text-siyah/70">{ticketsCount} / {nextTargetTickets}</span>
+                  <div className="min-w-0">
+                    <div className="flex flex-col gap-0.5 sm:flex-row sm:flex-nowrap sm:justify-between sm:items-center">
+                      <span className="font-medium text-siyah/80 text-sm break-words min-w-0">Maç biletleri baremi</span>
+                      <span className="tabular-nums text-siyah/70 text-sm shrink-0">{ticketsCount} / {nextTargetTickets}</span>
                     </div>
-                    <div className="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-siyah/10">
+                    <div className="mt-1 h-2.5 w-full min-w-0 overflow-hidden rounded-full bg-siyah/10">
                       <div className="progress-fill h-full rounded-full bg-bordo" style={{ width: `${barTickets}%` }} />
                     </div>
                   </div>
-                  <div>
-                    <div className="flex justify-between text-sm">
-                      <span className="font-medium text-siyah/80">Bağış baremi</span>
-                      <span className="tabular-nums text-siyah/70">{donationTotal.toFixed(0)} ₺ / {nextTargetDonation} ₺</span>
+                  <div className="min-w-0">
+                    <div className="flex flex-col gap-0.5 sm:flex-row sm:flex-nowrap sm:justify-between sm:items-center">
+                      <span className="font-medium text-siyah/80 text-sm break-words min-w-0">Bağış baremi</span>
+                      <span className="tabular-nums text-siyah/70 text-sm shrink-0">{donationTotal.toFixed(0)} ₺ / {nextTargetDonation} ₺</span>
                     </div>
-                    <div className="mt-1 h-2.5 w-full overflow-hidden rounded-full bg-siyah/10">
+                    <div className="mt-1 h-2.5 w-full min-w-0 overflow-hidden rounded-full bg-siyah/10">
                       <div className="progress-fill h-full rounded-full bg-bordo" style={{ width: `${barDonation}%` }} />
                     </div>
                   </div>
                   {favoriteMotmBonus > 0 && (
-                    <p className="text-xs text-siyah/60">
+                    <p className="text-xs text-siyah/60 break-words">
                       Favori oyuncun {motmCount} kez maçın oyuncusu seçildi: <span className="font-medium text-bordo">+{favoriteMotmBonus}%</span>
                     </p>
                   )}
-                  <div className="pt-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="font-semibold text-siyah">Toplam ilerleme (sonraki rozet)</span>
-                      <span className="tabular-nums text-bordo font-medium">{Math.round(overallBar)}%</span>
+                  <div className="pt-2 min-w-0">
+                    <div className="flex flex-col gap-0.5 sm:flex-row sm:flex-nowrap sm:justify-between sm:items-center">
+                      <span className="font-semibold text-siyah text-sm break-words min-w-0">Toplam ilerleme (sonraki rozet)</span>
+                      <span className="tabular-nums text-bordo font-medium text-sm shrink-0">{Math.round(overallBar)}%</span>
                     </div>
-                    <div className="mt-1 h-3 w-full overflow-hidden rounded-full bg-siyah/10">
+                    <div className="mt-1 h-3 w-full min-w-0 overflow-hidden rounded-full bg-siyah/10">
                       <div className="progress-fill progress-bar-glow h-full rounded-full bg-bordo" style={{ width: `${overallBar}%` }} />
                     </div>
                   </div>
@@ -294,23 +294,23 @@ export default async function BenimKosemPage() {
               </section>
             )}
             {!nextLevel && (
-              <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
-                <h2 className="font-display text-lg font-bold text-siyah">Sonraki rozetin için</h2>
-                <p className="mt-2 text-sm text-siyah/70">En yüksek kademe (Efsane) rozetindesin.</p>
+              <section className="rounded-2xl border border-siyah/10 bg-beyaz p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+                <h2 className="font-display text-lg font-bold text-siyah break-words">Sonraki rozetin için</h2>
+                <p className="mt-2 text-sm text-siyah/70 break-words">En yüksek kademe (Efsane) rozetindesin.</p>
               </section>
             )}
 
             {/* Bilet cüzdanı — sadece maç ve etkinlik biletleri (rozet teslim bileti yok) */}
-            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
-              <h2 className="font-display text-lg font-bold text-siyah">Bilet cüzdanım</h2>
-              <p className="mt-1 text-sm text-siyah/70">Aldığınız maç ve etkinlik biletleri.</p>
+            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+              <h2 className="font-display text-lg font-bold text-siyah break-words">Bilet cüzdanım</h2>
+              <p className="mt-1 text-sm text-siyah/70 break-words">Aldığınız maç ve etkinlik biletleri.</p>
               {activeTickets.length === 0 ? (
                 <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
                   <p className="text-sm text-siyah/60">Henüz biletiniz yok.</p>
                   <Link href="/biletler" className="mt-3 inline-block text-sm font-medium text-bordo hover:underline">Biletler →</Link>
                 </div>
               ) : (
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div className="mt-4 grid gap-3 grid-cols-1 sm:grid-cols-2 min-w-0">
                   {activeTickets.map((t) => {
                     const qrUrl = t.qr_code
                       ? `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(t.qr_code)}`
@@ -322,17 +322,17 @@ export default async function BenimKosemPage() {
                       <Link
                         key={t.id}
                         href={`/biletler/basarili?qrCode=${t.qr_code}${t.isEvent ? "&type=event" : ""}`}
-                        className="flex items-center gap-4 rounded-xl border border-siyah/10 bg-gradient-to-br from-siyah/5 to-bordo/5 p-4 transition-shadow hover:shadow-md"
+                        className="flex items-center gap-3 sm:gap-4 rounded-xl border border-siyah/10 bg-gradient-to-br from-siyah/5 to-bordo/5 p-4 transition-shadow hover:shadow-md min-w-0"
                       >
                         {qrUrl && (
-                          <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz">
+                          <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz">
                             <img src={qrUrl} alt="QR" width={56} height={56} className="h-full w-full object-contain" />
                           </div>
                         )}
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-siyah truncate">{t.label}</p>
+                        <div className="min-w-0 flex-1 overflow-hidden">
+                          <p className="font-semibold text-siyah text-sm sm:text-base truncate">{t.label}</p>
                           {t.isEvent && <span className="text-[10px] font-medium text-bordo/80 uppercase tracking-wide">Etkinlik</span>}
-                          <p className="text-xs text-siyah/60 mt-0.5">{subLine}</p>
+                          <p className="text-xs text-siyah/60 mt-0.5 truncate">{subLine}</p>
                           {t.seat_code && <p className="mt-0.5 text-xs font-medium text-bordo">Koltuk: {t.seat_code}</p>}
                         </div>
                         <span className="shrink-0 text-xs font-medium text-bordo">Göster</span>
@@ -347,19 +347,19 @@ export default async function BenimKosemPage() {
             </section>
 
             {/* Geçmiş biletler (maç) */}
-            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
-              <h2 className="font-display text-lg font-bold text-siyah">Geçmiş biletler</h2>
-              <p className="mt-1 text-sm text-siyah/70">Oynanmış maçlara ait biletleriniz.</p>
+            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+              <h2 className="font-display text-lg font-bold text-siyah break-words">Geçmiş biletler</h2>
+              <p className="mt-1 text-sm text-siyah/70 break-words">Oynanmış maçlara ait biletleriniz.</p>
               {pastMatchTickets.length === 0 ? (
                 <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
                   <p className="text-sm text-siyah/60">Geçmiş maç biletiniz yok.</p>
                 </div>
               ) : (
-                <ul className="mt-4 space-y-2">
+                <ul className="mt-4 space-y-2 min-w-0">
                   {pastMatchTickets.map((t) => (
-                    <li key={t.id} className="flex items-center justify-between rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-3">
-                      <span className="font-medium text-siyah">{t.label}</span>
-                      <span className="text-sm text-siyah/60">
+                    <li key={t.id} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-3 min-w-0">
+                      <span className="font-medium text-siyah text-sm break-words min-w-0">{t.label}</span>
+                      <span className="text-sm text-siyah/60 shrink-0">
                         {t.match_date ? new Date(t.match_date + "T12:00:00").toLocaleDateString("tr-TR") : ""}
                       </span>
                     </li>
@@ -369,19 +369,19 @@ export default async function BenimKosemPage() {
             </section>
 
             {/* Geçmiş etkinlikler */}
-            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
-              <h2 className="font-display text-lg font-bold text-siyah">Geçmiş etkinlikler</h2>
-              <p className="mt-1 text-sm text-siyah/70">Katıldığınız geçmiş etkinlikler.</p>
+            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+              <h2 className="font-display text-lg font-bold text-siyah break-words">Geçmiş etkinlikler</h2>
+              <p className="mt-1 text-sm text-siyah/70 break-words">Katıldığınız geçmiş etkinlikler.</p>
               {pastEventTickets.length === 0 ? (
                 <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
                   <p className="text-sm text-siyah/60">Geçmiş etkinlik biletiniz yok.</p>
                 </div>
               ) : (
-                <ul className="mt-4 space-y-2">
+                <ul className="mt-4 space-y-2 min-w-0">
                   {pastEventTickets.map((t) => (
-                    <li key={t.id} className="flex items-center justify-between rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-3">
-                      <span className="font-medium text-siyah">{t.label}</span>
-                      <span className="text-sm text-siyah/60">
+                    <li key={t.id} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-3 min-w-0">
+                      <span className="font-medium text-siyah text-sm break-words min-w-0">{t.label}</span>
+                      <span className="text-sm text-siyah/60 shrink-0">
                         {t.event_date ? new Date(t.event_date + "T12:00:00").toLocaleDateString("tr-TR") : ""}
                       </span>
                     </li>
@@ -391,19 +391,19 @@ export default async function BenimKosemPage() {
             </section>
 
             {/* Geçmiş siparişler */}
-            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
-              <h2 className="font-display text-lg font-bold text-siyah">Geçmiş siparişler</h2>
-              <p className="mt-1 text-sm text-siyah/70">Teslim edilmiş siparişleriniz.</p>
+            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+              <h2 className="font-display text-lg font-bold text-siyah break-words">Geçmiş siparişler</h2>
+              <p className="mt-1 text-sm text-siyah/70 break-words">Teslim edilmiş siparişleriniz.</p>
               {(!pastOrders || pastOrders.length === 0) ? (
                 <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
                   <p className="text-sm text-siyah/60">Henüz teslim edilmiş siparişiniz yok.</p>
                 </div>
               ) : (
-                <ul className="mt-4 space-y-2">
+                <ul className="mt-4 space-y-2 min-w-0">
                   {pastOrders.map((o) => (
-                    <li key={o.id} className="flex items-center justify-between rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-3">
-                      <span className="font-medium text-siyah">Sipariş {(o as { order_number: string }).order_number}</span>
-                      <span className="text-sm text-siyah/60">
+                    <li key={o.id} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-3 min-w-0">
+                      <span className="font-medium text-siyah text-sm break-words min-w-0">Sipariş {(o as { order_number: string }).order_number}</span>
+                      <span className="text-sm text-siyah/60 shrink-0">
                         {new Date((o as { created_at: string }).created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
                       </span>
                     </li>
@@ -413,16 +413,16 @@ export default async function BenimKosemPage() {
             </section>
 
             {/* Store cüzdanım — mağazadan teslim alınacak siparişler, QR ile */}
-            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
-              <h2 className="font-display text-lg font-bold text-siyah">Store cüzdanım</h2>
-              <p className="mt-1 text-sm text-siyah/70">Mağazadan teslim alacağınız siparişler. Teslim alırken bu QR kodunu gösterin.</p>
+            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+              <h2 className="font-display text-lg font-bold text-siyah break-words">Store cüzdanım</h2>
+              <p className="mt-1 text-sm text-siyah/70 break-words">Mağazadan teslim alacağınız siparişler. Teslim alırken bu QR kodunu gösterin.</p>
               {(!storePickupOrders || storePickupOrders.length === 0) ? (
                 <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
                   <p className="text-sm text-siyah/60">Mağazadan teslim alacağınız siparişiniz yok.</p>
                   <Link href="/magaza" className="mt-3 inline-block text-sm font-medium text-bordo hover:underline">Mağaza →</Link>
                 </div>
               ) : (
-                <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2 min-w-0">
                   {storePickupOrders.map((o) => {
                     const pickupCode = (o as { pickup_code: string }).pickup_code;
                     const qrData = `${baseUrl}/admin/teslim-al?code=${encodeURIComponent(pickupCode)}`;
@@ -433,19 +433,19 @@ export default async function BenimKosemPage() {
                     return (
                       <div
                         key={o.id}
-                        className={`flex items-center gap-4 rounded-xl border p-4 ${isDelivered ? "border-siyah/10 bg-siyah/[0.02]" : "border-siyah/10 bg-gradient-to-br from-siyah/5 to-bordo/5"}`}
+                        className={`flex items-center gap-3 sm:gap-4 rounded-xl border p-4 min-w-0 overflow-hidden ${isDelivered ? "border-siyah/10 bg-siyah/[0.02]" : "border-siyah/10 bg-gradient-to-br from-siyah/5 to-bordo/5"}`}
                       >
-                        <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz">
+                        <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz">
                           <img src={qrImgUrl} alt="Teslim QR" width={64} height={64} className="h-full w-full object-contain" />
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="font-semibold text-siyah">Sipariş {o.order_number}</p>
+                        <div className="min-w-0 flex-1 overflow-hidden">
+                          <p className="font-semibold text-siyah text-sm sm:text-base truncate">Sipariş {o.order_number}</p>
                           {pickupDate && (
-                            <p className="text-xs text-siyah/60 mt-0.5">
-                              Teslim tarihi: {new Date(pickupDate + "T12:00:00").toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+                            <p className="text-xs text-siyah/60 mt-0.5 break-words">
+                              Teslim: {new Date(pickupDate + "T12:00:00").toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
                             </p>
                           )}
-                          <p className="mt-0.5 font-mono text-xs text-siyah/70">Kod: {pickupCode}</p>
+                          <p className="mt-0.5 font-mono text-xs text-siyah/70 truncate">Kod: {pickupCode}</p>
                           {isDelivered && <span className="mt-1 inline-block rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">Teslim alındı</span>}
                         </div>
                       </div>
@@ -460,26 +460,26 @@ export default async function BenimKosemPage() {
 
             {/* Hediye haklarım — rütbeden kazanılan hediye; mağaza ürünü ücretsiz, QR ile teslim */}
             {giftQuota > 0 && (
-              <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
-                <h2 className="font-display text-lg font-bold text-siyah">Hediye haklarım</h2>
-                <p className="mt-1 text-sm text-siyah/70">Rütbenizden kazanılan hediyeler mağaza ürünü olarak verilir; ücretsiz, QR ile mağazadan teslim alırsınız.</p>
-                <p className="mt-2 text-sm font-medium text-siyah">Bu yıl: <span className="text-bordo">{giftUsedCount ?? 0} / {giftQuota}</span> hediye kullandınız.</p>
+              <section className="rounded-2xl border border-siyah/10 bg-beyaz p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+                <h2 className="font-display text-lg font-bold text-siyah break-words">Hediye haklarım</h2>
+                <p className="mt-1 text-sm text-siyah/70 break-words">Rütbenizden kazanılan hediyeler mağaza ürünü olarak verilir; ücretsiz, QR ile mağazadan teslim alırsınız.</p>
+                <p className="mt-2 text-sm font-medium text-siyah break-words">Bu yıl: <span className="text-bordo">{giftUsedCount ?? 0} / {giftQuota}</span> hediye kullandınız.</p>
                 {pendingGifts && pendingGifts.length > 0 && (
-                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                  <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2 min-w-0">
                     {pendingGifts.map((g) => {
                       const qrData = `${baseUrl}/admin/teslim-al?code=${encodeURIComponent((g as { qr_code: string }).qr_code)}`;
                       const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(qrData)}`;
                       const sp = (g as { store_products?: { name: string } | { name: string }[] | null }).store_products;
                       const productName = (Array.isArray(sp) ? sp[0]?.name : sp?.name) ?? "Ürün";
                       return (
-                        <div key={g.id} className="flex items-center gap-4 rounded-xl border border-bordo/20 bg-gradient-to-br from-bordo/5 to-siyah/5 p-4">
-                          <div className="h-16 w-16 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz">
+                        <div key={g.id} className="flex items-center gap-3 sm:gap-4 rounded-xl border border-bordo/20 bg-gradient-to-br from-bordo/5 to-siyah/5 p-4 min-w-0 overflow-hidden">
+                          <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz">
                             <img src={qrImgUrl} alt="Hediye QR" width={64} height={64} className="h-full w-full object-contain" />
                           </div>
-                          <div className="min-w-0 flex-1">
-                            <p className="font-semibold text-siyah">Hediye: {productName}</p>
-                            <p className="mt-0.5 font-mono text-xs text-siyah/70">Kod: {(g as { qr_code: string }).qr_code}</p>
-                            <p className="mt-1 text-xs text-siyah/60">Mağazada bu QR ile teslim alın.</p>
+                          <div className="min-w-0 flex-1 overflow-hidden">
+                            <p className="font-semibold text-siyah text-sm sm:text-base break-words">Hediye: {productName}</p>
+                            <p className="mt-0.5 font-mono text-xs text-siyah/70 truncate">Kod: {(g as { qr_code: string }).qr_code}</p>
+                            <p className="mt-1 text-xs text-siyah/60 break-words">Mağazada bu QR ile teslim alın.</p>
                           </div>
                         </div>
                       );
@@ -493,45 +493,45 @@ export default async function BenimKosemPage() {
             )}
 
             {/* Favori oyuncu */}
-            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
-              <h2 className="font-display text-lg font-bold text-siyah">Favori Oyuncum</h2>
-              <p className="mt-1 text-sm text-siyah/70">Favori oyuncun gol atınca ek puan kazanacaksın (sistem yakında aktif olacak).</p>
-              <div className="mt-4">
+            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+              <h2 className="font-display text-lg font-bold text-siyah break-words">Favori Oyuncum</h2>
+              <p className="mt-1 text-sm text-siyah/70 break-words">Favori oyuncun gol atınca ek puan kazanacaksın (sistem yakında aktif olacak).</p>
+              <div className="mt-4 min-w-0">
                 <FavoriOyuncuSec currentFavoriteId={favoritePlayerId} squad={squad} />
               </div>
               {favoritePlayer && (
-                <div className="mt-4 flex items-center gap-4 rounded-xl border border-siyah/10 bg-siyah/5 p-4">
-                  <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-bordo text-xl font-bold text-beyaz">
+                <div className="mt-4 flex items-center gap-3 sm:gap-4 rounded-xl border border-siyah/10 bg-siyah/5 p-4 min-w-0 overflow-hidden">
+                  <div className="flex h-12 w-12 sm:h-14 sm:w-14 shrink-0 items-center justify-center rounded-full bg-bordo text-lg sm:text-xl font-bold text-beyaz">
                     {favoritePlayer.shirt_number ?? "?"}
                   </div>
-                  <div>
-                    <p className="font-semibold text-siyah">{favoritePlayer.name}</p>
-                    {favoritePlayer.position && <p className="text-sm text-siyah/70">{favoritePlayer.position}</p>}
+                  <div className="min-w-0 flex-1 overflow-hidden">
+                    <p className="font-semibold text-siyah text-sm sm:text-base truncate">{favoritePlayer.name}</p>
+                    {favoritePlayer.position && <p className="text-sm text-siyah/70 truncate">{favoritePlayer.position}</p>}
                   </div>
-                  <Link href="/kadro" className="ml-auto text-sm font-medium text-bordo hover:underline">Kadro →</Link>
+                  <Link href="/kadro" className="shrink-0 text-sm font-medium text-bordo hover:underline">Kadro →</Link>
                 </div>
               )}
             </section>
           </div>
 
-          <div className="space-y-6">
+          <div className="min-w-0 space-y-6">
             {/* Mevcut rütbenin avantajları (sidebar) */}
-            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
-              <h2 className="font-display text-lg font-bold text-siyah">Mevcut rütbenin avantajları</h2>
+            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+              <h2 className="font-display text-lg font-bold text-siyah break-words">Mevcut rütbenin avantajları</h2>
               {mevcutAvantajlarListe.length > 0 ? (
-                <ul className="mt-3 list-inside list-disc space-y-2 text-sm text-siyah/80">
+                <ul className="mt-3 list-inside list-disc space-y-2 text-sm text-siyah/80 break-words">
                   {mevcutAvantajlarListe.map((h, i) => (
-                    <li key={i}>{h}</li>
+                    <li key={i} className="break-words">{h}</li>
                   ))}
                 </ul>
               ) : (
-                <p className="mt-3 text-sm text-siyah/60">Admin panelinden bu kademenin avantajları tanımlanabilir.</p>
+                <p className="mt-3 text-sm text-siyah/60 break-words">Admin panelinden bu kademenin avantajları tanımlanabilir.</p>
               )}
             </section>
 
             {/* Hızlı işlemler + Ayarlar */}
-            <section className="rounded-2xl border border-siyah/10 bg-bordo/10 p-6">
-              <h2 className="font-display text-lg font-bold text-siyah">Hızlı işlemler</h2>
+            <section className="rounded-2xl border border-siyah/10 bg-bordo/10 p-4 sm:p-6 min-w-0 overflow-hidden">
+              <h2 className="font-display text-lg font-bold text-siyah break-words">Hızlı işlemler</h2>
               <div className="mt-4 flex flex-col gap-2">
                 <Link href="/benim-kosem/ayarlar" className="rounded-lg border-2 border-siyah/20 px-4 py-3 font-medium text-siyah hover:bg-siyah/5 transition-colors text-center">
                   Ayarlar

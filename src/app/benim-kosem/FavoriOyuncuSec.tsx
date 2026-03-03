@@ -26,14 +26,14 @@ export function FavoriOyuncuSec({ currentFavoriteId, squad }: Props) {
   }
 
   return (
-    <div>
+    <div className="min-w-0 w-full max-w-xs">
       <label htmlFor="favori_oyuncu" className="block text-sm font-medium text-siyah/80">Favori oyuncun</label>
       <select
         id="favori_oyuncu"
         value={value}
         onChange={handleChange}
         disabled={loading}
-        className="mt-1 w-full max-w-xs rounded-lg border border-siyah/20 px-3 py-2 text-siyah disabled:opacity-60"
+        className="mt-1 w-full min-w-0 rounded-lg border border-siyah/20 px-3 py-2 text-siyah disabled:opacity-60"
       >
         <option value="">Seç...</option>
         {squad.map((p) => (
