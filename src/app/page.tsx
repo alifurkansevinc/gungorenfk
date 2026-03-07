@@ -46,10 +46,10 @@ export default async function Home() {
                 Taraftar Ol
               </Link>
               <Link
-                href="/maclar"
+                href="/bagis"
                 className="inline-flex items-center rounded-full border-2 border-beyaz px-8 py-4 text-sm font-bold text-beyaz transition-all duration-300 hover:bg-beyaz/15 hover:scale-105"
               >
-                Maçlar
+                Bağış Yap
               </Link>
             </div>
           </div>

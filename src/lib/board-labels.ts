@@ -11,12 +11,12 @@ export const BOARD_ROLE_LABELS: Record<string, string> = {
 /** Teknik heyet role_slug → görünen isim (önem sırasına göre) */
 export const TECHNICAL_STAFF_ROLE_LABELS: Record<string, string> = {
   teknik_direktor: "Teknik Direktör",
-  yardimci_hoca: "Yardımcı Hoca",
-  kaleci_antrenoru: "Kaleci Antrenörü",
-  altyapi_td: "Altyapı Teknik Direktörü",
-  gelisim_direktoru: "Gelişim Direktörü",
+  yardimci_hoca: "A Takım | Yardımcı Antrenör",
+  kaleci_antrenoru: "A Takım | Kaleci Antrenörü",
+  altyapi_td: "Altyapı Antrenörü",
+  gelisim_direktoru: "Atletik Performans Antrenörü",
   futbol_direktoru: "Futbol Direktörü",
   kulup_muduru: "Kulüp Müdürü",
-  lojistik_muduru: "Lojistik Müdürü",
+  lojistik_muduru: "Lojistik Sorumlusu",
   fizyoterapist: "Fizyoterapist",
 };
