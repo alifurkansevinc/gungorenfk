@@ -136,15 +136,14 @@ export default async function MaclarPage() {
                   {useMackolik ? (
                     mackolikMatches.map((m, i) => {
                       const hasScore = m.goalsHome != null && m.goalsAway != null;
-                      const isPast = m.date < todayStr;
+                      const isFinished = m.status === "finished";
                       const isGungorenHome = /güngören|gungoren|güngören bld/i.test(m.home);
                       const ourGoals = hasScore ? (isGungorenHome ? m.goalsHome! : m.goalsAway!) : 0;
                       const theirGoals = hasScore ? (isGungorenHome ? m.goalsAway! : m.goalsHome!) : 0;
                       const result: ResultType = !hasScore ? "D" : ourGoals > theirGoals ? "W" : ourGoals < theirGoals ? "L" : "D";
                       const müsabakaLabel = (m.competition && m.competition.trim()) ? m.competition : leagueName;
-                      const durumLabel = isPast ? "Bitti" : "Planlanan";
                       return (
-                        <tr key={`mackolik-${i}-${m.date}-${m.home}`} className="border-b border-siyah/5 hover:bg-siyah/[0.02]">
+                        <tr key={`mackolik-${i}-${m.date}-${m.home}`} className={`border-b border-siyah/5 hover:bg-siyah/[0.02] ${isFinished ? "bg-siyah/[0.02]" : ""}`}>
                           <td className="px-1 py-2 sm:py-2.5 text-siyah/80 whitespace-nowrap">{new Date(m.date + "T12:00:00").toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "2-digit" })}</td>
                           <td className="px-1 py-2 sm:py-2.5 text-siyah/80 text-[10px] sm:text-xs truncate" title={müsabakaLabel}>{müsabakaLabel}</td>
                           <td className="min-w-0 px-1 py-2 sm:py-2.5 font-medium text-siyah text-[11px] sm:text-sm truncate">{m.home} – {m.away}</td>
@@ -158,7 +157,9 @@ export default async function MaclarPage() {
                               ) : (
                                 <span className="text-siyah/50">—</span>
                               )}
-                              <span className={`text-[10px] sm:text-xs ${isPast ? "text-siyah/60" : "text-bordo/80"}`}>({durumLabel})</span>
+                              <span className={`text-[10px] sm:text-xs font-medium ${isFinished ? "text-emerald-700" : "text-bordo/80"}`}>
+                                {isFinished ? "Bitti" : "Planlanan"}
+                              </span>
                             </div>
                           </td>
                         </tr>
@@ -168,11 +169,13 @@ export default async function MaclarPage() {
                     <tr><td colSpan={4} className="px-2 py-6 text-center text-siyah/60 text-xs">Henüz maç eklenmedi.</td></tr>
                   ) : (
                     [...scheduled, ...finished].map((m) => {
-                      const isFinished = m.status === "finished" && m.goals_for != null && m.goals_against != null;
-                      const result: ResultType = !isFinished ? "D" : m.goals_for! > m.goals_against! ? "W" : m.goals_for! < m.goals_against! ? "L" : "D";
+                      const isPastDb = m.match_date < todayStr;
+                      const hasScoreDb = m.goals_for != null && m.goals_against != null;
+                      const isFinished = (m.status === "finished" && hasScoreDb) || (isPastDb && hasScoreDb) || isPastDb;
+                      const result: ResultType = !hasScoreDb ? "D" : m.goals_for! > m.goals_against! ? "W" : m.goals_for! < m.goals_against! ? "L" : "D";
                       const müsabakaLabel = (m.competition && m.competition.trim()) ? m.competition : leagueName;
                       return (
-                        <tr key={m.id} className="border-b border-siyah/5 hover:bg-siyah/[0.02]">
+                        <tr key={m.id} className={`border-b border-siyah/5 hover:bg-siyah/[0.02] ${isPastDb ? "bg-siyah/[0.02]" : ""}`}>
                           <td className="px-1 py-2 sm:py-2.5 text-siyah/80 whitespace-nowrap">{new Date(m.match_date).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "2-digit" })}</td>
                           <td className="px-1 py-2 sm:py-2.5 text-siyah/80 text-[10px] sm:text-xs truncate" title={müsabakaLabel}>{müsabakaLabel}</td>
                           <td className="min-w-0 px-1 py-2 sm:py-2.5">
@@ -182,7 +185,7 @@ export default async function MaclarPage() {
                           </td>
                           <td className="px-2 py-2 sm:py-2.5">
                             <div className="flex flex-wrap items-center justify-center gap-2">
-                              {isFinished ? (
+                              {hasScoreDb ? (
                                 <>
                                   <span className="font-bold text-siyah tabular-nums">
                                     {m.home_away === "home" ? `${m.goals_for} – ${m.goals_against}` : `${m.goals_against} – ${m.goals_for}`}
@@ -192,6 +195,9 @@ export default async function MaclarPage() {
                               ) : (
                                 <span className="text-siyah/50">—</span>
                               )}
+                              <span className={`text-[10px] sm:text-xs font-medium ${isPastDb ? "text-emerald-700" : "text-bordo/80"}`}>
+                                {isPastDb ? "Bitti" : "Planlanan"}
+                              </span>
                             </div>
                           </td>
                         </tr>

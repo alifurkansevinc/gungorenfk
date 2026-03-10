@@ -19,10 +19,75 @@ export type MackolikMatch = {
   goalsAway: number | null;
   competition?: string;
   matchUrl?: string;
+  /** Tarih geçmişse 'finished', gelecekteyse 'scheduled' */
+  status: "finished" | "scheduled";
 };
 
 function normalizeTeamName(s: string): string {
   return s.replace(/\s+/g, " ").trim();
+}
+
+const TODAY = () => new Date().toISOString().slice(0, 10);
+
+/** Objeden skor çıkar (Mackolik farklı alan adları kullanabiliyor). */
+function extractScore(obj: unknown): { home: number | null; away: number | null } {
+  if (!obj || typeof obj !== "object") return { home: null, away: null };
+  const o = obj as Record<string, unknown>;
+  const home =
+    typeof o.home === "number" ? o.home : o.homeTeam != null ? Number(o.homeTeam) : null;
+  const away =
+    typeof o.away === "number" ? o.away : o.awayTeam != null ? Number(o.awayTeam) : null;
+  if (home != null && !Number.isNaN(home) && away != null && !Number.isNaN(away))
+    return { home, away };
+  return { home: null, away: null };
+}
+
+/** __NEXT_DATA__ içinde fixture benzeri objeleri recursive arar. */
+function collectFixturesFromJson(obj: unknown, out: MackolikMatch[], todayStr: string): void {
+  if (!obj) return;
+  if (Array.isArray(obj)) {
+    for (const item of obj) {
+      if (item && typeof item === "object") {
+        const x = item as Record<string, unknown>;
+        const start = x.startDate ?? x.startTime ?? x.date;
+        const ht = x.homeTeam as { name?: string; shortName?: string } | undefined;
+        const at = x.awayTeam as { name?: string; shortName?: string } | undefined;
+        const homeTeam = ht?.name ?? ht?.shortName ?? (x.home as { name?: string })?.name ?? "";
+        const awayTeam = at?.name ?? at?.shortName ?? (x.away as { name?: string })?.name ?? "";
+        if (start && (homeTeam || awayTeam)) {
+          const d = new Date(start as string);
+          const dateStr = d.toISOString().slice(0, 10);
+          const score =
+            extractScore(x.score).home != null
+              ? extractScore(x.score)
+              : extractScore(x.result).home != null
+                ? extractScore(x.result)
+                : extractScore((x as { regularScore?: unknown }).regularScore ?? (x as { fullTimeScore?: unknown }).fullTimeScore ?? (x as { status?: { score?: unknown } }).status?.score);
+          const goalsHome = score.home;
+          const goalsAway = score.away;
+          const competition =
+            (x.competition as { name?: string })?.name ??
+            (x.league as { name?: string })?.name ??
+            (x.tournament as { name?: string })?.name;
+          out.push({
+            date: dateStr,
+            home: homeTeam || "Güngören Bld",
+            away: awayTeam || "Rakip",
+            goalsHome: goalsHome ?? null,
+            goalsAway: goalsAway ?? null,
+            competition: competition ?? undefined,
+            status: dateStr < todayStr ? "finished" : "scheduled",
+          });
+          continue;
+        }
+      }
+      collectFixturesFromJson(item, out, todayStr);
+    }
+    return;
+  }
+  if (typeof obj === "object") {
+    for (const v of Object.values(obj)) collectFixturesFromJson(v, out, todayStr);
+  }
 }
 
 /** Maç URL slug'ından takım isimlerini çıkar: güngören-bld-vs-yeşilova-esnaf → ["Güngören Bld", "Yeşilova Esnaf"] */
@@ -60,36 +125,14 @@ export async function getMackolikMatches(overrideUrl?: string | null): Promise<M
     const html = await res.text();
     const $ = cheerio.load(html);
     const matches: MackolikMatch[] = [];
+    const todayStr = TODAY();
 
-    // Önce __NEXT_DATA__ (Next.js sayfada skorlar ve maç listesi burada; sunucu fetch'inde HTML bazen boş gelir)
+    // Önce __NEXT_DATA__: skor ve maç listesi burada; tüm JSON ağacında fixture benzeri objeleri ara
     const scriptJson = $('script#__NEXT_DATA__').html();
     if (scriptJson) {
       try {
         const data = JSON.parse(scriptJson);
-        const fixtures =
-          data?.props?.pageProps?.data?.fixtures ??
-          data?.props?.pageProps?.fixtures ??
-          data?.props?.pageProps?.team?.fixtures ??
-          [];
-        for (const f of Array.isArray(fixtures) ? fixtures : []) {
-          const start = f?.startDate ?? f?.date ?? f?.startTime;
-          const homeTeam = f?.homeTeam?.name ?? f?.home?.name ?? f?.homeTeam?.shortName ?? "";
-          const awayTeam = f?.awayTeam?.name ?? f?.away?.name ?? f?.awayTeam?.shortName ?? "";
-          const score = f?.score ?? f?.result ?? f?.status?.score;
-          const goalsHome = score?.home != null ? Number(score.home) : score?.homeTeam != null ? Number(score.homeTeam) : null;
-          const goalsAway = score?.away != null ? Number(score.away) : score?.awayTeam != null ? Number(score.awayTeam) : null;
-          if (start && (homeTeam || awayTeam)) {
-            const d = new Date(start);
-            matches.push({
-              date: d.toISOString().slice(0, 10),
-              home: homeTeam || "Güngören Bld",
-              away: awayTeam || "Rakip",
-              goalsHome: goalsHome ?? null,
-              goalsAway: goalsAway ?? null,
-              competition: f?.competition?.name ?? f?.league?.name ?? f?.tournament?.name,
-            });
-          }
-        }
+        collectFixturesFromJson(data, matches, todayStr);
       } catch {
         // ignore
       }
@@ -162,6 +205,7 @@ export async function getMackolikMatches(overrideUrl?: string | null): Promise<M
         goalsAway,
         competition,
         matchUrl: href.startsWith("http") ? href : `https://www.mackolik.com${href.startsWith("/") ? "" : "/"}${href}`,
+        status: dateStr < todayStr ? "finished" : "scheduled",
       });
     });
     }
