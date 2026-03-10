@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Trophy, Minus, XCircle } from "lucide-react";
-import { getMatches, getLeagueStandings, getNextMatch } from "@/lib/data";
+import { getMatches, getLeagueStandings, getNextMatch, getMackolikFixtureUrl } from "@/lib/data";
 import { getMackolikMatches } from "@/lib/mackolik";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { NextMatchCard } from "@/components/NextMatchCard";
@@ -38,7 +38,7 @@ export default async function MaclarPage() {
     getMatches(24),
     getLeagueStandings(),
     getNextMatch(),
-    getMackolikMatches(),
+    getMackolikFixtureUrl().then((url) => getMackolikMatches(url)),
   ]);
   const finished = matches.filter((m) => m.status === "finished");
   const scheduled = matches.filter((m) => m.status === "scheduled");

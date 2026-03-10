@@ -132,14 +132,17 @@ export async function deleteMatch(id: string) {
   return { ok: true };
 }
 
-/** Mackolik fikstüründen maçları veritabanına aktarır. Aynı tarih + rakip olan kayıt varsa atlanır. */
+/** Mackolik fikstüründen maçları veritabanına aktarır. Aynı tarih + rakip olan kayıt varsa atlanır. Tarih ve skorla bitmiş/gelecek otomatik belirlenir. */
 export async function importMackolikMatches(): Promise<{ ok: true; imported: number; skipped: number } | { error: string }> {
+  const { getMackolikFixtureUrl } = await import("@/lib/data");
   const { getMackolikMatches } = await import("@/lib/mackolik");
-  const list = await getMackolikMatches();
+  const url = await getMackolikFixtureUrl();
+  const list = await getMackolikMatches(url);
   if (list.length === 0) return { ok: true, imported: 0, skipped: 0 };
 
   const s = matchesClient();
   const GUNGOREN_NAMES = /güngören|gungoren|güngören bld/i;
+  const todayStr = new Date().toISOString().slice(0, 10);
   let imported = 0;
   let skipped = 0;
 
@@ -149,7 +152,9 @@ export async function importMackolikMatches(): Promise<{ ok: true; imported: num
     const match_date = m.date;
     const goals_for = m.goalsHome != null && m.goalsAway != null ? (isHome ? m.goalsHome : m.goalsAway) : null;
     const goals_against = m.goalsHome != null && m.goalsAway != null ? (isHome ? m.goalsAway : m.goalsHome) : null;
-    const status = goals_for != null && goals_against != null ? "finished" : "scheduled";
+    const hasScore = goals_for != null && goals_against != null;
+    const isPast = match_date < todayStr;
+    const status = hasScore || isPast ? "finished" : "scheduled";
     const competition = (m.competition && m.competition.trim()) ? m.competition.trim() : null;
     const season = match_date.startsWith("2025") || match_date.startsWith("2026") ? "2025-2026" : match_date.slice(0, 4) + "-" + (parseInt(match_date.slice(0, 4), 10) + 1);
 
@@ -897,5 +902,20 @@ export async function updateGiftEligibleProducts(productIds: string[]) {
   if (error) return { error: error.message };
   revalidatePath("/admin/ayarlar");
   revalidatePath("/benim-kosem/hediye-kullan");
+  return { ok: true };
+}
+
+/** Mackolik fikstür sayfası linkini günceller. Link değişince sayfa yapısı aynıysa entegre çalışmaya devam eder. */
+export async function updateMackolikFixtureUrl(url: string) {
+  const trimmed = (url || "").trim();
+  if (!trimmed.startsWith("http")) return { error: "Geçerli bir Mackolik sayfa linki girin." };
+  const s = await supabase();
+  const { error } = await s.from("site_settings").upsert(
+    { key: "mackolik_fixture_url", value: trimmed, updated_at: new Date().toISOString() },
+    { onConflict: "key" }
+  );
+  if (error) return { error: error.message };
+  revalidatePath("/admin/maclar");
+  revalidatePath("/maclar");
   return { ok: true };
 }

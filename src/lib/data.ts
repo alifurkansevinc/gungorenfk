@@ -378,6 +378,14 @@ export async function getGiftEligibleProducts() {
   return data ?? [];
 }
 
+/** Mackolik fikstür sayfası URL'i (admin panelinden güncellenebilir; link değişince sayfa yapısı aynıysa entegre çalışır). */
+export async function getMackolikFixtureUrl(): Promise<string | null> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("site_settings").select("value").eq("key", "mackolik_fixture_url").maybeSingle();
+  const v = data?.value;
+  return typeof v === "string" && v.startsWith("http") ? v : null;
+}
+
 /** Rütbenin mağaza indirim oranı (0–100). Yoksa 0. */
 export async function getStoreDiscountForLevel(levelId: number): Promise<number> {
   const supabase = await createClient();

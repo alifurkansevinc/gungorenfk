@@ -1,11 +1,16 @@
 import Link from "next/link";
+import { getMackolikFixtureUrl } from "@/lib/data";
 import { getAdminSupabase } from "../../actions";
 import { MacSilButton } from "./MacSilButton";
 import { MacPasifToggle } from "./MacPasifToggle";
 import { MackolikImportButton } from "./MackolikImportButton";
+import { MackolikLinkForm } from "./MackolikLinkForm";
 
 export default async function AdminMaclarPage() {
-  const supabase = await getAdminSupabase();
+  const [supabase, mackolikUrl] = await Promise.all([
+    getAdminSupabase(),
+    getMackolikFixtureUrl(),
+  ]);
   const { data: matches } = await supabase
     .from("matches")
     .select("id, opponent_name, match_date, goals_for, goals_against, status, home_away, competition, is_hidden")
@@ -16,7 +21,7 @@ export default async function AdminMaclarPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-siyah">Maçlar</h1>
-          <p className="mt-1 text-siyah/70">Maç ekle/düzenle veya Mackolik fikstüründen içe aktar. Pasif yapılan maç sitede gösterilmez.</p>
+          <p className="mt-1 text-siyah/70">Maç ekle/düzenle veya Mackolik fikstüründen içe aktar. Tarih ve skorla bitmiş/gelecek otomatik belirlenir. Pasif yapılan maç sitede gösterilmez.</p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
           <MackolikImportButton />
@@ -24,6 +29,9 @@ export default async function AdminMaclarPage() {
             + Yeni maç
           </Link>
         </div>
+      </div>
+      <div className="mt-6">
+        <MackolikLinkForm initialUrl={mackolikUrl} />
       </div>
       <div className="mt-6 overflow-hidden rounded-xl border border-siyah/10">
         <table className="w-full min-w-[560px] text-left text-sm">

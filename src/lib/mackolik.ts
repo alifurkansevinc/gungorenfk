@@ -6,10 +6,10 @@
 
 import * as cheerio from "cheerio";
 
-// Türkçe karakterli path: güngören-belediyesi-spor-kulübü/maçlar (encode edilmiş)
-const MACKOLIK_URL = "https://www.mackolik.com/takim/g%C3%BCng%C3%B6ren-belediyesi-spor-kul%C3%BCb%C3%BC/ma%C3%A7lar/macko17420477681804340168";
+// Varsayılan link (admin panelinden değiştirilebilir)
+const DEFAULT_MACKOLIK_URL = "https://www.mackolik.com/takim/g%C3%BCng%C3%B6ren-belediyesi-spor-kul%C3%BCb%C3%BC/ma%C3%A7lar/macko17420477681804340168";
 const CACHE_MS = 60 * 60 * 1000; // 1 saat
-let cached: { matches: MackolikMatch[]; at: number } | null = null;
+const cacheByUrl = new Map<string, { matches: MackolikMatch[]; at: number }>();
 
 export type MackolikMatch = {
   date: string;
@@ -42,11 +42,17 @@ function parseTeamNamesFromMacUrl(href: string): { home: string; away: string } 
   }
 }
 
-export async function getMackolikMatches(): Promise<MackolikMatch[]> {
+/**
+ * Mackolik fikstür sayfasından maç listesini çeker.
+ * @param overrideUrl Admin'den gelen veya site_settings'teki URL; boşsa varsayılan kullanılır. Link değişince sayfa yapısı aynıysa entegre çalışır.
+ */
+export async function getMackolikMatches(overrideUrl?: string | null): Promise<MackolikMatch[]> {
+  const url = (overrideUrl && overrideUrl.startsWith("http")) ? overrideUrl : DEFAULT_MACKOLIK_URL;
+  const cached = cacheByUrl.get(url);
   if (cached && Date.now() - cached.at < CACHE_MS) return cached.matches;
 
   try {
-    const res = await fetch(MACKOLIK_URL, {
+    const res = await fetch(url, {
       headers: { "User-Agent": "Mozilla/5.0 (compatible; GüngörenFK/1.0)" },
       next: { revalidate: 3600 },
     });
@@ -87,12 +93,21 @@ export async function getMackolikMatches(): Promise<MackolikMatch[]> {
       const home = teams?.home ?? "Güngören Bld";
       const away = teams?.away ?? "Rakip";
 
+      // Müsabaka: tablonun hemen öncesindeki başlık/div (sayfa yapısına göre)
+      let competition: string | undefined;
+      const $table = $el.closest("table");
+      if ($table.length) {
+        const prevText = $table.prev().text().trim();
+        if (prevText && prevText.length < 200) competition = prevText;
+      }
+
       matches.push({
         date: dateStr,
         home,
         away,
         goalsHome,
         goalsAway,
+        competition,
         matchUrl: href.startsWith("http") ? href : `https://www.mackolik.com${href.startsWith("/") ? "" : "/"}${href}`,
       });
     });
@@ -137,9 +152,9 @@ export async function getMackolikMatches(): Promise<MackolikMatch[]> {
     });
     unique.sort((a, b) => b.date.localeCompare(a.date)); // en yeni üstte
 
-    cached = { matches: unique, at: Date.now() };
+    cacheByUrl.set(url, { matches: unique, at: Date.now() });
     return unique;
   } catch {
-    return cached?.matches ?? [];
+    return cacheByUrl.get(url)?.matches ?? [];
   }
 }
