@@ -25,6 +25,23 @@ function normalizeTeamName(s: string): string {
   return s.replace(/\s+/g, " ").trim();
 }
 
+/** Maç URL slug'ından takım isimlerini çıkar: güngören-bld-vs-yeşilova-esnaf → ["Güngören Bld", "Yeşilova Esnaf"] */
+function parseTeamNamesFromMacUrl(href: string): { home: string; away: string } | null {
+  try {
+    const path = href.includes("/mac/") ? href.split("/mac/")[1]?.split("/")[0] ?? "" : "";
+    if (!path || !path.includes("-vs-")) return null;
+    const [homeSlug, awaySlug] = path.split("-vs-");
+    if (!homeSlug || !awaySlug) return null;
+    const toTitle = (s: string) => {
+      const decoded = decodeURIComponent(s).replace(/-/g, " ");
+      return decoded.replace(/(^| )\S/g, (c) => c.toUpperCase());
+    };
+    return { home: toTitle(homeSlug), away: toTitle(awaySlug) };
+  } catch {
+    return null;
+  }
+}
+
 export async function getMackolikMatches(): Promise<MackolikMatch[]> {
   if (cached && Date.now() - cached.at < CACHE_MS) return cached.matches;
 
@@ -43,12 +60,8 @@ export async function getMackolikMatches(): Promise<MackolikMatch[]> {
       const $el = $(el);
       const href = $el.attr("href") ?? "";
       const linkText = $el.text().replace(/\s+/g, " ").trim();
-      const parent = $el.closest("tr, [class*='match'], [class*='row'], [class*='fixture'], section, div");
-      const rowText = (parent.length ? parent.first().text() : linkText).replace(/\s+/g, " ").trim();
 
-      // Tarih: önce link metninden (12.10 2025), yoksa row’dan
-      const dateSource = linkText.match(/(\d{1,2})\.(\d{1,2})\s*(?:\s(\d{4}))?/) ? linkText : rowText;
-      const dateMatch = dateSource.match(/(\d{1,2})\.(\d{1,2})\s*(?:\s(\d{4}))?/);
+      const dateMatch = linkText.match(/(\d{1,2})\.(\d{1,2})\s*(?:\s(\d{4}))?/);
       if (!dateMatch) return;
 
       const day = dateMatch[1];
@@ -56,23 +69,23 @@ export async function getMackolikMatches(): Promise<MackolikMatch[]> {
       const year = dateMatch[3] ?? new Date().getFullYear().toString();
       const dateStr = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 
-      const scoreMatch = rowText.match(/(\d+)\s*-\s*(\d+)/);
       let goalsHome: number | null = null;
       let goalsAway: number | null = null;
+      const p = $el.parent();
+      const pText = p.length ? p.text().replace(/\s+/g, " ") : "";
+      const gpText = p.parent().length ? p.parent().text().replace(/\s+/g, " ") : "";
+      const nextSibs = p.nextAll().length ? p.nextAll().toArray().map((n) => $(n).text()).join(" ").replace(/\s+/g, " ") : "";
+      const scoreText = [pText, gpText, nextSibs].find((t) => t.length > 0 && t.length < 500) || pText || gpText;
+      const scoreMatch = scoreText.match(/(\d+)\s*[-–]\s*(\d+)/);
       if (scoreMatch) {
         goalsHome = parseInt(scoreMatch[1], 10);
         goalsAway = parseInt(scoreMatch[2], 10);
       }
 
-      // Takım isimleri: skor etrafındaki metinden (Güngören Bld, Yeşilova Esnaf vb.)
-      const parts = rowText.split(/\d+\s*-\s*\d+/);
-      const beforeScore = (parts[0] ?? "").trim();
-      const afterScore = (parts[1] ?? "").trim();
-      const teamNames = [...beforeScore.split(/\s{2,}/), ...afterScore.split(/\s{2,}/)].map((s) => normalizeTeamName(s)).filter((s) => s.length > 1 && !/^\d+$/.test(s));
-      const home = (teamNames[0] && teamNames[0].length > 1) ? teamNames[0] : "Güngören Bld";
-      const away = (teamNames[1] && teamNames[1].length > 1) ? teamNames[1] : (teamNames[2] && teamNames[2].length > 1) ? teamNames[2] : "Rakip";
-
-      if (!home || !away) return;
+      // Takım isimleri: maç URL'den (örn. güngören-bld-vs-yeşilova-esnaf)
+      const teams = parseTeamNamesFromMacUrl(href);
+      const home = teams?.home ?? "Güngören Bld";
+      const away = teams?.away ?? "Rakip";
 
       matches.push({
         date: dateStr,
