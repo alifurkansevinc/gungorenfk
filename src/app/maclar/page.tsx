@@ -45,6 +45,7 @@ export default async function MaclarPage() {
   const hasRealMatches = matches.length > 0 && !matches[0].id.startsWith("demo-");
   const useMackolik = mackolikMatches.length > 0 && !hasRealMatches;
   const leagueName = standings.rows.length > 0 ? standings.league_name : "İstanbul 1. Amatör Lig";
+  const todayStr = new Date().toISOString().slice(0, 10);
 
   return (
     <div className="min-h-screen">
@@ -135,11 +136,13 @@ export default async function MaclarPage() {
                   {useMackolik ? (
                     mackolikMatches.map((m, i) => {
                       const hasScore = m.goalsHome != null && m.goalsAway != null;
+                      const isPast = m.date < todayStr;
                       const isGungorenHome = /güngören|gungoren|güngören bld/i.test(m.home);
                       const ourGoals = hasScore ? (isGungorenHome ? m.goalsHome! : m.goalsAway!) : 0;
                       const theirGoals = hasScore ? (isGungorenHome ? m.goalsAway! : m.goalsHome!) : 0;
                       const result: ResultType = !hasScore ? "D" : ourGoals > theirGoals ? "W" : ourGoals < theirGoals ? "L" : "D";
                       const müsabakaLabel = (m.competition && m.competition.trim()) ? m.competition : leagueName;
+                      const durumLabel = isPast ? "Bitti" : "Planlanan";
                       return (
                         <tr key={`mackolik-${i}-${m.date}-${m.home}`} className="border-b border-siyah/5 hover:bg-siyah/[0.02]">
                           <td className="px-1 py-2 sm:py-2.5 text-siyah/80 whitespace-nowrap">{new Date(m.date + "T12:00:00").toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "2-digit" })}</td>
@@ -155,6 +158,7 @@ export default async function MaclarPage() {
                               ) : (
                                 <span className="text-siyah/50">—</span>
                               )}
+                              <span className={`text-[10px] sm:text-xs ${isPast ? "text-siyah/60" : "text-bordo/80"}`}>({durumLabel})</span>
                             </div>
                           </td>
                         </tr>
