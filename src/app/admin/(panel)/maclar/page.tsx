@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getAdminSupabase } from "../../actions";
 import { MacSilButton } from "./MacSilButton";
 import { MacPasifToggle } from "./MacPasifToggle";
+import { MackolikImportButton } from "./MackolikImportButton";
 
 export default async function AdminMaclarPage() {
   const supabase = await getAdminSupabase();
@@ -15,11 +16,14 @@ export default async function AdminMaclarPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-siyah">Maçlar</h1>
-          <p className="mt-1 text-siyah/70">Maç ekle/düzenle. Pasif yapılan maç sitede gösterilmez.</p>
+          <p className="mt-1 text-siyah/70">Maç ekle/düzenle veya Mackolik fikstüründen içe aktar. Pasif yapılan maç sitede gösterilmez.</p>
         </div>
-        <Link href="/admin/maclar/yeni" className="rounded-lg bg-bordo px-4 py-2 text-sm font-semibold text-beyaz hover:bg-bordo-dark">
-          + Yeni maç
-        </Link>
+        <div className="flex flex-wrap items-center gap-3">
+          <MackolikImportButton />
+          <Link href="/admin/maclar/yeni" className="rounded-lg bg-bordo px-4 py-2 text-sm font-semibold text-beyaz hover:bg-bordo-dark">
+            + Yeni maç
+          </Link>
+        </div>
       </div>
       <div className="mt-6 overflow-hidden rounded-xl border border-siyah/10">
         <table className="w-full min-w-[560px] text-left text-sm">

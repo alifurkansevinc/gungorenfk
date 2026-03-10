@@ -1,9 +1,32 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Trophy, Minus, XCircle } from "lucide-react";
 import { getMatches, getLeagueStandings, getNextMatch } from "@/lib/data";
 import { getMackolikMatches } from "@/lib/mackolik";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { NextMatchCard } from "@/components/NextMatchCard";
+
+type ResultType = "W" | "D" | "L";
+
+function ResultBadge({ result }: { result: ResultType }) {
+  if (result === "W")
+    return (
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-700" title="Galibiyet">
+        <Trophy className="h-3.5 w-3.5" strokeWidth={2.5} />
+      </span>
+    );
+  if (result === "D")
+    return (
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-siyah/15 text-siyah/70" title="Beraberlik">
+        <Minus className="h-3.5 w-3.5" strokeWidth={2.5} />
+      </span>
+    );
+  return (
+    <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-red-500/20 text-red-600" title="Mağlubiyet">
+      <XCircle className="h-3.5 w-3.5" strokeWidth={2.5} />
+    </span>
+  );
+}
 
 export const metadata = {
   title: "Sıralama & Maçlar | Güngören FK",
@@ -19,7 +42,9 @@ export default async function MaclarPage() {
   ]);
   const finished = matches.filter((m) => m.status === "finished");
   const scheduled = matches.filter((m) => m.status === "scheduled");
-  const useMackolik = mackolikMatches.length > 0;
+  const hasRealMatches = matches.length > 0 && !matches[0].id.startsWith("demo-");
+  const useMackolik = mackolikMatches.length > 0 && !hasRealMatches;
+  const leagueName = standings.rows.length > 0 ? standings.league_name : "İstanbul 1. Amatör Lig";
 
   return (
     <div className="min-h-screen">
@@ -108,43 +133,66 @@ export default async function MaclarPage() {
                 </thead>
                 <tbody>
                   {useMackolik ? (
-                    mackolikMatches.map((m, i) => (
-                      <tr key={`mackolik-${i}-${m.date}-${m.home}`} className="border-b border-siyah/5 hover:bg-siyah/[0.02]">
-                        <td className="px-1 py-2 sm:py-2.5 text-siyah/80 whitespace-nowrap">{new Date(m.date + "T12:00:00").toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "2-digit" })}</td>
-                        <td className="px-1 py-2 sm:py-2.5 text-siyah/80 text-[10px] sm:text-xs truncate" title={m.competition ?? ""}>{m.competition ?? "—"}</td>
-                        <td className="min-w-0 px-1 py-2 sm:py-2.5 font-medium text-siyah text-[11px] sm:text-sm truncate">{m.home} – {m.away}</td>
-                        <td className="px-0.5 py-2 sm:py-2.5 text-center whitespace-nowrap">
-                          {m.goalsHome != null && m.goalsAway != null ? (
-                            <span className="font-bold text-bordo">{m.goalsHome} – {m.goalsAway}</span>
-                          ) : (
-                            <span className="text-siyah/50">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
+                    mackolikMatches.map((m, i) => {
+                      const hasScore = m.goalsHome != null && m.goalsAway != null;
+                      const isGungorenHome = /güngören|gungoren|güngören bld/i.test(m.home);
+                      const ourGoals = hasScore ? (isGungorenHome ? m.goalsHome! : m.goalsAway!) : 0;
+                      const theirGoals = hasScore ? (isGungorenHome ? m.goalsAway! : m.goalsHome!) : 0;
+                      const result: ResultType = !hasScore ? "D" : ourGoals > theirGoals ? "W" : ourGoals < theirGoals ? "L" : "D";
+                      const müsabakaLabel = (m.competition && m.competition.trim()) ? m.competition : leagueName;
+                      return (
+                        <tr key={`mackolik-${i}-${m.date}-${m.home}`} className="border-b border-siyah/5 hover:bg-siyah/[0.02]">
+                          <td className="px-1 py-2 sm:py-2.5 text-siyah/80 whitespace-nowrap">{new Date(m.date + "T12:00:00").toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "2-digit" })}</td>
+                          <td className="px-1 py-2 sm:py-2.5 text-siyah/80 text-[10px] sm:text-xs truncate" title={müsabakaLabel}>{müsabakaLabel}</td>
+                          <td className="min-w-0 px-1 py-2 sm:py-2.5 font-medium text-siyah text-[11px] sm:text-sm truncate">{m.home} – {m.away}</td>
+                          <td className="px-2 py-2 sm:py-2.5">
+                            <div className="flex flex-wrap items-center justify-center gap-2">
+                              {hasScore ? (
+                                <>
+                                  <span className="font-bold text-siyah tabular-nums">{m.goalsHome} – {m.goalsAway}</span>
+                                  <ResultBadge result={result} />
+                                </>
+                              ) : (
+                                <span className="text-siyah/50">—</span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   ) : matches.length === 0 ? (
                     <tr><td colSpan={4} className="px-2 py-6 text-center text-siyah/60 text-xs">Henüz maç eklenmedi.</td></tr>
                   ) : (
-                    [...scheduled, ...finished].map((m) => (
-                      <tr key={m.id} className="border-b border-siyah/5 hover:bg-siyah/[0.02]">
-                        <td className="px-1 py-2 sm:py-2.5 text-siyah/80 whitespace-nowrap">{new Date(m.match_date).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "2-digit" })}</td>
-                        <td className="px-1 py-2 sm:py-2.5 text-siyah/80 text-[10px] sm:text-xs truncate" title={m.competition || ""}>{m.competition || "—"}</td>
-                        <td className="min-w-0 px-1 py-2 sm:py-2.5">
-                          <Link href={`/maclar/${m.id}`} className="font-medium text-siyah hover:text-bordo text-[11px] sm:text-sm truncate block">
-                            {m.home_away === "home" ? "Güngören FK" : m.opponent_name} - {m.home_away === "away" ? "Güngören FK" : m.opponent_name}
-                          </Link>
-                        </td>
-                        <td className="px-0.5 py-2 sm:py-2.5 text-center whitespace-nowrap">
-                          {m.status === "finished" && m.goals_for != null && m.goals_against != null ? (
-                            <span className="font-bold text-bordo">
-                              {m.home_away === "home" ? `${m.goals_for} - ${m.goals_against}` : `${m.goals_against} - ${m.goals_for}`}
-                            </span>
-                          ) : (
-                            <span className="text-siyah/50">—</span>
-                          )}
-                        </td>
-                      </tr>
-                    ))
+                    [...scheduled, ...finished].map((m) => {
+                      const isFinished = m.status === "finished" && m.goals_for != null && m.goals_against != null;
+                      const result: ResultType = !isFinished ? "D" : m.goals_for! > m.goals_against! ? "W" : m.goals_for! < m.goals_against! ? "L" : "D";
+                      const müsabakaLabel = (m.competition && m.competition.trim()) ? m.competition : leagueName;
+                      return (
+                        <tr key={m.id} className="border-b border-siyah/5 hover:bg-siyah/[0.02]">
+                          <td className="px-1 py-2 sm:py-2.5 text-siyah/80 whitespace-nowrap">{new Date(m.match_date).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "2-digit" })}</td>
+                          <td className="px-1 py-2 sm:py-2.5 text-siyah/80 text-[10px] sm:text-xs truncate" title={müsabakaLabel}>{müsabakaLabel}</td>
+                          <td className="min-w-0 px-1 py-2 sm:py-2.5">
+                            <Link href={`/maclar/${m.id}`} className="font-medium text-siyah hover:text-bordo text-[11px] sm:text-sm truncate block">
+                              {m.home_away === "home" ? "Güngören FK" : m.opponent_name} – {m.home_away === "away" ? "Güngören FK" : m.opponent_name}
+                            </Link>
+                          </td>
+                          <td className="px-2 py-2 sm:py-2.5">
+                            <div className="flex flex-wrap items-center justify-center gap-2">
+                              {isFinished ? (
+                                <>
+                                  <span className="font-bold text-siyah tabular-nums">
+                                    {m.home_away === "home" ? `${m.goals_for} – ${m.goals_against}` : `${m.goals_against} – ${m.goals_for}`}
+                                  </span>
+                                  <ResultBadge result={result} />
+                                </>
+                              ) : (
+                                <span className="text-siyah/50">—</span>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
                   )}
                 </tbody>
               </table>

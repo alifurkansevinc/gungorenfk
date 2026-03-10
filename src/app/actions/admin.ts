@@ -132,6 +132,60 @@ export async function deleteMatch(id: string) {
   return { ok: true };
 }
 
+/** Mackolik fikstüründen maçları veritabanına aktarır. Aynı tarih + rakip olan kayıt varsa atlanır. */
+export async function importMackolikMatches(): Promise<{ ok: true; imported: number; skipped: number } | { error: string }> {
+  const { getMackolikMatches } = await import("@/lib/mackolik");
+  const list = await getMackolikMatches();
+  if (list.length === 0) return { ok: true, imported: 0, skipped: 0 };
+
+  const s = matchesClient();
+  const GUNGOREN_NAMES = /güngören|gungoren|güngören bld/i;
+  let imported = 0;
+  let skipped = 0;
+
+  for (const m of list) {
+    const isHome = GUNGOREN_NAMES.test(m.home);
+    const opponent_name = isHome ? m.away : m.home;
+    const match_date = m.date;
+    const goals_for = m.goalsHome != null && m.goalsAway != null ? (isHome ? m.goalsHome : m.goalsAway) : null;
+    const goals_against = m.goalsHome != null && m.goalsAway != null ? (isHome ? m.goalsAway : m.goalsHome) : null;
+    const status = goals_for != null && goals_against != null ? "finished" : "scheduled";
+    const competition = (m.competition && m.competition.trim()) ? m.competition.trim() : null;
+    const season = match_date.startsWith("2025") || match_date.startsWith("2026") ? "2025-2026" : match_date.slice(0, 4) + "-" + (parseInt(match_date.slice(0, 4), 10) + 1);
+
+    const { data: existing } = await s
+      .from("matches")
+      .select("id")
+      .eq("match_date", match_date)
+      .eq("opponent_name", opponent_name)
+      .eq("home_away", isHome ? "home" : "away")
+      .maybeSingle();
+    if (existing) {
+      skipped++;
+      continue;
+    }
+
+    const { error } = await s.from("matches").insert({
+      opponent_name,
+      home_away: isHome ? "home" : "away",
+      venue: null,
+      match_date,
+      match_time: null,
+      opponent_logo_url: null,
+      competition,
+      season,
+      goals_for,
+      goals_against,
+      status,
+    });
+    if (!error) imported++;
+  }
+
+  revalidatePath("/admin/maclar");
+  revalidatePath("/maclar");
+  return { ok: true, imported, skipped };
+}
+
 // ——— Kadro ———
 export async function createSquadMember(formData: FormData) {
   const s = await supabase();
