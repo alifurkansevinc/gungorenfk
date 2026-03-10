@@ -61,7 +61,7 @@ export async function getMackolikMatches(overrideUrl?: string | null): Promise<M
     const $ = cheerio.load(html);
     const matches: MackolikMatch[] = [];
 
-    // Mackolik fikstür: maç linkleri /mac/ içerir; tarih link metninde (12.10 2025), skor/takımlar parent veya komşu elemanda
+    // Mackolik fikstür: maç linkleri /mac/ içerir; tarih link metninde (12.10 2025); skor aynı satırda "X - Y" (ev sahibi - deplasman)
     $("a[href*='/mac/']").each((_, el) => {
       const $el = $(el);
       const href = $el.attr("href") ?? "";
@@ -77,15 +77,34 @@ export async function getMackolikMatches(overrideUrl?: string | null): Promise<M
 
       let goalsHome: number | null = null;
       let goalsAway: number | null = null;
-      const p = $el.parent();
-      const pText = p.length ? p.text().replace(/\s+/g, " ") : "";
-      const gpText = p.parent().length ? p.parent().text().replace(/\s+/g, " ") : "";
-      const nextSibs = p.nextAll().length ? p.nextAll().toArray().map((n) => $(n).text()).join(" ").replace(/\s+/g, " ") : "";
-      const scoreText = [pText, gpText, nextSibs].find((t) => t.length > 0 && t.length < 500) || pText || gpText;
-      const scoreMatch = scoreText.match(/(\d+)\s*[-–]\s*(\d+)/);
-      if (scoreMatch) {
-        goalsHome = parseInt(scoreMatch[1], 10);
-        goalsAway = parseInt(scoreMatch[2], 10);
+      // Skor sayfada maç satırında "X - Y" (ev - deplasman). tr, div.row vb. container'da aranır.
+      let $container = $el.closest("tr");
+      if (!$container.length) {
+        let $p: ReturnType<typeof $el.parent> = $el.parent();
+        for (let i = 0; i < 8 && $p.length; i++) {
+          const t = $p.text();
+          if (t.includes(" - ") && /\d+\s*[-–]\s*\d+/.test(t) && t.length < 800) {
+            $container = $p;
+            break;
+          }
+          $p = $p.parent();
+        }
+      }
+      const rowText = $container.length ? $container.text().replace(/\s+/g, " ").trim() : "";
+      const scoreCandidates = rowText.match(/(\d+)\s*[-–]\s*(\d+)/g);
+      if (scoreCandidates && scoreCandidates.length > 0) {
+        for (const s of scoreCandidates) {
+          const m = s.match(/(\d+)\s*[-–]\s*(\d+)/);
+          if (m) {
+            const a = parseInt(m[1], 10);
+            const b = parseInt(m[2], 10);
+            if (a >= 0 && a <= 20 && b >= 0 && b <= 20) {
+              goalsHome = a;
+              goalsAway = b;
+              break;
+            }
+          }
+        }
       }
 
       // Takım isimleri: maç URL'den (örn. güngören-bld-vs-yeşilova-esnaf)
@@ -112,12 +131,13 @@ export async function getMackolikMatches(overrideUrl?: string | null): Promise<M
       });
     });
 
-    // Alternatif: script içinde JSON veri (Mackolik bazen __NEXT_DATA__ veya benzeri kullanır)
+    // __NEXT_DATA__ içinde skorlar ve maç listesi olabilir (client render sayfalarda HTML'de skor yoktur)
     const scriptJson = $('script#__NEXT_DATA__').html();
-    if (scriptJson && matches.length === 0) {
+    if (scriptJson) {
       try {
         const data = JSON.parse(scriptJson);
         const fixtures = data?.props?.pageProps?.data?.fixtures ?? data?.props?.pageProps?.fixtures ?? [];
+        const fromJson: MackolikMatch[] = [];
         for (const f of fixtures) {
           const start = f?.startDate ?? f?.date;
           const homeTeam = f?.homeTeam?.name ?? f?.home?.name ?? "";
@@ -127,7 +147,7 @@ export async function getMackolikMatches(overrideUrl?: string | null): Promise<M
           const goalsAway = score?.away != null ? Number(score.away) : null;
           if (start && (homeTeam || awayTeam)) {
             const d = new Date(start);
-            matches.push({
+            fromJson.push({
               date: d.toISOString().slice(0, 10),
               home: homeTeam || "Güngören Bld",
               away: awayTeam || "Rakip",
@@ -135,6 +155,23 @@ export async function getMackolikMatches(overrideUrl?: string | null): Promise<M
               goalsAway,
               competition: f?.competition?.name ?? f?.league?.name,
             });
+          }
+        }
+        if (fromJson.length > 0) {
+          if (matches.length === 0) {
+            matches.push(...fromJson);
+          } else {
+            // Link loop maçları var; skor eksik olanları __NEXT_DATA__ ile eşleştirip doldur
+            const key = (m: MackolikMatch) => `${m.date}|${normalizeTeamName(m.home)}|${normalizeTeamName(m.away)}`;
+            const jsonByKey = new Map(fromJson.map((m) => [key(m), m]));
+            for (const m of matches) {
+              const j = jsonByKey.get(key(m));
+              if (j && (m.goalsHome == null || m.goalsAway == null) && (j.goalsHome != null || j.goalsAway != null)) {
+                m.goalsHome = j.goalsHome ?? m.goalsHome;
+                m.goalsAway = j.goalsAway ?? m.goalsAway;
+                if (j.competition) m.competition = j.competition;
+              }
+            }
           }
         }
       } catch {
