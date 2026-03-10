@@ -1,6 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getMatches, getLeagueStandings, getNextMatch } from "@/lib/data";
+import { getMackolikMatches } from "@/lib/mackolik";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { NextMatchCard } from "@/components/NextMatchCard";
 
@@ -10,13 +11,15 @@ export const metadata = {
 };
 
 export default async function MaclarPage() {
-  const [matches, standings, nextMatch] = await Promise.all([
+  const [matches, standings, nextMatch, mackolikMatches] = await Promise.all([
     getMatches(24),
     getLeagueStandings(),
     getNextMatch(),
+    getMackolikMatches(),
   ]);
   const finished = matches.filter((m) => m.status === "finished");
   const scheduled = matches.filter((m) => m.status === "scheduled");
+  const useMackolik = mackolikMatches.length > 0;
 
   return (
     <div className="min-h-screen">
@@ -86,10 +89,12 @@ export default async function MaclarPage() {
           </section>
         )}
 
-        {/* Fikstür ve sonuçlar — mobilde tek ekranda, Tarih/Müsabaka dar */}
+        {/* Fikstür ve sonuçlar — Mackolik’ten veya veritabanından */}
         <section>
           <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-siyah/60 mb-1">Fikstür ve sonuçlar</h2>
-          <p className="text-[10px] sm:text-xs text-siyah/50 mb-2 sm:mb-4">Sezon içi tüm karşılaşmalar ve skorlar.</p>
+          <p className="text-[10px] sm:text-xs text-siyah/50 mb-2 sm:mb-4">
+            {useMackolik ? "Kaynak: Mackolik.com — Güngören Belediye Spor Kulübü fikstürü." : "Sezon içi tüm karşılaşmalar ve skorlar."}
+          </p>
           <div className="overflow-hidden rounded-xl border border-siyah/10 bg-beyaz">
             <div className="overflow-x-auto overflow-y-visible">
               <table className="w-full text-left text-[11px] sm:text-sm table-fixed">
@@ -102,7 +107,22 @@ export default async function MaclarPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {matches.length === 0 ? (
+                  {useMackolik ? (
+                    mackolikMatches.map((m, i) => (
+                      <tr key={`mackolik-${i}-${m.date}-${m.home}`} className="border-b border-siyah/5 hover:bg-siyah/[0.02]">
+                        <td className="px-1 py-2 sm:py-2.5 text-siyah/80 whitespace-nowrap">{new Date(m.date + "T12:00:00").toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "2-digit" })}</td>
+                        <td className="px-1 py-2 sm:py-2.5 text-siyah/80 text-[10px] sm:text-xs truncate" title={m.competition ?? ""}>{m.competition ?? "—"}</td>
+                        <td className="min-w-0 px-1 py-2 sm:py-2.5 font-medium text-siyah text-[11px] sm:text-sm truncate">{m.home} – {m.away}</td>
+                        <td className="px-0.5 py-2 sm:py-2.5 text-center whitespace-nowrap">
+                          {m.goalsHome != null && m.goalsAway != null ? (
+                            <span className="font-bold text-bordo">{m.goalsHome} – {m.goalsAway}</span>
+                          ) : (
+                            <span className="text-siyah/50">—</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  ) : matches.length === 0 ? (
                     <tr><td colSpan={4} className="px-2 py-6 text-center text-siyah/60 text-xs">Henüz maç eklenmedi.</td></tr>
                   ) : (
                     [...scheduled, ...finished].map((m) => (

@@ -810,3 +810,30 @@ export async function updateDonationReceiptTemplate(formData: FormData) {
   revalidatePath("/bagis/basarili");
   return { ok: true };
 }
+
+// ——— Menü pasif (Etkinlikler / Maçlar gizle) ———
+export async function updateNavVisibility(formData: FormData) {
+  const s = await supabase();
+  const etkinliklerHidden = formData.get("nav_etkinlikler_hidden") === "1";
+  const maclarHidden = formData.get("nav_maclar_hidden") === "1";
+  await Promise.all([
+    s.from("site_settings").upsert({ key: "nav_etkinlikler_hidden", value: etkinliklerHidden, updated_at: new Date().toISOString() }, { onConflict: "key" }),
+    s.from("site_settings").upsert({ key: "nav_maclar_hidden", value: maclarHidden, updated_at: new Date().toISOString() }, { onConflict: "key" }),
+  ]);
+  revalidatePath("/admin/ayarlar");
+  revalidatePath("/");
+  return { ok: true };
+}
+
+// ——— Hediye hakkı ürünleri (admin seçer, sadece bunlar hediye ile alınabilir) ———
+export async function updateGiftEligibleProducts(productIds: string[]) {
+  const s = await supabase();
+  const { error } = await s.from("site_settings").upsert(
+    { key: "gift_eligible_product_ids", value: productIds, updated_at: new Date().toISOString() },
+    { onConflict: "key" }
+  );
+  if (error) return { error: error.message };
+  revalidatePath("/admin/ayarlar");
+  revalidatePath("/benim-kosem/hediye-kullan");
+  return { ok: true };
+}

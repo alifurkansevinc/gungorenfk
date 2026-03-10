@@ -353,6 +353,41 @@ export async function getGiftQuotaForLevel(levelId: number): Promise<number> {
   return row ? Math.max(0, Number(row.value)) : 0;
 }
 
+/** Menü görünürlük: Etkinlikler ve Maçlar pasif tuşu (gizlensin mi). */
+export async function getNavVisibilitySettings(): Promise<{ etkinliklerHidden: boolean; maclarHidden: boolean }> {
+  const supabase = await createClient();
+  const [e, m] = await Promise.all([
+    supabase.from("site_settings").select("value").eq("key", "nav_etkinlikler_hidden").maybeSingle(),
+    supabase.from("site_settings").select("value").eq("key", "nav_maclar_hidden").maybeSingle(),
+  ]);
+  return {
+    etkinliklerHidden: e.data?.value === true,
+    maclarHidden: m.data?.value === true,
+  };
+}
+
+/** Hediye hakkı ile alınabilecek ürün ID’leri (admin panelinden seçilen). */
+export async function getGiftEligibleProductIds(): Promise<string[]> {
+  const supabase = await createClient();
+  const { data } = await supabase.from("site_settings").select("value").eq("key", "gift_eligible_product_ids").maybeSingle();
+  const arr = data?.value;
+  if (!Array.isArray(arr)) return [];
+  return arr.filter((id): id is string => typeof id === "string");
+}
+
+/** Hediye hakkı ile alınabilecek ürünler listesi (admin’in seçtiği). */
+export async function getGiftEligibleProducts() {
+  const ids = await getGiftEligibleProductIds();
+  if (ids.length === 0) return [];
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("store_products")
+    .select("id, name, slug, description, price, image_url, sku")
+    .eq("is_active", true)
+    .in("id", ids);
+  return data ?? [];
+}
+
 /** Rütbenin mağaza indirim oranı (0–100). Yoksa 0. */
 export async function getStoreDiscountForLevel(levelId: number): Promise<number> {
   const supabase = await createClient();

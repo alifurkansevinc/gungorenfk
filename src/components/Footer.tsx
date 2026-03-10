@@ -30,7 +30,18 @@ const columns = [
   },
 ];
 
-export function Footer() {
+type NavHidden = { etkinliklerHidden?: boolean; maclarHidden?: boolean };
+
+function filterLinks(links: { href: string; label: string }[], navHidden?: NavHidden) {
+  if (!navHidden) return links;
+  return links.filter((l) => {
+    if (l.href === "/haberler" && navHidden.etkinliklerHidden) return false;
+    if (l.href === "/maclar" && navHidden.maclarHidden) return false;
+    return true;
+  });
+}
+
+export function Footer({ navHidden }: { navHidden?: NavHidden }) {
   return (
     <footer className="bg-siyah text-beyaz">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
@@ -45,7 +56,7 @@ export function Footer() {
             <div key={col.title}>
               <h3 className="text-xs font-semibold uppercase tracking-wider text-white/60">{col.title}</h3>
               <ul className="mt-4 space-y-2">
-                {col.links.map(({ href, label }) => (
+                {filterLinks(col.links, navHidden).map(({ href, label }) => (
                   <li key={href}>
                     <Link href={href} className="text-sm text-white/80 hover:text-beyaz transition-colors">
                       {label}

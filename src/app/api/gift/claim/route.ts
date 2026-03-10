@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
-import { getGiftQuotaForLevel } from "@/lib/data";
+import { getGiftQuotaForLevel, getGiftEligibleProductIds } from "@/lib/data";
 
 /** Hediye hakkını kullan: seçilen mağaza ürünü için ücretsiz teslim kaydı oluşturur, QR döner. */
 export async function POST(req: NextRequest) {
@@ -24,8 +24,11 @@ export async function POST(req: NextRequest) {
   if (!profile) return NextResponse.json({ success: false, error: "Profil bulunamadı." }, { status: 404 });
 
   const levelId = (profile as { fan_level_id?: number }).fan_level_id ?? 1;
-  const quota = await getGiftQuotaForLevel(levelId);
+  const [quota, allowedIds] = await Promise.all([getGiftQuotaForLevel(levelId), getGiftEligibleProductIds()]);
   if (quota <= 0) return NextResponse.json({ success: false, error: "Bu rütbede hediye hakkınız yok." }, { status: 400 });
+  if (allowedIds.length > 0 && !allowedIds.includes(productId)) {
+    return NextResponse.json({ success: false, error: "Bu ürün hediye hakkı ile alınamaz. Lütfen listeden seçin." }, { status: 400 });
+  }
 
   const year = new Date().getFullYear();
   const { count } = await serviceSupabase

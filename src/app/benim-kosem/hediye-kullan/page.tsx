@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
-import { getFeaturedProducts, getGiftQuotaForLevel } from "@/lib/data";
+import { getGiftEligibleProducts, getGiftQuotaForLevel } from "@/lib/data";
 import { HediyeKullanForm } from "./HediyeKullanForm";
 
 export const metadata = {
@@ -19,7 +19,7 @@ export default async function HediyeKullanPage() {
   const [quota, usedCount, products] = await Promise.all([
     getGiftQuotaForLevel(levelId),
     supabase.from("gift_redemptions").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("redemption_year", new Date().getFullYear()).then((r) => r.count ?? 0),
-    getFeaturedProducts(100),
+    getGiftEligibleProducts(),
   ]);
 
   const remaining = Math.max(0, quota - (usedCount ?? 0));
@@ -27,7 +27,7 @@ export default async function HediyeKullanPage() {
   if (remaining <= 0) redirect("/benim-kosem");
 
   const productList = Array.isArray(products) ? products : [];
-  if (productList.length === 0) redirect("/benim-kosem");
+  if (productList.length === 0) redirect("/benim-kosem"); // Admin panelinden hediye ürünü seçilmediyse
 
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
