@@ -23,12 +23,14 @@ export default async function BiletlerPage() {
       .select("id, opponent_name, home_away, venue, match_date, match_time, competition, opponent_logo_url")
       .gte("match_date", today)
       .eq("status", "scheduled")
+      .or("is_hidden.eq.false,is_hidden.is.null")
       .order("match_date")
       .limit(20),
     supabase
       .from("news")
       .select("id, title, slug, event_date, event_end_date, event_time, event_place, event_type")
       .eq("is_ticketed", true)
+      .or("is_hidden.eq.false,is_hidden.is.null")
       .or(`event_date.gte.${today},event_end_date.gte.${today}`)
       .order("event_date", { ascending: true })
       .limit(20),

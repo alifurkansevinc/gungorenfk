@@ -811,17 +811,25 @@ export async function updateDonationReceiptTemplate(formData: FormData) {
   return { ok: true };
 }
 
-// ——— Menü pasif (Etkinlikler / Maçlar gizle) ———
-export async function updateNavVisibility(formData: FormData) {
+// ——— Etkinlik pasif (tek etkinlik gizle) ———
+export async function setNewsHidden(id: string, isHidden: boolean) {
   const s = await supabase();
-  const etkinliklerHidden = formData.get("nav_etkinlikler_hidden") === "1";
-  const maclarHidden = formData.get("nav_maclar_hidden") === "1";
-  await Promise.all([
-    s.from("site_settings").upsert({ key: "nav_etkinlikler_hidden", value: etkinliklerHidden, updated_at: new Date().toISOString() }, { onConflict: "key" }),
-    s.from("site_settings").upsert({ key: "nav_maclar_hidden", value: maclarHidden, updated_at: new Date().toISOString() }, { onConflict: "key" }),
-  ]);
-  revalidatePath("/admin/ayarlar");
-  revalidatePath("/");
+  const { error } = await s.from("news").update({ is_hidden: isHidden, updated_at: new Date().toISOString() }).eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/haberler");
+  revalidatePath("/haberler");
+  revalidatePath("/biletler");
+  return { ok: true };
+}
+
+// ——— Maç pasif (tek maç gizle) ———
+export async function setMatchHidden(id: string, isHidden: boolean) {
+  const s = await supabase();
+  const { error } = await s.from("matches").update({ is_hidden: isHidden, updated_at: new Date().toISOString() }).eq("id", id);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/maclar");
+  revalidatePath("/maclar");
+  revalidatePath("/biletler");
   return { ok: true };
 }
 

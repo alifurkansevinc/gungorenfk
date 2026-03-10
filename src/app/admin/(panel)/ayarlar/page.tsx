@@ -1,16 +1,14 @@
 import { getAdminSupabase } from "@/app/admin/actions";
-import { getNavVisibilitySettings, getGiftEligibleProductIds } from "@/lib/data";
+import { getGiftEligibleProductIds } from "@/lib/data";
 import { KargoFormu } from "./KargoFormu";
 import { BagisMakbuzFormu } from "./BagisMakbuzFormu";
-import { NavPasifForm } from "./NavPasifForm";
 import { GiftUrunForm } from "./GiftUrunForm";
 
 export default async function AdminAyarlarPage() {
   const supabase = await getAdminSupabase();
-  const [shippingRes, receiptRes, navSettings, giftIds, productsRes] = await Promise.all([
+  const [shippingRes, receiptRes, giftIds, productsRes] = await Promise.all([
     supabase.from("site_settings").select("value").eq("key", "shipping").single(),
     supabase.from("site_settings").select("value").eq("key", "donation_receipt_template").single(),
-    getNavVisibilitySettings(),
     getGiftEligibleProductIds(),
     supabase.from("store_products").select("id, name, slug").eq("is_active", true).order("sort_order"),
   ]);
@@ -40,9 +38,8 @@ export default async function AdminAyarlarPage() {
   return (
     <div>
       <h1 className="text-2xl font-bold text-siyah">Ayarlar</h1>
-      <p className="mt-1 text-siyah/70">Kargo, menü pasif tuşları, hediye ürünleri ve site ayarları.</p>
+      <p className="mt-1 text-siyah/70">Kargo, hediye ürünleri ve site ayarları. Etkinlik/maç pasif tuşları ilgili listelerde (Etkinlikler, Maçlar) her satırda.</p>
       <div className="mt-8 max-w-xl space-y-8">
-        <NavPasifForm etkinliklerHidden={navSettings.etkinliklerHidden} maclarHidden={navSettings.maclarHidden} />
         <GiftUrunForm products={productList} selectedIds={giftIds} />
         <KargoFormu initial={initial} />
         <BagisMakbuzFormu initial={receiptInitial} />

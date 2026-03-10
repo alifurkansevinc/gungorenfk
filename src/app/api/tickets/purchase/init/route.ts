@@ -49,6 +49,9 @@ export async function POST(req: NextRequest) {
       if (eventError || !event) {
         return NextResponse.json({ success: false, error: "Etkinlik bulunamadı." }, { status: 404 });
       }
+      if ((event as { is_hidden?: boolean }).is_hidden) {
+        return NextResponse.json({ success: false, error: "Bu etkinlik şu an satışta değil." }, { status: 404 });
+      }
       if (!(event as { is_ticketed?: boolean }).is_ticketed) {
         return NextResponse.json({ success: false, error: "Bu etkinlik biletli değil." }, { status: 400 });
       }

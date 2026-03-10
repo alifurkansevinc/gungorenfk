@@ -115,12 +115,13 @@ export async function getMemleketCounts(): Promise<MemleketCount[]> {
   }
 }
 
-/** Maçlar listesi; veri yoksa demo döner. */
+/** Maçlar listesi; veri yoksa demo döner. Pasif (is_hidden) maçlar dahil edilmez. */
 export async function getMatches(limit = 20) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("matches")
     .select("id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, goals_for, goals_against, status, competition")
+    .or("is_hidden.eq.false,is_hidden.is.null")
     .order("match_date", { ascending: false })
     .limit(limit);
   if (!data || data.length === 0) return DEMO_MATCHES;
@@ -144,6 +145,7 @@ export async function getNextMatch(): Promise<{
     .from("matches")
     .select("id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, competition")
     .eq("status", "scheduled")
+    .or("is_hidden.eq.false,is_hidden.is.null")
     .gte("match_date", today)
     .order("match_date", { ascending: true })
     .limit(1)
@@ -304,13 +306,14 @@ export async function getTechnicalStaff(): Promise<TechnicalStaffMember[]> {
   return data as TechnicalStaffMember[];
 }
 
-/** Son haberler (anasayfa için). */
+/** Son haberler (anasayfa için). Pasif (is_hidden) etkinlikler dahil edilmez. */
 export async function getLatestNews(limit = 4) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("news")
     .select("id, title, slug, excerpt, image_url, published_at")
     .not("published_at", "is", null)
+    .or("is_hidden.eq.false,is_hidden.is.null")
     .order("published_at", { ascending: false })
     .limit(limit);
   return data ?? [];
@@ -351,19 +354,6 @@ export async function getGiftQuotaForLevel(levelId: number): Promise<number> {
     .eq("benefit_module_id", mod.id)
     .single();
   return row ? Math.max(0, Number(row.value)) : 0;
-}
-
-/** Menü görünürlük: Etkinlikler ve Maçlar pasif tuşu (gizlensin mi). */
-export async function getNavVisibilitySettings(): Promise<{ etkinliklerHidden: boolean; maclarHidden: boolean }> {
-  const supabase = await createClient();
-  const [e, m] = await Promise.all([
-    supabase.from("site_settings").select("value").eq("key", "nav_etkinlikler_hidden").maybeSingle(),
-    supabase.from("site_settings").select("value").eq("key", "nav_maclar_hidden").maybeSingle(),
-  ]);
-  return {
-    etkinliklerHidden: e.data?.value === true,
-    maclarHidden: m.data?.value === true,
-  };
 }
 
 /** Hediye hakkı ile alınabilecek ürün ID’leri (admin panelinden seçilen). */

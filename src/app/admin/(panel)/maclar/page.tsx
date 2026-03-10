@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { getAdminSupabase } from "../../actions";
 import { MacSilButton } from "./MacSilButton";
+import { MacPasifToggle } from "./MacPasifToggle";
 
 export default async function AdminMaclarPage() {
   const supabase = await getAdminSupabase();
   const { data: matches } = await supabase
     .from("matches")
-    .select("id, opponent_name, match_date, goals_for, goals_against, status, home_away, competition")
+    .select("id, opponent_name, match_date, goals_for, goals_against, status, home_away, competition, is_hidden")
     .order("match_date", { ascending: false });
 
   return (
@@ -14,7 +15,7 @@ export default async function AdminMaclarPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-siyah">Maçlar</h1>
-          <p className="mt-1 text-siyah/70">Maç ekle/düzenle. Skor ve durum alanları.</p>
+          <p className="mt-1 text-siyah/70">Maç ekle/düzenle. Pasif yapılan maç sitede gösterilmez.</p>
         </div>
         <Link href="/admin/maclar/yeni" className="rounded-lg bg-bordo px-4 py-2 text-sm font-semibold text-beyaz hover:bg-bordo-dark">
           + Yeni maç
@@ -29,12 +30,13 @@ export default async function AdminMaclarPage() {
               <th className="px-4 py-3 font-semibold text-siyah/70">Müsabaka</th>
               <th className="px-4 py-3 font-semibold text-siyah/70">Sonuç</th>
               <th className="px-4 py-3 font-semibold text-siyah/70">Durum</th>
+              <th className="px-4 py-3 font-semibold text-siyah/70">Pasif</th>
               <th className="px-4 py-3 font-semibold text-siyah/70">İşlem</th>
             </tr>
           </thead>
           <tbody>
             {(!matches || matches.length === 0) ? (
-              <tr><td colSpan={6} className="px-4 py-8 text-center text-siyah/60">Henüz maç yok. &quot;Yeni maç&quot; ile ekleyin.</td></tr>
+              <tr><td colSpan={7} className="px-4 py-8 text-center text-siyah/60">Henüz maç yok. &quot;Yeni maç&quot; ile ekleyin.</td></tr>
             ) : (
               matches.map((m) => (
                 <tr key={m.id} className="border-t border-siyah/5 hover:bg-siyah/[0.02]">
@@ -49,6 +51,9 @@ export default async function AdminMaclarPage() {
                       : "—"}
                   </td>
                   <td className="px-4 py-3 text-siyah/70">{m.status}</td>
+                  <td className="px-4 py-3">
+                    <MacPasifToggle id={m.id} isHidden={!!(m as { is_hidden?: boolean }).is_hidden} />
+                  </td>
                   <td className="px-4 py-3 flex gap-3">
                     <Link href={`/admin/maclar/duzenle/${m.id}`} className="text-bordo font-medium hover:underline">Düzenle</Link>
                     <MacSilButton id={m.id} label={`${m.home_away === "home" ? "Güngören FK - " : ""}${m.opponent_name}${m.home_away === "away" ? " - Güngören FK" : ""}`} />

@@ -6,7 +6,8 @@
 
 import * as cheerio from "cheerio";
 
-const MACKOLIK_URL = "https://www.mackolik.com/takim/gungoren-belediyesi-spor-kulubu/maclar/macko17420477681804340168";
+// Türkçe karakterli path: güngören-belediyesi-spor-kulübü/maçlar (encode edilmiş)
+const MACKOLIK_URL = "https://www.mackolik.com/takim/g%C3%BCng%C3%B6ren-belediyesi-spor-kul%C3%BCb%C3%BC/ma%C3%A7lar/macko17420477681804340168";
 const CACHE_MS = 60 * 60 * 1000; // 1 saat
 let cached: { matches: MackolikMatch[]; at: number } | null = null;
 
@@ -37,16 +38,17 @@ export async function getMackolikMatches(): Promise<MackolikMatch[]> {
     const $ = cheerio.load(html);
     const matches: MackolikMatch[] = [];
 
-    // Mackolik fikstür: maç satırları genelde [data-testid] veya class ile işaretli; alternatif olarak tablo/link grupları
+    // Mackolik fikstür: maç linkleri /mac/ içerir; tarih link metninde (12.10 2025), skor/takımlar parent veya komşu elemanda
     $("a[href*='/mac/']").each((_, el) => {
-      const href = $(el).attr("href") ?? "";
-      const text = $(el).text().trim();
-      const parent = $(el).closest("tr, [class*='match'], [class*='row']");
-      const rowText = parent.length ? parent.text().replace(/\s+/g, " ").trim() : text;
+      const $el = $(el);
+      const href = $el.attr("href") ?? "";
+      const linkText = $el.text().replace(/\s+/g, " ").trim();
+      const parent = $el.closest("tr, [class*='match'], [class*='row'], [class*='fixture'], section, div");
+      const rowText = (parent.length ? parent.first().text() : linkText).replace(/\s+/g, " ").trim();
 
-      // Tarih: DD.MM YYYY veya DD.MM
-      const dateMatch = rowText.match(/(\d{1,2})\.(\d{1,2})\s*(?:\s(\d{4}))?/);
-      const scoreMatch = rowText.match(/(\d+)\s*-\s*(\d+)/);
+      // Tarih: önce link metninden (12.10 2025), yoksa row’dan
+      const dateSource = linkText.match(/(\d{1,2})\.(\d{1,2})\s*(?:\s(\d{4}))?/) ? linkText : rowText;
+      const dateMatch = dateSource.match(/(\d{1,2})\.(\d{1,2})\s*(?:\s(\d{4}))?/);
       if (!dateMatch) return;
 
       const day = dateMatch[1];
@@ -54,6 +56,7 @@ export async function getMackolikMatches(): Promise<MackolikMatch[]> {
       const year = dateMatch[3] ?? new Date().getFullYear().toString();
       const dateStr = `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
 
+      const scoreMatch = rowText.match(/(\d+)\s*-\s*(\d+)/);
       let goalsHome: number | null = null;
       let goalsAway: number | null = null;
       if (scoreMatch) {
@@ -61,23 +64,24 @@ export async function getMackolikMatches(): Promise<MackolikMatch[]> {
         goalsAway = parseInt(scoreMatch[2], 10);
       }
 
-      // Güngören tarafını tespit et (ev/deplasman)
-      const gungorenBld = /güngören|gungoren|güngören bld|gungoren bld/i.test(rowText);
-      const homePart = rowText.split(/-|\d+\s*-\s*\d+/)[0]?.trim() ?? "";
-      const awayPart = rowText.split(/-|\d+\s*-\s*\d+/)[1]?.trim() ?? "";
-      const home = normalizeTeamName(homePart || "Güngören Bld");
-      const away = normalizeTeamName(awayPart || "Rakip");
+      // Takım isimleri: skor etrafındaki metinden (Güngören Bld, Yeşilova Esnaf vb.)
+      const parts = rowText.split(/\d+\s*-\s*\d+/);
+      const beforeScore = (parts[0] ?? "").trim();
+      const afterScore = (parts[1] ?? "").trim();
+      const teamNames = [...beforeScore.split(/\s{2,}/), ...afterScore.split(/\s{2,}/)].map((s) => normalizeTeamName(s)).filter((s) => s.length > 1 && !/^\d+$/.test(s));
+      const home = (teamNames[0] && teamNames[0].length > 1) ? teamNames[0] : "Güngören Bld";
+      const away = (teamNames[1] && teamNames[1].length > 1) ? teamNames[1] : (teamNames[2] && teamNames[2].length > 1) ? teamNames[2] : "Rakip";
 
-      if (home && away && (home.length > 2 || away.length > 2)) {
-        matches.push({
-          date: dateStr,
-          home,
-          away,
-          goalsHome,
-          goalsAway,
-          matchUrl: href.startsWith("http") ? href : `https://www.mackolik.com${href.startsWith("/") ? "" : "/"}${href}`,
-        });
-      }
+      if (!home || !away) return;
+
+      matches.push({
+        date: dateStr,
+        home,
+        away,
+        goalsHome,
+        goalsAway,
+        matchUrl: href.startsWith("http") ? href : `https://www.mackolik.com${href.startsWith("/") ? "" : "/"}${href}`,
+      });
     });
 
     // Alternatif: script içinde JSON veri (Mackolik bazen __NEXT_DATA__ veya benzeri kullanır)

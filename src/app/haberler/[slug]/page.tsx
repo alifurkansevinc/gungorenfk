@@ -9,7 +9,7 @@ export default async function HaberDetayPage({ params }: { params: Promise<{ slu
   const { slug } = await params;
   const supabase = await createClient();
   const { data: item } = await supabase.from("news").select("*").eq("slug", slug).single();
-  if (!item) notFound();
+  if (!item || (item as { is_hidden?: boolean }).is_hidden) notFound();
 
   const hasEventInfo =
     (item as { event_date?: string | null }).event_date ||

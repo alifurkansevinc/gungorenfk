@@ -18,9 +18,7 @@ const NAV_BASE = [
   { href: "/haberler", label: "Etkinlikler" },
 ] as const;
 
-type NavHidden = { etkinliklerHidden?: boolean; maclarHidden?: boolean };
-
-export function Header({ navHidden = {} }: { navHidden?: NavHidden }) {
+export function Header() {
   const [logoError, setLogoError] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [signedIn, setSignedIn] = useState(false);
@@ -34,12 +32,7 @@ export function Header({ navHidden = {} }: { navHidden?: NavHidden }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const base = NAV_BASE.filter((l) => {
-    if (l.href === "/haberler" && navHidden.etkinliklerHidden) return false;
-    if (l.href === "/maclar" && navHidden.maclarHidden) return false;
-    return true;
-  });
-  const navLinks = signedIn ? [...base, { href: "/benim-kosem", label: "Benim Köşem" }] : [...base];
+  const navLinks = signedIn ? [...NAV_BASE, { href: "/benim-kosem", label: "Benim Köşem" }] : [...NAV_BASE];
 
   return (
     <header className="sticky top-0 z-50 bg-siyah">

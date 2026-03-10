@@ -16,6 +16,7 @@ export default async function HaberlerPage() {
     .from("news")
     .select("id, title, slug, excerpt, image_url, published_at, event_date, event_time, event_place, event_type, is_ticketed")
     .or("published_at.not.is.null,event_date.not.is.null")
+    .or("is_hidden.eq.false,is_hidden.is.null")
     .order("published_at", { ascending: false, nullsFirst: false })
     .limit(20);
 

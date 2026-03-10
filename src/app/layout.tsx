@@ -5,7 +5,6 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CartProvider } from "@/context/CartContext";
 import { RecoveryRedirect } from "@/components/RecoveryRedirect";
-import { getNavVisibilitySettings } from "@/lib/data";
 
 const oswald = Oswald({
   variable: "--font-display",
@@ -36,20 +35,19 @@ export const viewport = {
   themeColor: "#0A0A0A",
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const navHidden = await getNavVisibilitySettings();
   return (
     <html lang="tr" className="scroll-smooth">
       <body className={`${oswald.variable} ${outfit.variable} font-body antialiased min-h-screen flex flex-col bg-beyaz text-siyah overflow-x-hidden`}>
         <CartProvider>
           <RecoveryRedirect />
-          <Header navHidden={navHidden} />
+          <Header />
           <main className="flex-1">{children}</main>
-          <Footer navHidden={navHidden} />
+          <Footer />
         </CartProvider>
       </body>
     </html>
