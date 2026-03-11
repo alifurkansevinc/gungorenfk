@@ -99,6 +99,7 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
               name={product.name}
               price={effectivePrice}
               slug={product.slug}
+              sizes={(product as { sizes?: string[] }).sizes}
             />
           </div>
         </div>

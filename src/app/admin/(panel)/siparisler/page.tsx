@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { expireOldPendingOrders, deleteOrder } from "@/app/actions/admin";
 
-type OrderItem = { id: string; name: string; price: number; quantity: number };
+type OrderItem = { id: string; name: string; price: number; quantity: number; size?: string | null; image_url?: string | null };
 type Order = {
   id: string;
   orderNumber: string;
@@ -509,6 +509,7 @@ export default function AdminSiparislerPage() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 text-left text-gray-500">
+                      <th className="pb-2 font-medium w-14">Görsel</th>
                       <th className="pb-2 font-medium">Ürün</th>
                       <th className="pb-2 text-center font-medium">Adet</th>
                       <th className="pb-2 text-right font-medium">Fiyat</th>
@@ -518,7 +519,17 @@ export default function AdminSiparislerPage() {
                   <tbody>
                     {selected.items.map((item) => (
                       <tr key={item.id} className="border-b border-gray-50">
-                        <td className="py-2 text-gray-900">{item.name}</td>
+                        <td className="py-2">
+                          {item.image_url ? (
+                            <img src={item.image_url} alt="" className="h-12 w-12 rounded-lg object-cover border border-gray-100" />
+                          ) : (
+                            <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center text-gray-400 text-xs">—</div>
+                          )}
+                        </td>
+                        <td className="py-2 text-gray-900">
+                          {item.name}
+                          {item.size && <span className="ml-1 text-xs text-gray-500">(Beden: {item.size})</span>}
+                        </td>
                         <td className="py-2 text-center">{item.quantity}</td>
                         <td className="py-2 text-right">{formatPrice(item.price)}</td>
                         <td className="py-2 text-right font-medium">{formatPrice(item.price * item.quantity)}</td>

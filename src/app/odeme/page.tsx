@@ -134,6 +134,7 @@ export default function OdemePage() {
             price: i.price,
             quantity: i.quantity,
             category: "Mağaza",
+            size: i.size ?? "tek_beden",
           })),
           shippingAddress: {
             fullName,

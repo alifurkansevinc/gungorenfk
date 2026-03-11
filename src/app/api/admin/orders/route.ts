@@ -83,8 +83,21 @@ export async function GET(req: NextRequest) {
 
   const { data: items } = await supabase
     .from("order_items")
-    .select("id, order_id, product_id, name, price, quantity")
+    .select("id, order_id, product_id, name, price, quantity, size")
     .in("order_id", orderIds);
+
+  const productIds = [...new Set((items ?? []).map((i) => (i as { product_id: string | null }).product_id).filter(Boolean))] as string[];
+  const productImages: Record<string, string | null> = {};
+  if (productIds.length > 0) {
+    const { data: products } = await supabase
+      .from("store_products")
+      .select("id, image_url")
+      .in("id", productIds);
+    for (const p of products ?? []) {
+      const row = p as { id: string; image_url: string | null };
+      productImages[row.id] = row.image_url ?? null;
+    }
+  }
 
   const itemsByOrder = new Map<string, typeof items>();
   for (const item of items ?? []) {
@@ -114,7 +127,10 @@ export async function GET(req: NextRequest) {
         phone,
       },
       shippingAddress: addressParts.join(", ") || (o.delivery_method === "store_pickup" ? "Mağazadan teslim" : ""),
-      items: itemsByOrder.get(o.id) ?? [],
+      items: (itemsByOrder.get(o.id) ?? []).map((it) => ({
+        ...it,
+        image_url: (it as { product_id?: string }).product_id ? productImages[(it as { product_id: string }).product_id] ?? null : null,
+      })),
       subtotal: Number(o.subtotal),
       shippingCost: Number(o.shipping_cost),
       total: Number(o.total),

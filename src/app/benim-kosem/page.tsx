@@ -120,17 +120,32 @@ export default async function BenimKosemPage() {
         .order("created_at", { ascending: false })
         .limit(20)
     : { data: null as (typeof ordersByUser) };
-  const storePickupOrders = [...(ordersByUser ?? []), ...(guestOrdersRes.data ?? [])]
+  const storePickupOrdersAll = [...(ordersByUser ?? []), ...(guestOrdersRes.data ?? [])]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 20);
+  // Store cüzdanımda sadece henüz teslim alınmamış siparişler; kullanılan (DELIVERED) QR'lar sadece Geçmiş siparişlerde
+  const storePickupOrders = storePickupOrdersAll.filter((o) => (o as { status: string }).status !== "DELIVERED");
 
-  const { data: pastOrders } = await supabase
+  const { data: pastOrdersByUser } = await supabase
     .from("orders")
     .select("id, order_number, status, created_at, delivery_method")
     .eq("user_id", user.id)
     .in("status", ["DELIVERED", "SHIPPED"])
     .order("created_at", { ascending: false })
     .limit(30);
+  const pastOrdersGuest = userEmail
+    ? await supabase
+        .from("orders")
+        .select("id, order_number, status, created_at, delivery_method")
+        .is("user_id", null)
+        .eq("guest_email", userEmail)
+        .in("status", ["DELIVERED", "SHIPPED"])
+        .order("created_at", { ascending: false })
+        .limit(30)
+    : { data: null as typeof pastOrdersByUser };
+  const pastOrders = [...(pastOrdersByUser ?? []), ...(pastOrdersGuest.data ?? [])]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 30);
 
   let motmCount = 0;
   if (favoritePlayerId) {
@@ -386,47 +401,27 @@ export default async function BenimKosemPage() {
                     const qrData = `${baseUrl}/admin/teslim-al?code=${encodeURIComponent(pickupCode)}`;
                     const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(qrData)}`;
                     const pickupDate = (o as { pickup_date: string | null }).pickup_date;
-                    const status = (o as { status: string }).status;
-                    const isDelivered = status === "DELIVERED";
-                    const cardContent = (
-                      <>
+                    return (
+                      <Link
+                        key={o.id}
+                        href={`/benim-kosem/store-qr?code=${encodeURIComponent(pickupCode)}&orderNumber=${encodeURIComponent(o.order_number)}`}
+                        className="flex items-center gap-3 sm:gap-4 rounded-xl border border-siyah/10 bg-gradient-to-br from-siyah/5 to-bordo/5 p-4 min-w-0 overflow-hidden transition-shadow hover:shadow-md"
+                      >
                         {qrImgUrl && (
-                          <div className={`h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz ${isDelivered ? "opacity-60" : ""}`}>
+                          <div className="h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz">
                             <img src={qrImgUrl} alt="Teslim QR" width={56} height={56} className="h-full w-full object-contain" />
                           </div>
                         )}
                         <div className="min-w-0 flex-1 overflow-hidden">
-                          <p className={`font-semibold text-sm sm:text-base truncate ${isDelivered ? "text-siyah/70" : "text-siyah"}`}>Sipariş {o.order_number}</p>
+                          <p className="font-semibold text-sm sm:text-base truncate text-siyah">Sipariş {o.order_number}</p>
                           {pickupDate && (
                             <p className="text-xs text-siyah/60 mt-0.5 break-words">
                               Teslim: {new Date(pickupDate + "T12:00:00").toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
                             </p>
                           )}
                           <p className="mt-0.5 font-mono text-xs text-siyah/70 truncate">Kod: {pickupCode}</p>
-                          {isDelivered ? (
-                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                              <span className="inline-flex items-center rounded-md bg-siyah/10 px-2.5 py-1 text-xs font-medium text-siyah/80">QR üzerinde kullanıldı</span>
-                              <span className="text-[11px] text-siyah/55">Tekrar kullanılamaz</span>
-                            </div>
-                          ) : null}
                         </div>
-                        {!isDelivered && <span className="shrink-0 text-xs font-medium text-bordo">Göster</span>}
-                      </>
-                    );
-                    return isDelivered ? (
-                      <div
-                        key={o.id}
-                        className="flex items-center gap-3 sm:gap-4 rounded-xl border border-siyah/10 bg-siyah/[0.02] p-4 min-w-0 overflow-hidden opacity-90"
-                      >
-                        {cardContent}
-                      </div>
-                    ) : (
-                      <Link
-                        key={o.id}
-                        href={`/benim-kosem/store-qr?code=${encodeURIComponent(pickupCode)}&orderNumber=${encodeURIComponent(o.order_number)}`}
-                        className="flex items-center gap-3 sm:gap-4 rounded-xl border border-siyah/10 bg-gradient-to-br from-siyah/5 to-bordo/5 p-4 min-w-0 overflow-hidden transition-shadow hover:shadow-md"
-                      >
-                        {cardContent}
+                        <span className="shrink-0 text-xs font-medium text-bordo">Göster</span>
                       </Link>
                     );
                   })}
@@ -533,21 +528,28 @@ export default async function BenimKosemPage() {
                 {pendingGifts && pendingGifts.length > 0 && (
                   <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2 min-w-0">
                     {pendingGifts.map((g) => {
-                      const qrData = `${baseUrl}/admin/teslim-al?code=${encodeURIComponent((g as { qr_code: string }).qr_code)}`;
+                      const qrCode = (g as { qr_code: string }).qr_code;
+                      const qrData = `${baseUrl}/admin/teslim-al?code=${encodeURIComponent(qrCode)}`;
                       const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(qrData)}`;
                       const sp = (g as { store_products?: { name: string } | { name: string }[] | null }).store_products;
                       const productName = (Array.isArray(sp) ? sp[0]?.name : sp?.name) ?? "Ürün";
+                      const hediyeQrUrl = `/benim-kosem/hediye-qr?code=${encodeURIComponent(qrCode)}&productName=${encodeURIComponent(productName)}`;
                       return (
-                        <div key={g.id} className="flex items-center gap-3 sm:gap-4 rounded-xl border border-bordo/20 bg-gradient-to-br from-bordo/5 to-siyah/5 p-4 min-w-0 overflow-hidden">
+                        <Link
+                          key={g.id}
+                          href={hediyeQrUrl}
+                          className="flex items-center gap-3 sm:gap-4 rounded-xl border border-bordo/20 bg-gradient-to-br from-bordo/5 to-siyah/5 p-4 min-w-0 overflow-hidden transition-shadow hover:shadow-md"
+                        >
                           <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz">
                             <img src={qrImgUrl} alt="Hediye QR" width={64} height={64} className="h-full w-full object-contain" />
                           </div>
                           <div className="min-w-0 flex-1 overflow-hidden">
                             <p className="font-semibold text-siyah text-sm sm:text-base break-words">Hediye: {productName}</p>
-                            <p className="mt-0.5 font-mono text-xs text-siyah/70 truncate">Kod: {(g as { qr_code: string }).qr_code}</p>
+                            <p className="mt-0.5 font-mono text-xs text-siyah/70 truncate">Kod: {qrCode}</p>
                             <p className="mt-1 text-xs text-siyah/60 break-words">Mağazada bu QR ile teslim alın.</p>
                           </div>
-                        </div>
+                          <span className="shrink-0 text-xs font-medium text-bordo">Göster</span>
+                        </Link>
                       );
                     })}
                   </div>

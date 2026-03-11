@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getAdminSupabase } from "@/app/admin/actions";
+import { STORE_SIZE_VALUES } from "@/lib/store-sizes";
 
 function collectImageUrls(formData: FormData): string[] {
   const urls: string[] = [];
@@ -26,6 +27,9 @@ export async function createProduct(formData: FormData) {
   const sort_order = parseInt((formData.get("sort_order") as string) || "0", 10);
   const imageUrls = collectImageUrls(formData);
   const image_url = imageUrls[0] || null;
+  const sizesRaw = formData.getAll("sizes") as string[];
+  const sizes = sizesRaw.length > 0 ? sizesRaw.filter((s) => STORE_SIZE_VALUES.includes(s as typeof STORE_SIZE_VALUES[number])) : ["tek_beden"];
+  const sizesFinal = sizes.length > 0 ? sizes : ["tek_beden"];
 
   const { data: product, error } = await supabase
     .from("store_products")
@@ -38,6 +42,7 @@ export async function createProduct(formData: FormData) {
       image_url,
       sort_order,
       is_active: true,
+      sizes: sizesFinal,
     })
     .select("id")
     .single();
@@ -65,6 +70,9 @@ export async function updateProduct(id: string, formData: FormData) {
   const is_active = formData.get("is_active") === "on";
   const imageUrls = collectImageUrls(formData);
   const image_url = imageUrls[0] || null;
+  const sizesRaw = formData.getAll("sizes") as string[];
+  const sizes = sizesRaw.length > 0 ? sizesRaw.filter((s) => STORE_SIZE_VALUES.includes(s as typeof STORE_SIZE_VALUES[number])) : ["tek_beden"];
+  const sizesFinal = sizes.length > 0 ? sizes : ["tek_beden"];
 
   const { error } = await supabase
     .from("store_products")
@@ -77,6 +85,7 @@ export async function updateProduct(id: string, formData: FormData) {
       image_url,
       sort_order,
       is_active,
+      sizes: sizesFinal,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);

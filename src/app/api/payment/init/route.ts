@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
     const { userId, email, items, shippingAddress, deliveryMethod: rawDeliveryMethod } = body as {
       userId?: string | null;
       email: string;
-      items: Array<{ id: string; productId?: string; name: string; price: number; quantity: number; category?: string }>;
+      items: Array<{ id: string; productId?: string; name: string; price: number; quantity: number; category?: string; size?: string }>;
       shippingAddress: {
         fullName?: string;
         email?: string;
@@ -144,12 +144,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Sipariş oluşturulamadı." }, { status: 500 });
     }
 
-    const orderItems = items.map((i: { productId?: string; name: string; price: number; quantity: number }) => ({
+    const orderItems = items.map((i: { productId?: string; name: string; price: number; quantity: number; size?: string }) => ({
       order_id: order.id,
       product_id: i.productId || null,
       name: i.name,
       price: i.price,
       quantity: i.quantity,
+      size: i.size || null,
     }));
     const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
     if (itemsError) {

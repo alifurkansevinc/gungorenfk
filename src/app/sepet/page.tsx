@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCart } from "@/context/CartContext";
+import { getSizeLabel } from "@/lib/store-sizes";
 
 export default function SepetPage() {
   const { items, removeItem, updateQuantity, totalPrice, totalCount } = useCart();
@@ -25,15 +26,18 @@ export default function SepetPage() {
         <div className="lg:col-span-2">
           <ul className="divide-y divide-siyah/10">
             {items.map((item) => (
-              <li key={item.productId} className="flex items-center gap-4 py-4 first:pt-0">
+              <li key={item.id} className="flex items-center gap-4 py-4 first:pt-0">
                 <div className="flex-1">
                   <p className="font-semibold text-siyah">{item.name}</p>
-                  <p className="text-sm text-siyah/70">{Number(item.price).toFixed(2)} ₺ × {item.quantity}</p>
+                  <p className="text-sm text-siyah/70">
+                    {Number(item.price).toFixed(2)} ₺ × {item.quantity}
+                    {item.size && item.size !== "tek_beden" && ` · Beden: ${getSizeLabel(item.size)}`}
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
-                    onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
                     className="h-8 w-8 rounded border border-siyah/20 text-siyah hover:bg-siyah/5"
                     aria-label="Azalt"
                   >
@@ -42,7 +46,7 @@ export default function SepetPage() {
                   <span className="min-w-[2rem] text-center font-medium">{item.quantity}</span>
                   <button
                     type="button"
-                    onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
                     className="h-8 w-8 rounded border border-siyah/20 text-siyah hover:bg-siyah/5"
                     aria-label="Artır"
                   >
@@ -54,7 +58,7 @@ export default function SepetPage() {
                 </p>
                 <button
                   type="button"
-                  onClick={() => removeItem(item.productId)}
+                  onClick={() => removeItem(item.id)}
                   className="text-sm text-siyah/60 hover:text-red-600"
                   aria-label="Kaldır"
                 >

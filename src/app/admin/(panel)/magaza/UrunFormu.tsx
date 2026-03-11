@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createProduct, updateProduct } from "@/app/actions/store";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2 } from "lucide-react";
+import { STORE_SIZE_OPTIONS } from "@/lib/store-sizes";
 
 type Product = {
   id: string;
@@ -17,6 +18,7 @@ type Product = {
   sort_order: number;
   is_active: boolean;
   images?: string[];
+  sizes?: string[];
 } | null;
 
 export function UrunFormu({ product }: { product?: Product }) {
@@ -110,6 +112,21 @@ export function UrunFormu({ product }: { product?: Product }) {
           required
           className={inputClass}
         />
+      </div>
+      <div>
+        <label className={labelClass}>Bedenler</label>
+        <p className="mt-1 text-xs text-gray-500">Ürünün satışa sunulduğu bedenleri işaretleyin (en az biri).</p>
+        <div className="mt-2 flex flex-wrap gap-4">
+          {STORE_SIZE_OPTIONS.map(({ value, label }) => {
+            const defaultChecked = product?.sizes?.includes(value) ?? (value === "tek_beden");
+            return (
+              <label key={value} className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" name="sizes" value={value} defaultChecked={defaultChecked} className="h-4 w-4 rounded border-gray-300 text-bordo focus:ring-bordo" />
+                <span className="text-sm text-gray-700">{label}</span>
+              </label>
+            );
+          })}
+        </div>
       </div>
       <div>
         <div className="flex items-center justify-between">
