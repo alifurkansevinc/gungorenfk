@@ -147,14 +147,14 @@ export default async function MaclarPage() {
                       <p className="mb-2 text-xs font-medium text-siyah/60">
                         {dateStr} <span className="mx-1.5 text-siyah/40">·</span> {müsabakaLabel}
                       </p>
-                      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 gap-y-2 w-full max-w-xl mx-auto">
-                        <span className={`min-w-0 max-w-[140px] truncate text-right text-sm sm:max-w-[180px] ${/güngören|gungoren|güngören bld/i.test(m.home) ? "font-extrabold text-siyah" : "font-medium text-siyah"}`} title={m.home}>{m.home}</span>
+                      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-4 gap-y-2 w-full max-w-xl mx-auto">
+                        <span className={`min-w-0 max-w-[140px] truncate text-left text-sm sm:max-w-[180px] ${/güngören|gungoren|güngören bld/i.test(m.home) ? "font-extrabold text-siyah" : "font-medium text-siyah"}`} title={m.home}>{m.home}</span>
                         <div className="flex items-center justify-center gap-2 w-20 shrink-0 tabular-nums">
                           <span className="font-bold text-siyah w-6 text-center">{hasScore ? m.goalsHome : "–"}</span>
                           <ResultBadge result={result} />
                           <span className="font-bold text-siyah w-6 text-center">{hasScore ? m.goalsAway : "–"}</span>
                         </div>
-                        <span className={`min-w-0 max-w-[140px] truncate text-left text-sm sm:max-w-[180px] ${/güngören|gungoren|güngören bld/i.test(m.away) ? "font-extrabold text-siyah" : "font-medium text-siyah"}`} title={m.away}>{m.away}</span>
+                        <span className={`min-w-0 max-w-[140px] truncate text-right text-sm sm:max-w-[180px] ${/güngören|gungoren|güngören bld/i.test(m.away) ? "font-extrabold text-siyah" : "font-medium text-siyah"}`} title={m.away}>{m.away}</span>
                       </div>
                       <span className={`mt-2 text-[11px] font-medium ${isFinished ? "text-emerald-600" : "text-bordo/90"}`}>
                         {isFinished ? "Bitti" : "Planlanan"}
@@ -184,14 +184,14 @@ export default async function MaclarPage() {
                     <p className="mb-2 text-xs font-medium text-siyah/60">
                       {dateStr} <span className="mx-1.5 text-siyah/40">·</span> {müsabakaLabel}
                     </p>
-                    <Link href={`/maclar/${m.id}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 gap-y-2 w-full max-w-xl mx-auto hover:opacity-90">
-                      <span className={`min-w-0 max-w-[140px] truncate text-right text-sm sm:max-w-[180px] ${teamHome === "Güngören FK" ? "font-extrabold text-siyah" : "font-medium text-siyah"}`}>{teamHome}</span>
+                    <Link href={`/maclar/${m.id}`} className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-4 gap-y-2 w-full max-w-xl mx-auto hover:opacity-90">
+                      <span className={`min-w-0 max-w-[140px] truncate text-left text-sm sm:max-w-[180px] ${teamHome === "Güngören FK" ? "font-extrabold text-siyah" : "font-medium text-siyah"}`}>{teamHome}</span>
                       <div className="flex items-center justify-center gap-2 w-20 shrink-0 tabular-nums">
                         <span className="font-bold text-siyah w-6 text-center">{hasScoreDb ? scoreHome : "–"}</span>
                         <ResultBadge result={result} />
                         <span className="font-bold text-siyah w-6 text-center">{hasScoreDb ? scoreAway : "–"}</span>
                       </div>
-                      <span className={`min-w-0 max-w-[140px] truncate text-left text-sm sm:max-w-[180px] ${teamAway === "Güngören FK" ? "font-extrabold text-siyah" : "font-medium text-siyah"}`}>{teamAway}</span>
+                      <span className={`min-w-0 max-w-[140px] truncate text-right text-sm sm:max-w-[180px] ${teamAway === "Güngören FK" ? "font-extrabold text-siyah" : "font-medium text-siyah"}`}>{teamAway}</span>
                     </Link>
                     <span className={`mt-2 text-[11px] font-medium ${isFinishedDb ? "text-emerald-600" : "text-bordo/90"}`}>
                       {isFinishedDb ? "Bitti" : "Planlanan"}

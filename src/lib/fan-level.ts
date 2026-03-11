@@ -9,11 +9,21 @@ export async function checkAndLevelUp(userId: string): Promise<{ leveledUp: bool
 
   const { data: profile, error: profileError } = await supabase
     .from("fan_profiles")
-    .select("id, fan_level_id, store_spend_total, donation_total")
+    .select("id, fan_level_id, store_spend_total, donation_total, email")
     .eq("user_id", userId)
     .single();
 
   if (profileError || !profile) return { leveledUp: false };
+
+  const profileEmail = (profile as { email?: string | null }).email ?? null;
+  const { data: paidOrders } = profileEmail
+    ? await supabase
+        .from("orders")
+        .select("total")
+        .eq("payment_status", "PAID")
+        .or(`user_id.eq.${userId},and(user_id.is.null,guest_email.eq.${profileEmail})`)
+    : await supabase.from("orders").select("total").eq("payment_status", "PAID").eq("user_id", userId);
+  const effectiveStoreSpend = (paidOrders ?? []).reduce((s, o) => s + Number((o as { total: number }).total || 0), 0);
 
   const { data: distinctMatches } = await supabase
     .from("match_tickets")
@@ -37,7 +47,7 @@ export async function checkAndLevelUp(userId: string): Promise<{ leveledUp: bool
   const targetStore = Number(nextLevel.target_store_spend) || 0;
   const targetTickets = Number(nextLevel.target_tickets) || 0;
   const targetDonation = Number(nextLevel.target_donation) || 0;
-  const storeSpend = Number(profile.store_spend_total) || 0;
+  const storeSpend = Math.max(Number(profile.store_spend_total) || 0, effectiveStoreSpend);
   const donation = Number(profile.donation_total) || 0;
 
   // En az iki barem türü hedefli olmalı; tek baremle (örn. sadece 1 bilet) seviye atlanmaz.

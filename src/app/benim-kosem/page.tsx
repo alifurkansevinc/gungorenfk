@@ -77,8 +77,16 @@ export default async function BenimKosemPage() {
   const favoritePlayerId = (profile as { favorite_player_id?: string | null }).favorite_player_id ?? null;
   const favoritePlayer = favoritePlayerId ? squad.find((p) => p.id === favoritePlayerId) : null;
 
-  const storeSpend = Number((profile as { store_spend_total?: number }).store_spend_total ?? 0);
+  const profileStoreSpend = Number((profile as { store_spend_total?: number }).store_spend_total ?? 0);
   const donationTotal = Number((profile as { donation_total?: number }).donation_total ?? 0);
+
+  // Efektif mağaza harcaması: üye + aynı e-postayla yapılan misafir siparişlerinin toplamı (barem doğru ilerlesin)
+  const { data: paidOrdersForSpend } = await supabase
+    .from("orders")
+    .select("total")
+    .eq("payment_status", "PAID")
+    .or(userEmail ? `user_id.eq.${user.id},and(user_id.is.null,guest_email.eq.${userEmail})` : `user_id.eq.${user.id}`);
+  const storeSpend = (paidOrdersForSpend ?? []).reduce((sum, o) => sum + Number((o as { total: number }).total || 0), 0);
 
   const { data: myTickets } = await supabase
     .from("match_tickets")
@@ -118,7 +126,7 @@ export default async function BenimKosemPage() {
 
   const { data: pastOrders } = await supabase
     .from("orders")
-    .select("id, order_number, status, created_at")
+    .select("id, order_number, status, created_at, delivery_method")
     .eq("user_id", user.id)
     .in("status", ["DELIVERED", "SHIPPED"])
     .order("created_at", { ascending: false })
@@ -303,6 +311,9 @@ export default async function BenimKosemPage() {
                       <div className="progress-fill progress-bar-glow h-full rounded-full bg-bordo" style={{ width: `${overallBar}%` }} />
                     </div>
                   </div>
+                  <p className="mt-3 text-[11px] text-siyah/55 break-words">
+                    <strong>Barem hareketi:</strong> Mağaza = Ödenen mağaza siparişlerinizin toplam tutarı (giriş yaparak veya aynı e-postayla). Bilet = Ödenen maç/etkinlik bilet sayısı. Bağış = Yaptığınız bağışların toplamı. Toplam ilerleme = Üç baremin ortalaması + favori oyuncu MOTM bonusu (en fazla +10%).
+                  </p>
                 </div>
               </section>
             )}
@@ -359,6 +370,73 @@ export default async function BenimKosemPage() {
               )}
             </section>
 
+            {/* Store cüzdanım — mağazadan teslim alınacak siparişler, QR ile (Bilet cüzdanımın hemen altında) */}
+            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
+              <h2 className="font-display text-lg font-bold text-siyah break-words">Store cüzdanım</h2>
+              <p className="mt-1 text-sm text-siyah/70 break-words">Mağazadan teslim alacağınız siparişler. Teslim alırken bu QR kodunu gösterin.</p>
+              {(!storePickupOrders || storePickupOrders.length === 0) ? (
+                <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
+                  <p className="text-sm text-siyah/60">Mağazadan teslim alacağınız siparişiniz yok.</p>
+                  <Link href="/magaza" className="mt-3 inline-block text-sm font-medium text-bordo hover:underline">Mağaza →</Link>
+                </div>
+              ) : (
+                <div className="mt-4 grid gap-3 grid-cols-1 sm:grid-cols-2 min-w-0">
+                  {storePickupOrders.map((o) => {
+                    const pickupCode = (o as { pickup_code: string }).pickup_code;
+                    const qrData = `${baseUrl}/admin/teslim-al?code=${encodeURIComponent(pickupCode)}`;
+                    const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(qrData)}`;
+                    const pickupDate = (o as { pickup_date: string | null }).pickup_date;
+                    const status = (o as { status: string }).status;
+                    const isDelivered = status === "DELIVERED";
+                    const cardContent = (
+                      <>
+                        {qrImgUrl && (
+                          <div className={`h-12 w-12 sm:h-14 sm:w-14 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz ${isDelivered ? "opacity-60" : ""}`}>
+                            <img src={qrImgUrl} alt="Teslim QR" width={56} height={56} className="h-full w-full object-contain" />
+                          </div>
+                        )}
+                        <div className="min-w-0 flex-1 overflow-hidden">
+                          <p className={`font-semibold text-sm sm:text-base truncate ${isDelivered ? "text-siyah/70" : "text-siyah"}`}>Sipariş {o.order_number}</p>
+                          {pickupDate && (
+                            <p className="text-xs text-siyah/60 mt-0.5 break-words">
+                              Teslim: {new Date(pickupDate + "T12:00:00").toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+                            </p>
+                          )}
+                          <p className="mt-0.5 font-mono text-xs text-siyah/70 truncate">Kod: {pickupCode}</p>
+                          {isDelivered ? (
+                            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                              <span className="inline-flex items-center rounded-md bg-siyah/10 px-2.5 py-1 text-xs font-medium text-siyah/80">QR üzerinde kullanıldı</span>
+                              <span className="text-[11px] text-siyah/55">Tekrar kullanılamaz</span>
+                            </div>
+                          ) : null}
+                        </div>
+                        {!isDelivered && <span className="shrink-0 text-xs font-medium text-bordo">Göster</span>}
+                      </>
+                    );
+                    return isDelivered ? (
+                      <div
+                        key={o.id}
+                        className="flex items-center gap-3 sm:gap-4 rounded-xl border border-siyah/10 bg-siyah/[0.02] p-4 min-w-0 overflow-hidden opacity-90"
+                      >
+                        {cardContent}
+                      </div>
+                    ) : (
+                      <Link
+                        key={o.id}
+                        href={`/benim-kosem/store-qr?code=${encodeURIComponent(pickupCode)}&orderNumber=${encodeURIComponent(o.order_number)}`}
+                        className="flex items-center gap-3 sm:gap-4 rounded-xl border border-siyah/10 bg-gradient-to-br from-siyah/5 to-bordo/5 p-4 min-w-0 overflow-hidden transition-shadow hover:shadow-md"
+                      >
+                        {cardContent}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+              {storePickupOrders && storePickupOrders.length > 0 && (
+                <Link href="/magaza" className="mt-4 block text-center text-sm font-medium text-bordo hover:underline">Mağaza →</Link>
+              )}
+            </section>
+
             {/* Geçmiş biletler (maç) */}
             <section className="rounded-2xl border border-siyah/10 bg-beyaz p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
               <h2 className="font-display text-lg font-bold text-siyah break-words">Geçmiş biletler</h2>
@@ -370,8 +448,11 @@ export default async function BenimKosemPage() {
               ) : (
                 <ul className="mt-4 space-y-2 min-w-0">
                   {pastMatchTickets.map((t) => (
-                    <li key={t.id} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-3 min-w-0">
-                      <span className="font-medium text-siyah text-sm break-words min-w-0">{t.label}</span>
+                    <li key={t.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-3 min-w-0">
+                      <div className="min-w-0 flex-1">
+                        <span className="font-medium text-siyah/80 text-sm break-words">{t.label}</span>
+                        <span className="mt-1.5 inline-flex items-center rounded-md bg-siyah/10 px-2 py-0.5 text-[11px] font-medium text-siyah/70">QR üzerinde kullanıldı · Tekrar kullanılamaz</span>
+                      </div>
                       <span className="text-sm text-siyah/60 shrink-0">
                         {t.match_date ? new Date(t.match_date + "T12:00:00").toLocaleDateString("tr-TR") : ""}
                       </span>
@@ -392,8 +473,11 @@ export default async function BenimKosemPage() {
               ) : (
                 <ul className="mt-4 space-y-2 min-w-0">
                   {pastEventTickets.map((t) => (
-                    <li key={t.id} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-3 min-w-0">
-                      <span className="font-medium text-siyah text-sm break-words min-w-0">{t.label}</span>
+                    <li key={t.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-3 min-w-0">
+                      <div className="min-w-0 flex-1">
+                        <span className="font-medium text-siyah/80 text-sm break-words">{t.label}</span>
+                        <span className="mt-1.5 inline-flex items-center rounded-md bg-siyah/10 px-2 py-0.5 text-[11px] font-medium text-siyah/70">QR üzerinde kullanıldı · Tekrar kullanılamaz</span>
+                      </div>
                       <span className="text-sm text-siyah/60 shrink-0">
                         {t.event_date ? new Date(t.event_date + "T12:00:00").toLocaleDateString("tr-TR") : ""}
                       </span>
@@ -413,61 +497,24 @@ export default async function BenimKosemPage() {
                 </div>
               ) : (
                 <ul className="mt-4 space-y-2 min-w-0">
-                  {pastOrders.map((o) => (
-                    <li key={o.id} className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-3 min-w-0">
-                      <span className="font-medium text-siyah text-sm break-words min-w-0">Sipariş {(o as { order_number: string }).order_number}</span>
-                      <span className="text-sm text-siyah/60 shrink-0">
-                        {new Date((o as { created_at: string }).created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-
-            {/* Store cüzdanım — mağazadan teslim alınacak siparişler, QR ile */}
-            <section className="rounded-2xl border border-siyah/10 bg-beyaz p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
-              <h2 className="font-display text-lg font-bold text-siyah break-words">Store cüzdanım</h2>
-              <p className="mt-1 text-sm text-siyah/70 break-words">Mağazadan teslim alacağınız siparişler. Teslim alırken bu QR kodunu gösterin.</p>
-              {(!storePickupOrders || storePickupOrders.length === 0) ? (
-                <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
-                  <p className="text-sm text-siyah/60">Mağazadan teslim alacağınız siparişiniz yok.</p>
-                  <Link href="/magaza" className="mt-3 inline-block text-sm font-medium text-bordo hover:underline">Mağaza →</Link>
-                </div>
-              ) : (
-                <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2 min-w-0">
-                  {storePickupOrders.map((o) => {
-                    const pickupCode = (o as { pickup_code: string }).pickup_code;
-                    const qrData = `${baseUrl}/admin/teslim-al?code=${encodeURIComponent(pickupCode)}`;
-                    const qrImgUrl = `https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=${encodeURIComponent(qrData)}`;
-                    const pickupDate = (o as { pickup_date: string | null }).pickup_date;
-                    const status = (o as { status: string }).status;
-                    const isDelivered = status === "DELIVERED";
+                  {pastOrders.map((o) => {
+                    const deliveryMethod = (o as { delivery_method?: string }).delivery_method;
+                    const isStorePickup = deliveryMethod === "store_pickup";
                     return (
-                      <div
-                        key={o.id}
-                        className={`flex items-center gap-3 sm:gap-4 rounded-xl border p-4 min-w-0 overflow-hidden ${isDelivered ? "border-siyah/10 bg-siyah/[0.02]" : "border-siyah/10 bg-gradient-to-br from-siyah/5 to-bordo/5"}`}
-                      >
-                        <div className="h-14 w-14 sm:h-16 sm:w-16 shrink-0 overflow-hidden rounded-lg border border-siyah/10 bg-beyaz">
-                          <img src={qrImgUrl} alt="Teslim QR" width={64} height={64} className="h-full w-full object-contain" />
-                        </div>
-                        <div className="min-w-0 flex-1 overflow-hidden">
-                          <p className="font-semibold text-siyah text-sm sm:text-base truncate">Sipariş {o.order_number}</p>
-                          {pickupDate && (
-                            <p className="text-xs text-siyah/60 mt-0.5 break-words">
-                              Teslim: {new Date(pickupDate + "T12:00:00").toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
-                            </p>
+                      <li key={o.id} className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-3 min-w-0">
+                        <div className="min-w-0 flex-1">
+                          <span className="font-medium text-siyah/80 text-sm break-words">Sipariş {(o as { order_number: string }).order_number}</span>
+                          {isStorePickup && (
+                            <span className="mt-1.5 inline-flex items-center rounded-md bg-siyah/10 px-2 py-0.5 text-[11px] font-medium text-siyah/70">QR üzerinde kullanıldı · Tekrar kullanılamaz</span>
                           )}
-                          <p className="mt-0.5 font-mono text-xs text-siyah/70 truncate">Kod: {pickupCode}</p>
-                          {isDelivered && <span className="mt-1 inline-block rounded bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">Teslim alındı</span>}
                         </div>
-                      </div>
+                        <span className="text-sm text-siyah/60 shrink-0">
+                          {new Date((o as { created_at: string }).created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+                        </span>
+                      </li>
                     );
                   })}
-                </div>
-              )}
-              {storePickupOrders && storePickupOrders.length > 0 && (
-                <Link href="/magaza" className="mt-4 block text-center text-sm font-medium text-bordo hover:underline">Mağaza →</Link>
+                </ul>
               )}
             </section>
 

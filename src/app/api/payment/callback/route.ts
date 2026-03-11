@@ -45,7 +45,7 @@ async function processPaymentCallback(req: NextRequest, token: string): Promise<
 
     const { data: order, error: findError } = await supabase
       .from("orders")
-      .select("id, order_number, notes, user_id, total")
+      .select("id, order_number, notes, user_id, total, guest_email")
       .eq("payment_id", token)
       .single();
 
@@ -67,25 +67,46 @@ async function processPaymentCallback(req: NextRequest, token: string): Promise<
         })
         .eq("id", order.id);
 
-      if (order.user_id) {
-        const orderTotal = Number(order.total) || 0;
+      const orderTotal = Number(order.total) || 0;
+      let userIdToLevelUp: string | null = null;
+      if (order.user_id && orderTotal > 0) {
         const { data: profile } = await supabase
           .from("fan_profiles")
           .select("id, store_spend_total")
           .eq("user_id", order.user_id)
           .single();
-        if (profile && orderTotal > 0) {
+        if (profile) {
           const newTotal = (Number(profile.store_spend_total) || 0) + orderTotal;
           await supabase
             .from("fan_profiles")
             .update({ store_spend_total: newTotal, updated_at: new Date().toISOString() })
             .eq("id", profile.id);
-          const levelResult = await checkAndLevelUp(order.user_id);
-          if (levelResult.leveledUp && levelResult.newLevelId) {
-            return NextResponse.redirect(
-              new URL(`/odeme/basarili?orderNumber=${order.order_number}&levelUp=1&newLevel=${levelResult.newLevelId}`, base)
-            );
+          userIdToLevelUp = order.user_id;
+        }
+      } else if (!order.user_id && orderTotal > 0) {
+        const guestEmail = (order as { guest_email?: string | null }).guest_email;
+        if (guestEmail) {
+          const { data: profileByEmail } = await supabase
+            .from("fan_profiles")
+            .select("id, user_id, store_spend_total")
+            .eq("email", guestEmail)
+            .maybeSingle();
+          if (profileByEmail) {
+            const newTotal = (Number(profileByEmail.store_spend_total) || 0) + orderTotal;
+            await supabase
+              .from("fan_profiles")
+              .update({ store_spend_total: newTotal, updated_at: new Date().toISOString() })
+              .eq("id", profileByEmail.id);
+            userIdToLevelUp = profileByEmail.user_id as string;
           }
+        }
+      }
+      if (userIdToLevelUp) {
+        const levelResult = await checkAndLevelUp(userIdToLevelUp);
+        if (levelResult.leveledUp && levelResult.newLevelId) {
+          return NextResponse.redirect(
+            new URL(`/odeme/basarili?orderNumber=${order.order_number}&levelUp=1&newLevel=${levelResult.newLevelId}`, base)
+          );
         }
       }
 
