@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Trophy, Minus, XCircle } from "lucide-react";
+import { CheckCircle, Circle, XCircle } from "lucide-react";
 import { getMatches, getLeagueStandings, getNextMatch, getMackolikFixtureUrl } from "@/lib/data";
 import { getMackolikMatches } from "@/lib/mackolik";
 import { DEMO_IMAGES } from "@/lib/demo-images";
@@ -11,14 +11,14 @@ type ResultType = "W" | "D" | "L";
 function ResultBadge({ result }: { result: ResultType }) {
   if (result === "W")
     return (
-      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-700" title="Galibiyet">
-        <Trophy className="h-3.5 w-3.5" strokeWidth={2.5} />
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-emerald-500/20 text-emerald-600" title="Galibiyet">
+        <CheckCircle className="h-3.5 w-3.5" strokeWidth={2.5} />
       </span>
     );
   if (result === "D")
     return (
-      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-siyah/15 text-siyah/70" title="Beraberlik">
-        <Minus className="h-3.5 w-3.5" strokeWidth={2.5} />
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-siyah/15 text-siyah/60" title="Beraberlik">
+        <Circle className="h-3.5 w-3.5" strokeWidth={2.5} fill="currentColor" />
       </span>
     );
   return (
@@ -40,12 +40,12 @@ export default async function MaclarPage() {
     getNextMatch(),
     getMackolikFixtureUrl().then((url) => getMackolikMatches(url)),
   ]);
-  const finished = matches.filter((m) => m.status === "finished");
-  const scheduled = matches.filter((m) => m.status === "scheduled");
   const hasRealMatches = matches.length > 0 && !matches[0].id.startsWith("demo-");
   const useMackolik = mackolikMatches.length > 0 && !hasRealMatches;
   const leagueName = standings.rows.length > 0 ? standings.league_name : "İstanbul 1. Amatör Lig";
   const todayStr = new Date().toISOString().slice(0, 10);
+  // En üstte en yeni, en altta en eski (tarihe göre azalan)
+  const sortedDbMatches = [...matches].sort((a, b) => b.match_date.localeCompare(a.match_date));
 
   return (
     <div className="min-h-screen">
@@ -168,14 +168,13 @@ export default async function MaclarPage() {
                   ) : matches.length === 0 ? (
                     <tr><td colSpan={4} className="px-2 py-6 text-center text-siyah/60 text-xs">Henüz maç eklenmedi.</td></tr>
                   ) : (
-                    [...scheduled, ...finished].map((m) => {
-                      const isPastDb = m.match_date < todayStr;
+                    sortedDbMatches.map((m) => {
                       const hasScoreDb = m.goals_for != null && m.goals_against != null;
-                      const isFinished = (m.status === "finished" && hasScoreDb) || (isPastDb && hasScoreDb) || isPastDb;
                       const result: ResultType = !hasScoreDb ? "D" : m.goals_for! > m.goals_against! ? "W" : m.goals_for! < m.goals_against! ? "L" : "D";
                       const müsabakaLabel = (m.competition && m.competition.trim()) ? m.competition : leagueName;
+                      const isFinishedDb = m.status === "finished";
                       return (
-                        <tr key={m.id} className={`border-b border-siyah/5 hover:bg-siyah/[0.02] ${isPastDb ? "bg-siyah/[0.02]" : ""}`}>
+                        <tr key={m.id} className={`border-b border-siyah/5 hover:bg-siyah/[0.02] ${isFinishedDb ? "bg-siyah/[0.02]" : ""}`}>
                           <td className="px-1 py-2 sm:py-2.5 text-siyah/80 whitespace-nowrap">{new Date(m.match_date).toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "2-digit" })}</td>
                           <td className="px-1 py-2 sm:py-2.5 text-siyah/80 text-[10px] sm:text-xs truncate" title={müsabakaLabel}>{müsabakaLabel}</td>
                           <td className="min-w-0 px-1 py-2 sm:py-2.5">
@@ -195,8 +194,8 @@ export default async function MaclarPage() {
                               ) : (
                                 <span className="text-siyah/50">—</span>
                               )}
-                              <span className={`text-[10px] sm:text-xs font-medium ${isPastDb ? "text-emerald-700" : "text-bordo/80"}`}>
-                                {isPastDb ? "Bitti" : "Planlanan"}
+                              <span className={`text-[10px] sm:text-xs font-medium ${isFinishedDb ? "text-emerald-700" : "text-bordo/80"}`}>
+                                {isFinishedDb ? "Bitti" : "Planlanan"}
                               </span>
                             </div>
                           </td>
