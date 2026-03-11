@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Search,
   Eye,
@@ -8,7 +8,6 @@ import {
   Loader2,
   Package,
   X,
-  ChevronDown,
   CheckCircle,
   Truck,
   XCircle,
@@ -67,7 +66,13 @@ function formatPrice(n: number) {
   return new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", minimumFractionDigits: 2 }).format(n);
 }
 
-type Summary = { total: number; byPayment: Record<string, number> };
+type Summary = {
+  total: number;
+  byPayment: Record<string, number>;
+  totalCiro: number;
+  kargoCount: number;
+  storePickupCount: number;
+};
 
 export default function AdminSiparislerPage() {
   const [orders, setOrders] = useState<Order[]>([]);
@@ -81,10 +86,9 @@ export default function AdminSiparislerPage() {
   const [endDate, setEndDate] = useState("");
   const [selected, setSelected] = useState<Order | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [dropdownId, setDropdownId] = useState<string | null>(null);
+  const [statusModalOrder, setStatusModalOrder] = useState<Order | null>(null);
   const [notify, setNotify] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [updating, setUpdating] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -116,14 +120,6 @@ export default function AdminSiparislerPage() {
     })();
     return () => { cancelled = true; };
   }, [fetchOrders]);
-
-  useEffect(() => {
-    const onOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setDropdownId(null);
-    };
-    document.addEventListener("mousedown", onOutside);
-    return () => document.removeEventListener("mousedown", onOutside);
-  }, []);
 
   const showNotify = (type: "ok" | "err", msg: string) => {
     setNotify({ type, msg });
@@ -160,7 +156,7 @@ export default function AdminSiparislerPage() {
       showNotify("err", "İstek hatası.");
     } finally {
       setUpdating(false);
-      setDropdownId(null);
+      setStatusModalOrder(null);
     }
   };
 
@@ -171,7 +167,7 @@ export default function AdminSiparislerPage() {
       return;
     }
     setUpdating(true);
-    setDropdownId(null);
+    setStatusModalOrder(null);
     try {
       const result = await deleteOrder(orderId);
       if ("ok" in result && result.ok) {
@@ -187,33 +183,45 @@ export default function AdminSiparislerPage() {
     }
   };
 
+  const escapeHtml = (s: string) =>
+    String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+
   const printKargoEtiketi = (order: Order) => {
     if (order.deliveryMethod !== "shipping") return;
-    const addr = order.shippingAddress || "";
+    const addr = order.shippingAddress || "—";
+    const orderNo = escapeHtml(order.orderNumber);
+    const addrSafe = escapeHtml(addr).replace(/\n/g, "<br>");
+    const name = escapeHtml(order.customer.name);
+    const phone = escapeHtml(order.customer.phone || "");
+    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Kargo etiketi - ${orderNo}</title>
+<style>body{font-family:sans-serif;padding:24px;max-width:420px;margin:0 auto}
+.label{border:2px solid #222;padding:20px;font-size:14px}
+.order-no{font-size:18px;font-weight:bold;margin-bottom:12px}
+.addr{line-height:1.5;margin:8px 0}
+.customer{color:#555;margin-top:8px}
+@media print{body{padding:0}}</style></head><body>
+<div class="label">
+  <div class="order-no">Sipariş: ${orderNo}</div>
+  <div class="addr">${addrSafe}</div>
+  <div class="customer">${name}${phone ? " · " + phone : ""}</div>
+</div>
+<p style="margin-top:16px;font-size:12px;color:#666">Yazdır (Ctrl+P) veya PDF olarak kaydet</p>
+</body></html>`;
     const win = window.open("", "_blank");
-    if (!win) return;
-    win.document.write(`
-      <!DOCTYPE html>
-      <html><head><meta charset="utf-8"><title>Kargo etiketi - ${order.orderNumber}</title>
-      <style>
-        body { font-family: sans-serif; padding: 24px; max-width: 400px; margin: 0 auto; }
-        .label { border: 2px solid #333; padding: 16px; }
-        .order-no { font-size: 18px; font-weight: bold; margin-bottom: 12px; }
-        .addr { white-space: pre-line; line-height: 1.5; }
-        .customer { margin-top: 8px; color: #555; }
-      </style>
-      </head><body>
-      <div class="label">
-        <div class="order-no">Sipariş: ${order.orderNumber}</div>
-        <div class="addr">${addr.replace(/\n/g, "<br>")}</div>
-        <div class="customer">${order.customer.name} · ${order.customer.phone || ""}</div>
-      </div>
-      <p style="margin-top:16px;font-size:12px;color:#666">Yazdır (Ctrl+P) veya PDF olarak kaydet</p>
-      </body></html>
-    `);
+    if (!win) {
+      showNotify("err", "Popup engellendi. Lütfen tarayıcıda açılır pencerelere izin verin.");
+      return;
+    }
+    win.document.write(html);
     win.document.close();
     win.focus();
-    setTimeout(() => win.print(), 300);
+    setTimeout(() => {
+      win.print();
+    }, 400);
   };
 
   if (loading) {
@@ -253,18 +261,26 @@ export default function AdminSiparislerPage() {
       </div>
 
       {summary && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          <div className="rounded-xl border border-bordo/20 bg-bordo/5 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase text-bordo/80">Toplam ciro</p>
+            <p className="text-xl font-bold text-bordo sm:text-2xl">{formatPrice(summary.totalCiro ?? 0)}</p>
+          </div>
+          <div className="rounded-xl border border-indigo-100 bg-indigo-50/50 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase text-indigo-700">Kargo edilecek</p>
+            <p className="text-2xl font-bold text-indigo-800">{summary.kargoCount ?? 0}</p>
+          </div>
+          <div className="rounded-xl border border-amber-100 bg-amber-50/50 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase text-amber-700">Mağazadan teslim</p>
+            <p className="text-2xl font-bold text-amber-800">{summary.storePickupCount ?? 0}</p>
+          </div>
           <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium uppercase text-gray-500">Toplam</p>
+            <p className="text-xs font-medium uppercase text-gray-500">Toplam sipariş</p>
             <p className="text-2xl font-bold text-gray-900">{summary.total}</p>
           </div>
           <div className="rounded-xl border border-green-100 bg-green-50/50 p-4 shadow-sm">
             <p className="text-xs font-medium uppercase text-green-700">Ödendi</p>
             <p className="text-2xl font-bold text-green-800">{summary.byPayment.PAID ?? 0}</p>
-          </div>
-          <div className="rounded-xl border border-yellow-100 bg-yellow-50/50 p-4 shadow-sm">
-            <p className="text-xs font-medium uppercase text-yellow-700">Bekliyor</p>
-            <p className="text-2xl font-bold text-yellow-800">{summary.byPayment.PENDING ?? 0}</p>
           </div>
           <div className="rounded-xl border border-red-100 bg-red-50/50 p-4 shadow-sm">
             <p className="text-xs font-medium uppercase text-red-700">Başarısız</p>
@@ -401,7 +417,7 @@ export default function AdminSiparislerPage() {
                         </span>
                       </td>
                       <td className="p-4">
-                        <div className="relative flex items-center gap-1" ref={dropdownId === order.id ? dropdownRef : null}>
+                        <div className="flex items-center gap-1 flex-wrap">
                           <button
                             type="button"
                             onClick={() => {
@@ -413,50 +429,24 @@ export default function AdminSiparislerPage() {
                           >
                             <Eye className="h-5 w-5 text-gray-500" />
                           </button>
-                          <div className="relative">
+                          <button
+                            type="button"
+                            onClick={() => setStatusModalOrder(order)}
+                            className="rounded-lg px-2.5 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 border border-gray-200"
+                            title="Durum güncelle"
+                          >
+                            Durum
+                          </button>
+                          {order.deliveryMethod === "shipping" && order.paymentStatus === "PAID" && (
                             <button
                               type="button"
-                              onClick={() => setDropdownId(dropdownId === order.id ? null : order.id)}
-                              className="rounded-lg p-2 hover:bg-gray-100"
-                              title="Durum"
+                              onClick={() => printKargoEtiketi(order)}
+                              className="rounded-lg p-2 hover:bg-indigo-50 text-indigo-600"
+                              title="Kargo etiketi yazdır"
                             >
-                              <ChevronDown className="h-5 w-5 text-gray-500" />
+                              <Printer className="h-5 w-5" />
                             </button>
-                            {dropdownId === order.id && (
-                              <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-xl border border-gray-100 bg-white py-2 shadow-xl">
-                                <p className="border-b border-gray-100 px-3 py-2 text-xs font-medium uppercase text-gray-400">
-                                  Durum güncelle
-                                </p>
-                                {(["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"] as const).map(
-                                  (status) => (
-                                    <button
-                                      key={status}
-                                      type="button"
-                                      disabled={order.status === status || updating}
-                                      onClick={() => handleUpdateStatus(order.id, status)}
-                                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-50"
-                                    >
-                                      {statusConfig[status].label}
-                                    </button>
-                                  )
-                                )}
-                                {order.paymentStatus === "FAILED" && (
-                                  <>
-                                    <div className="my-1 border-t border-gray-100" />
-                                    <button
-                                      type="button"
-                                      disabled={updating}
-                                      onClick={() => handleDeleteOrder(order.id)}
-                                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                      Siparişi sil
-                                    </button>
-                                  </>
-                                )}
-                              </div>
-                            )}
-                          </div>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -562,6 +552,50 @@ export default function AdminSiparislerPage() {
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Durum güncelle modal — ortada, dropdown yerine */}
+      {statusModalOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setStatusModalOrder(null)} />
+          <div className="relative w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-6 shadow-xl">
+            <h3 className="mb-4 text-lg font-bold text-gray-900">Durum güncelle · {statusModalOrder.orderNumber}</h3>
+            <div className="flex flex-col gap-2">
+              {(["PENDING", "PROCESSING", "SHIPPED", "DELIVERED", "CANCELLED"] as const).map((status) => (
+                <button
+                  key={status}
+                  type="button"
+                  disabled={statusModalOrder.status === status || updating}
+                  onClick={() => handleUpdateStatus(statusModalOrder.id, status)}
+                  className={`rounded-xl border px-4 py-3 text-left text-sm font-medium transition ${statusModalOrder.status === status ? "border-bordo bg-bordo/10 text-bordo cursor-default" : "border-gray-200 hover:bg-gray-50"}`}
+                >
+                  {statusConfig[status].label}
+                </button>
+              ))}
+              {statusModalOrder.paymentStatus === "FAILED" && (
+                <>
+                  <div className="my-2 border-t border-gray-100" />
+                  <button
+                    type="button"
+                    disabled={updating}
+                    onClick={() => handleDeleteOrder(statusModalOrder.id)}
+                    className="rounded-xl border border-red-200 px-4 py-3 text-left text-sm font-medium text-red-600 hover:bg-red-50"
+                  >
+                    <Trash2 className="mr-2 inline h-4 w-4" />
+                    Siparişi sil
+                  </button>
+                </>
+              )}
+            </div>
+            <button
+              type="button"
+              onClick={() => setStatusModalOrder(null)}
+              className="mt-4 w-full rounded-xl border border-gray-200 py-2.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
+            >
+              Kapat
+            </button>
           </div>
         </div>
       )}

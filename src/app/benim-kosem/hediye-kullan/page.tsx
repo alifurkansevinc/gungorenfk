@@ -18,7 +18,7 @@ export default async function HediyeKullanPage() {
   const levelId = (profile as { fan_level_id?: number } | null)?.fan_level_id ?? 1;
   const [quota, usedCount, products] = await Promise.all([
     getGiftQuotaForLevel(levelId),
-    supabase.from("gift_redemptions").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("redemption_year", new Date().getFullYear()).then((r) => r.count ?? 0),
+    supabase.from("gift_redemptions").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("redemption_year", new Date().getFullYear()).eq("granted_by_admin", false).then((r) => r.count ?? 0),
     getGiftEligibleProducts(),
   ]);
 

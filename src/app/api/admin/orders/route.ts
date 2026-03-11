@@ -22,17 +22,40 @@ export async function GET(req: NextRequest) {
 
   const supabase = createServiceRoleClient();
 
-  let summary: { total: number; byPayment: Record<string, number> } | undefined;
+  let summary: {
+    total: number;
+    byPayment: Record<string, number>;
+    totalCiro: number;
+    kargoCount: number;
+    storePickupCount: number;
+  } | undefined;
   if (withSummary) {
     const { data: allRows } = await supabase
       .from("orders")
-      .select("payment_status");
+      .select("payment_status, delivery_method, status, total");
     const byPayment: Record<string, number> = { PENDING: 0, PAID: 0, FAILED: 0, REFUNDED: 0 };
+    let totalCiro = 0;
+    let kargoCount = 0;
+    let storePickupCount = 0;
     for (const r of allRows ?? []) {
-      const ps = (r as { payment_status: string }).payment_status ?? "PENDING";
+      const row = r as { payment_status: string; delivery_method: string; status: string; total: number };
+      const ps = row.payment_status ?? "PENDING";
       byPayment[ps] = (byPayment[ps] ?? 0) + 1;
+      if (ps === "PAID") {
+        totalCiro += Number(row.total) || 0;
+        const dm = row.delivery_method ?? "shipping";
+        const st = row.status ?? "";
+        if (dm === "shipping" && st !== "DELIVERED" && st !== "CANCELLED") kargoCount += 1;
+        if (dm === "store_pickup" && st !== "DELIVERED") storePickupCount += 1;
+      }
     }
-    summary = { total: allRows?.length ?? 0, byPayment };
+    summary = {
+      total: allRows?.length ?? 0,
+      byPayment,
+      totalCiro,
+      kargoCount,
+      storePickupCount,
+    };
   }
 
   let query = supabase

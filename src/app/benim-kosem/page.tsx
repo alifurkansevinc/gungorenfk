@@ -518,12 +518,18 @@ export default async function BenimKosemPage() {
               )}
             </section>
 
-            {/* Hediye haklarım — rütbeden kazanılan hediye; mağaza ürünü ücretsiz, QR ile teslim */}
-            {giftQuota > 0 && (
+            {/* Hediye haklarım — rütbeden kazanılan + admin tarafından verilen hediyeler; mağaza ürünü, QR ile teslim */}
+            {(giftQuota > 0 || (pendingGifts && pendingGifts.length > 0)) && (
               <section className="rounded-2xl border border-siyah/10 bg-beyaz p-4 sm:p-6 shadow-sm min-w-0 overflow-hidden">
                 <h2 className="font-display text-lg font-bold text-siyah break-words">Hediye haklarım</h2>
-                <p className="mt-1 text-sm text-siyah/70 break-words">Rütbenizden kazanılan hediyeler mağaza ürünü olarak verilir; ücretsiz, QR ile mağazadan teslim alırsınız.</p>
-                <p className="mt-2 text-sm font-medium text-siyah break-words">Bu yıl: <span className="text-bordo">{giftUsedCount ?? 0} / {giftQuota}</span> hediye kullandınız.</p>
+                <p className="mt-1 text-sm text-siyah/70 break-words">
+                  {giftQuota > 0
+                    ? "Rütbenizden kazanılan hediyeler mağaza ürünü olarak verilir; ücretsiz, QR ile mağazadan teslim alırsınız."
+                    : "Kulüpten size verilen hediyeler; mağazada bu QR ile teslim alabilirsiniz."}
+                </p>
+                {giftQuota > 0 && (
+                  <p className="mt-2 text-sm font-medium text-siyah break-words">Bu yıl: <span className="text-bordo">{giftUsedCount ?? 0} / {giftQuota}</span> hediye kullandınız.</p>
+                )}
                 {pendingGifts && pendingGifts.length > 0 && (
                   <div className="mt-4 grid gap-4 grid-cols-1 sm:grid-cols-2 min-w-0">
                     {pendingGifts.map((g) => {
@@ -546,7 +552,7 @@ export default async function BenimKosemPage() {
                     })}
                   </div>
                 )}
-                {(giftUsedCount ?? 0) < giftQuota && (
+                {giftQuota > 0 && (giftUsedCount ?? 0) < giftQuota && (
                   <Link href="/benim-kosem/hediye-kullan" className="mt-4 inline-block rounded-lg bg-bordo px-4 py-2 text-sm font-medium text-beyaz hover:bg-bordo/90">Hediye hakkını kullan</Link>
                 )}
               </section>
