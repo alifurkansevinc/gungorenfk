@@ -3,15 +3,43 @@ import { createServiceRoleClient } from "@/lib/supabase/service";
 import { retrieveCheckoutForm } from "@/lib/iyzico";
 import { checkAndLevelUp } from "@/lib/fan-level";
 
+function getBaseUrl(req: NextRequest): string {
+  return req.nextUrl.origin;
+}
+
+export async function GET(req: NextRequest) {
+  const token = req.nextUrl.searchParams.get("token")?.trim();
+  if (!token) {
+    return NextResponse.redirect(new URL("/odeme/hata?error=token_missing", getBaseUrl(req)));
+  }
+  try {
+    return await processPaymentCallback(req, token);
+  } catch (err) {
+    console.error("Payment callback GET error:", err);
+    return NextResponse.redirect(
+      new URL(`/odeme/hata?error=${encodeURIComponent(err instanceof Error ? err.message : "Bir hata oluştu")}`, getBaseUrl(req))
+    );
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
-    const token = formData.get("token") as string | null;
-
+    const token = (formData.get("token") as string | null)?.trim() ?? null;
     if (!token) {
-      return NextResponse.redirect(new URL("/odeme/hata?error=token_missing", req.url));
+      return NextResponse.redirect(new URL("/odeme/hata?error=token_missing", getBaseUrl(req)));
     }
+    return await processPaymentCallback(req, token);
+  } catch (err) {
+    console.error("Payment callback error:", err);
+    return NextResponse.redirect(
+      new URL(`/odeme/hata?error=${encodeURIComponent(err instanceof Error ? err.message : "Bir hata oluştu")}`, getBaseUrl(req))
+    );
+  }
+}
 
+async function processPaymentCallback(req: NextRequest, token: string): Promise<NextResponse> {
+  try {
     const result = await retrieveCheckoutForm(token);
     const supabase = createServiceRoleClient();
 
@@ -23,10 +51,10 @@ export async function POST(req: NextRequest) {
 
     if (findError || !order) {
       console.error("Order not found for token:", token, findError);
-      return NextResponse.redirect(new URL("/odeme/hata?error=order_not_found", req.url));
+      return NextResponse.redirect(new URL("/odeme/hata?error=order_not_found", getBaseUrl(req)));
     }
 
-    const base = req.nextUrl.origin;
+    const base = getBaseUrl(req);
 
     if (result.status === "success" && result.paymentStatus === "SUCCESS") {
       await supabase
@@ -76,9 +104,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(new URL(`/odeme/hata?error=${encodeURIComponent(errorMessage)}`, base));
   } catch (err) {
     console.error("Payment callback error:", err);
-    const base = req.nextUrl.origin;
     return NextResponse.redirect(
-      new URL(`/odeme/hata?error=${encodeURIComponent(err instanceof Error ? err.message : "Bir hata oluştu")}`, base)
+      new URL(`/odeme/hata?error=${encodeURIComponent(err instanceof Error ? err.message : "Bir hata oluştu")}`, getBaseUrl(req))
     );
   }
 }

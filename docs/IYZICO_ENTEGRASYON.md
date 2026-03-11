@@ -1,6 +1,55 @@
 # iyzico Ödeme Entegrasyonu
 
-Apeirona projesindeki iyzico entegrasyonu Güngören FK mağazasına uyarlandı.
+Güngören FK mağaza, bilet ve bağış ödemeleri iyzico Checkout Form ile yapılıyor.
+
+## iyzico'yu Nasıl Bağlarız?
+
+### 1. iyzico hesabı
+- [iyzico.com](https://www.iyzico.com) üzerinden kayıt olun / giriş yapın.
+- **Sandbox (test):** Panelden sandbox API anahtarlarını alın.
+- **Canlı:** Mağaza/uygulama bilgilerinizi girip onay sonrası canlı API anahtarlarını alın.
+
+### 2. API anahtarlarını alın
+- iyzico Panel → **Ayarlar** / **Entegrasyon** (veya API Anahtarları).
+- **API Key** ve **Secret Key** değerlerini kopyalayın (sandbox veya canlı).
+
+### 3. Ortam değişkenleri (.env)
+Proje kökünde `.env` veya `.env.local`:
+
+```env
+IYZICO_API_KEY=sandbox-veya-canli-api-key
+IYZICO_SECRET_KEY=sandbox-veya-canli-secret-key
+# Test: https://sandbox-api.iyzipay.com  |  Canlı: https://api.iyzipay.com
+IYZICO_BASE_URL=https://sandbox-api.iyzipay.com
+```
+
+Vercel kullanıyorsanız: **Project → Settings → Environment Variables** içine aynı üç değişkeni ekleyin.
+
+### 4. Callback URL
+Ödeme sonrası iyzico kullanıcıyı şu adrese yönlendirir: `{SITE_URL}/api/payment/callback`.  
+Kod bu adresi otomatik üretir: `NEXT_PUBLIC_BASE_URL` veya (Vercel’de) `https://${VERCEL_URL}`.  
+Canlı sitede doğru çalışması için:
+
+```env
+NEXT_PUBLIC_BASE_URL=https://siteniz.com
+```
+
+iyzico panelde ayrıca callback URL girmeniz gerekmez; istek içinde gönderiliyor.
+
+### 5. Veritabanı
+Supabase’de `008_orders_and_iyzico.sql` migration’ı uygulanmış olmalı. Uygulanmadıysa SQL Editor’den çalıştırın.
+
+### 6. Test (sandbox)
+- Sandbox anahtarları ve `IYZICO_BASE_URL=https://sandbox-api.iyzipay.com` ile
+- Mağazadan sepete ekleyip `/odeme` → adres → "iyzico ile ödemeye geç"
+- iyzico dokümanındaki test kartlarıyla deneyin
+
+### 7. Canlıya geçiş
+- iyzico’dan canlı **API Key** ve **Secret Key** alın.
+- `.env` / Vercel’de bu değerleri yazın ve `IYZICO_BASE_URL=https://api.iyzipay.com` yapın.
+- Projeyi yeniden deploy edin.
+
+---
 
 ## Yapılanlar
 
