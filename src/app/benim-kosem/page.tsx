@@ -79,6 +79,7 @@ export default async function BenimKosemPage() {
 
   const profileStoreSpend = Number((profile as { store_spend_total?: number }).store_spend_total ?? 0);
   const donationTotal = Number((profile as { donation_total?: number }).donation_total ?? 0);
+  const userEmail = (profile as { email?: string | null }).email ?? user.email ?? "";
 
   // Efektif mağaza harcaması: üye + aynı e-postayla yapılan misafir siparişlerinin toplamı (barem doğru ilerlesin)
   const { data: paidOrdersForSpend } = await supabase
@@ -98,7 +99,6 @@ export default async function BenimKosemPage() {
 
   // Mağazadan teslim alınacak siparişler (Store cüzdanım) — üye siparişleri + aynı e-posta ile yapılmış misafir siparişleri
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-  const userEmail = (profile as { email?: string | null }).email ?? user.email ?? "";
   const { data: ordersByUser } = await supabase
     .from("orders")
     .select("id, order_number, pickup_code, pickup_date, status, created_at")
