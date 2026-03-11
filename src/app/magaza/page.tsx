@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/server";
-import { getFeaturedProducts, getStoreDiscountForLevel, getEffectiveProductPrice, getLevelSortOrder, isBeRozetProduct } from "@/lib/data";
+import { getFeaturedProducts, getStoreDiscountForLevel, getEffectiveProductPrice, getMemberProductDiscountsForUser } from "@/lib/data";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 
 export const metadata = {
@@ -12,12 +12,15 @@ export const metadata = {
 export default async function MagazaPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  let discountPercent = 0;
-  let levelSortOrder = 1;
+  let levelDiscountPercent = 0;
+  let memberDiscounts: Record<string, number> = {};
   if (user) {
     const { data: profile } = await supabase.from("fan_profiles").select("fan_level_id").eq("user_id", user.id).single();
     const levelId = (profile as { fan_level_id?: number } | null)?.fan_level_id ?? 1;
-    [discountPercent, levelSortOrder] = await Promise.all([getStoreDiscountForLevel(levelId), getLevelSortOrder(levelId)]);
+    [levelDiscountPercent, memberDiscounts] = await Promise.all([
+      getStoreDiscountForLevel(levelId),
+      getMemberProductDiscountsForUser(user.id),
+    ]);
   }
 
   const products = await getFeaturedProducts(50);
@@ -33,9 +36,9 @@ export default async function MagazaPage() {
             <span className="text-siyah font-medium">Mağaza</span>
           </nav>
           <h1 className="font-display mt-3 text-2xl font-bold text-siyah sm:text-3xl">Mağaza</h1>
-          {discountPercent > 0 && (
+          {levelDiscountPercent > 0 && (
             <p className="mt-2 rounded-lg bg-bordo/10 px-3 py-1.5 text-sm font-medium text-bordo inline-block">
-              Üye indiriminiz: %{discountPercent} — Tüm fiyatlara uygulanıyor
+              Üye indiriminiz: %{levelDiscountPercent} — Ürün bazlı indirimler de uygulanır
             </p>
           )}
         </div>
@@ -46,10 +49,9 @@ export default async function MagazaPage() {
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {products.map((p) => {
             const listPrice = Number(p.price);
-            const sku = (p as { sku?: string }).sku;
-            const effectivePrice = getEffectiveProductPrice(listPrice, discountPercent, p.slug, levelSortOrder, sku);
-            const isFreeBeRozet = isBeRozetProduct(p.slug, sku) && levelSortOrder >= 2 && effectivePrice === 0;
-            const hasDiscount = (discountPercent > 0 && effectivePrice < listPrice) || isFreeBeRozet;
+            const productDiscount = Math.max(levelDiscountPercent, memberDiscounts[p.id] ?? 0);
+            const effectivePrice = getEffectiveProductPrice(listPrice, productDiscount);
+            const hasDiscount = productDiscount > 0 && effectivePrice < listPrice;
             return (
               <Link
                 key={p.id}
@@ -65,11 +67,8 @@ export default async function MagazaPage() {
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                     unoptimized
                   />
-                  {isFreeBeRozet && (
-                    <span className="absolute top-2 right-2 rounded-full bg-bordo px-2 py-0.5 text-xs font-bold text-beyaz">Ücretsiz (rozet hakkı)</span>
-                  )}
-                  {hasDiscount && !isFreeBeRozet && (
-                    <span className="absolute top-2 right-2 rounded-full bg-bordo px-2 py-0.5 text-xs font-bold text-beyaz">%{discountPercent} indirim</span>
+                  {hasDiscount && (
+                    <span className="absolute top-2 right-2 rounded-full bg-bordo px-2 py-0.5 text-xs font-bold text-beyaz">%{productDiscount} indirim</span>
                   )}
                   <div className="absolute inset-0 bg-gradient-to-t from-siyah/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
@@ -82,9 +81,7 @@ export default async function MagazaPage() {
                   )}
                   <div className="mt-4 flex items-end justify-between gap-2">
                     <div className="flex flex-wrap items-baseline gap-2">
-                      {isFreeBeRozet ? (
-                        <span className="text-xl font-bold text-bordo">Ücretsiz</span>
-                      ) : hasDiscount ? (
+                      {hasDiscount ? (
                         <>
                           <span className="text-sm text-siyah/50 line-through">{listPrice.toFixed(2)} ₺</span>
                           <span className="text-xl font-bold text-bordo">{effectivePrice.toFixed(2)} ₺</span>

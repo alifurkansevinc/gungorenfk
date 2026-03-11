@@ -28,6 +28,7 @@ import {
   ArrowLeftRight,
   LayoutGrid,
   ShieldCheck,
+  Gift,
 } from "lucide-react";
 
 const menuItems = [
@@ -41,6 +42,7 @@ const menuItems = [
   { href: "/admin/biletler", label: "Biletler", icon: Ticket },
   { href: "/admin/ayarlar", label: "Ayarlar", icon: Settings },
   { href: "/admin/taraftarlar", label: "Taraftarlar", icon: Users },
+  { href: "/admin/hediye-verme", label: "Hediye Verme", icon: Gift },
   { href: "/admin/maclar", label: "Maçlar", icon: Calendar },
   { href: "/admin/kadro", label: "Kadro", icon: Shirt },
   { href: "/admin/transferler", label: "Transferler", icon: ArrowLeftRight },

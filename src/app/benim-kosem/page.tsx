@@ -66,7 +66,8 @@ export default async function BenimKosemPage() {
     .from("gift_redemptions")
     .select("id", { count: "exact", head: true })
     .eq("user_id", user.id)
-    .eq("redemption_year", year);
+    .eq("redemption_year", year)
+    .eq("granted_by_admin", false);
   const { data: pendingGifts } = await supabase
     .from("gift_redemptions")
     .select("id, qr_code, store_products(name)")
@@ -222,14 +223,9 @@ export default async function BenimKosemPage() {
                 </>
               )}
               {currentLevel.sort_order >= 2 && (
-                <div className="mt-4 rounded-xl border border-bordo/20 bg-bordo/5 p-4">
-                  <p className="text-sm font-medium text-siyah/90 break-words">
-                    Takım rozetini mağazadan <strong className="text-bordo">%100 indirimli</strong> olarak alabilirsin. Kargo istersen kargo ücreti uygulanır.
-                  </p>
-                  <Link href="/magaza" className="mt-2 inline-block text-sm font-semibold text-bordo hover:underline">
-                    Mağazaya git →
-                  </Link>
-                </div>
+                <p className="mt-2 text-xs text-siyah/60 break-words">
+                  Takım rozeti (beyaz rozet) kulüp tarafından QR kod ile verilir; Store cüzdanında görünecektir.
+                </p>
               )}
             </section>
 

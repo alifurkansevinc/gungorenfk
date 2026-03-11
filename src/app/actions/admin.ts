@@ -919,3 +919,112 @@ export async function updateMackolikFixtureUrl(url: string) {
   revalidatePath("/maclar");
   return { ok: true };
 }
+
+const PENDING_DONATION_EXPIRE_DAYS = 3;
+
+/** Bekleyen (PENDING) bağışlar 3 gün içinde ödenmezse sistemden silinir. Bağışlar sayfası yüklenirken çağrılır. */
+export async function expireOldPendingDonations(): Promise<{ expired: number }> {
+  const s = createServiceRoleClient();
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - PENDING_DONATION_EXPIRE_DAYS);
+  const cutoffIso = cutoff.toISOString();
+  const { data: toDelete } = await s
+    .from("donations")
+    .select("id")
+    .eq("payment_status", "PENDING")
+    .lt("created_at", cutoffIso);
+  if (!toDelete?.length) return { expired: 0 };
+  const { error } = await s.from("donations").delete().in("id", toDelete.map((r) => r.id));
+  if (error) return { expired: 0 };
+  revalidatePath("/admin/bagislar");
+  return { expired: toDelete.length };
+}
+
+/** Bağış siler. Ödendi (PAID) statüsündeki kayıtlar silinemez (DB trigger da engeller). */
+export async function deleteDonation(id: string): Promise<{ ok: true } | { error: string }> {
+  const s = createServiceRoleClient();
+  const { data: row, error: fetchErr } = await s.from("donations").select("payment_status").eq("id", id).single();
+  if (fetchErr || !row) return { error: "Bağış bulunamadı." };
+  if (row.payment_status === "PAID") return { error: "Ödendi statüsündeki bağış silinemez." };
+  const { error: delErr } = await s.from("donations").delete().eq("id", id);
+  if (delErr) return { error: delErr.message };
+  revalidatePath("/admin/bagislar");
+  return { ok: true };
+}
+
+// ——— Hediye Verme (admin: üyeye hediye veya ürün bazlı indirim) ———
+function generateGiftQrCode(): string {
+  return "GIFT-" + Math.random().toString(36).slice(2, 10).toUpperCase() + Date.now().toString(36).slice(-6).toUpperCase();
+}
+
+/** Admin: Üyeye mağaza ürünü hediye verir (QR ile teslim). Ürün ürün, adet kadar kayıt oluşturulur. */
+export async function adminGiveGift(
+  userId: string,
+  productId: string,
+  quantity: number
+): Promise<{ ok: true; qrCodes: string[] } | { error: string }> {
+  const s = createServiceRoleClient();
+  const qty = Math.max(1, Math.min(Number(quantity) || 1, 50));
+  const { data: product } = await s.from("store_products").select("id, name").eq("id", productId).eq("is_active", true).single();
+  if (!product) return { error: "Ürün bulunamadı veya pasif." };
+  const year = new Date().getFullYear();
+  const rows: { user_id: string; product_id: string; qr_code: string; status: string; redemption_year: number; granted_by_admin: boolean }[] = [];
+  const used = new Set<string>();
+  for (let i = 0; i < qty; i++) {
+    let qr = generateGiftQrCode();
+    while (used.has(qr)) qr = generateGiftQrCode();
+    used.add(qr);
+    rows.push({
+      user_id: userId,
+      product_id: productId,
+      qr_code: qr,
+      status: "pending_pickup",
+      redemption_year: year,
+      granted_by_admin: true,
+    });
+  }
+  const { error } = await s.from("gift_redemptions").insert(rows);
+  if (error) return { error: error.message };
+  revalidatePath("/admin/hediye-verme");
+  revalidatePath("/benim-kosem");
+  return { ok: true, qrCodes: rows.map((r) => r.qr_code) };
+}
+
+/** Admin: Üyeye ürün bazlı indirim atar (ürün ürün). items: { productId, discountPercent }[]; 0 = indirimi kaldır. */
+export async function adminSetMemberProductDiscounts(
+  userId: string,
+  items: { productId: string; discountPercent: number }[]
+): Promise<{ ok: true } | { error: string }> {
+  const s = createServiceRoleClient();
+  const now = new Date().toISOString();
+  for (const { productId, discountPercent } of items) {
+    const pct = Math.min(100, Math.max(0, Number(discountPercent) || 0));
+    if (pct === 0) {
+      await s.from("member_product_discounts").delete().eq("user_id", userId).eq("product_id", productId);
+    } else {
+      await s.from("member_product_discounts").upsert(
+        { user_id: userId, product_id: productId, discount_percent: pct, updated_at: now },
+        { onConflict: "user_id,product_id" }
+      );
+    }
+  }
+  revalidatePath("/admin/hediye-verme");
+  revalidatePath("/magaza");
+  revalidatePath("/benim-kosem");
+  return { ok: true };
+}
+
+/** Admin: Seçilen üyenin ürün bazlı indirimlerini döner (ürün id -> yüzde). */
+export async function adminGetMemberDiscounts(userId: string): Promise<Record<string, number>> {
+  const s = createServiceRoleClient();
+  const { data } = await s
+    .from("member_product_discounts")
+    .select("product_id, discount_percent")
+    .eq("user_id", userId);
+  const out: Record<string, number> = {};
+  for (const row of data ?? []) {
+    const id = (row as { product_id: string }).product_id;
+    out[id] = Math.min(100, Math.max(0, Number((row as { discount_percent: number }).discount_percent)));
+  }
+  return out;
+}

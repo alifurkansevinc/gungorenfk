@@ -35,7 +35,8 @@ export async function POST(req: NextRequest) {
     .from("gift_redemptions")
     .select("id", { count: "exact", head: true })
     .eq("user_id", user.id)
-    .eq("redemption_year", year);
+    .eq("redemption_year", year)
+    .eq("granted_by_admin", false);
   const used = count ?? 0;
   if (used >= quota) return NextResponse.json({ success: false, error: "Bu yıl hediye hakkınız kalmadı." }, { status: 400 });
 

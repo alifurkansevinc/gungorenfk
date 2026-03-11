@@ -407,9 +407,8 @@ export function getEffectiveStorePrice(listPrice: number, discountPercent: numbe
   return Math.round(discounted * 100) / 100;
 }
 
-/** Maestro ve sonrası rozet sahipleri Be-Rozet / takım rozetini mağazadan %100 indirimli alabilir (kargo ücreti ayrı). */
+/** Beyaz / Be-Rozet artık mağazada ücretsiz değil; admin Hediye Verme ile QR olarak üyeye verilir. */
 export const BE_ROZET_PRODUCT_SLUGS = ["be-rozet", "takim-rozeti"] as const;
-/** Stok kodu BE-ROZET olan ürün de rozet hakkıyla ücretsiz (slug farklı olsa bile). */
 export const BE_ROZET_SKU = "BE-ROZET";
 
 export function isBeRozetProduct(slug: string | null | undefined, sku?: string | null): boolean {
@@ -417,22 +416,49 @@ export function isBeRozetProduct(slug: string | null | undefined, sku?: string |
   return !!slug && BE_ROZET_PRODUCT_SLUGS.includes(slug as (typeof BE_ROZET_PRODUCT_SLUGS)[number]);
 }
 
-/** Rütbenin sıra numarası (Maestro = 2, sonrası 3,4,5). 2 ve üzeri rozet hakkıyla Be-Rozet ücretsiz. */
 export async function getLevelSortOrder(levelId: number): Promise<number> {
   const supabase = await createClient();
   const { data } = await supabase.from("fan_levels").select("sort_order").eq("id", levelId).single();
   return (data as { sort_order?: number } | null)?.sort_order ?? 1;
 }
 
-/** Ürün için geçerli fiyat: Be-Rozet (slug veya sku BE-ROZET) ve Maestro+ ise 0, yoksa indirimli fiyat. */
+/** Üye için ürün bazlı indirim (admin ataması). Yoksa 0. */
+export async function getMemberProductDiscount(userId: string | null, productId: string): Promise<number> {
+  if (!userId) return 0;
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("member_product_discounts")
+    .select("discount_percent")
+    .eq("user_id", userId)
+    .eq("product_id", productId)
+    .maybeSingle();
+  return data ? Math.min(100, Math.max(0, Number(data.discount_percent))) : 0;
+}
+
+/** Üyenin tüm ürün bazlı indirimleri (productId -> yüzde). Mağaza listesinde tek sorguda kullanılır. */
+export async function getMemberProductDiscountsForUser(userId: string | null): Promise<Record<string, number>> {
+  if (!userId) return {};
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("member_product_discounts")
+    .select("product_id, discount_percent")
+    .eq("user_id", userId);
+  const out: Record<string, number> = {};
+  for (const row of data ?? []) {
+    const id = (row as { product_id: string }).product_id;
+    out[id] = Math.min(100, Math.max(0, Number((row as { discount_percent: number }).discount_percent)));
+  }
+  return out;
+}
+
+/** Ürün için geçerli fiyat: sadece indirim yüzdesi uygulanır (beyaz rozet artık mağazada ücretsiz değil; admin hediye ile QR verir). */
 export function getEffectiveProductPrice(
   listPrice: number,
   discountPercent: number,
-  productSlug: string | null | undefined,
-  levelSortOrder: number,
-  productSku?: string | null
+  _productSlug?: string | null,
+  _levelSortOrder?: number,
+  _productSku?: string | null
 ): number {
-  if (isBeRozetProduct(productSlug, productSku) && levelSortOrder >= 2) return 0;
   return getEffectiveStorePrice(listPrice, discountPercent);
 }
 

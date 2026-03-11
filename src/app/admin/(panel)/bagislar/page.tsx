@@ -1,16 +1,44 @@
 import { getAdminSupabase } from "../../actions";
-import { Heart, TrendingUp, Calendar } from "lucide-react";
+import { Heart, TrendingUp } from "lucide-react";
 import { AdminBagislarFilter } from "./AdminBagislarFilter";
+import { expireOldPendingDonations } from "@/app/actions/admin";
+
+function parseDateRange(
+  baslangic?: string,
+  bitis?: string
+): { start: string | null; end: string | null } {
+  if (!baslangic || !bitis) return { start: null, end: null };
+  const startMatch = baslangic.match(/^\d{4}-\d{2}-\d{2}$/);
+  const endMatch = bitis.match(/^\d{4}-\d{2}-\d{2}$/);
+  if (!startMatch || !endMatch) return { start: null, end: null };
+  return {
+    start: `${baslangic}T00:00:00Z`,
+    end: `${bitis}T23:59:59.999Z`,
+  };
+}
 
 export default async function AdminBagislarPage({
   searchParams,
 }: {
-  searchParams: Promise<{ ay?: string }>;
+  searchParams: Promise<{
+    ay?: string;
+    baslangic?: string;
+    bitis?: string;
+    isim?: string;
+    tutarMin?: string;
+    tutarMax?: string;
+  }>;
 }) {
-  const { ay } = await searchParams;
+  const params = await searchParams;
+  const { ay, baslangic, bitis, isim, tutarMin, tutarMax } = params;
+
+  await expireOldPendingDonations();
+
   const supabase = await getAdminSupabase();
 
   const monthFilter = ay && /^\d{4}-\d{2}$/.test(ay) ? ay : null;
+  const { start: rangeStart, end: rangeEnd } = parseDateRange(baslangic, bitis);
+
   const startOfMonth = monthFilter ? `${monthFilter}-01T00:00:00Z` : null;
   const endOfMonth = monthFilter
     ? new Date(new Date(startOfMonth!).getFullYear(), new Date(startOfMonth!).getMonth() + 1, 1).toISOString().slice(0, 10) + "T00:00:00Z"
@@ -22,19 +50,37 @@ export default async function AdminBagislarPage({
     .order("created_at", { ascending: false })
     .limit(500);
 
-  if (startOfMonth && endOfMonth) {
+  if (rangeStart && rangeEnd) {
+    donationsQuery.gte("created_at", rangeStart).lte("created_at", rangeEnd);
+  } else if (startOfMonth && endOfMonth) {
     donationsQuery.gte("created_at", startOfMonth).lt("created_at", endOfMonth);
   }
 
-  const { data: donations } = await donationsQuery;
+  const numTutarMin = tutarMin != null && tutarMin !== "" ? parseFloat(tutarMin) : NaN;
+  const numTutarMax = tutarMax != null && tutarMax !== "" ? parseFloat(tutarMax) : NaN;
+  if (!Number.isNaN(numTutarMin)) donationsQuery.gte("amount", numTutarMin);
+  if (!Number.isNaN(numTutarMax)) donationsQuery.lte("amount", numTutarMax);
 
-  const userIds = [...new Set((donations ?? []).map((d) => d.user_id).filter(Boolean))] as string[];
+  const { data: donationsRaw } = await donationsQuery;
+
+  const userIds = [...new Set((donationsRaw ?? []).map((d) => d.user_id).filter(Boolean))] as string[];
   const { data: profiles } = userIds.length
     ? await supabase.from("fan_profiles").select("user_id, first_name, last_name").in("user_id", userIds)
     : { data: [] };
   const profileMap = new Map((profiles ?? []).map((p) => [p.user_id, `${p.first_name} ${p.last_name}`.trim()]));
 
-  const paidOnly = (donations ?? []).filter((d) => d.payment_status === "PAID");
+  const isimLower = (isim?.trim() ?? "").toLowerCase();
+  const donations =
+    !isimLower && donationsRaw
+      ? donationsRaw
+      : (donationsRaw ?? []).filter((d) => {
+          const displayName = d.user_id
+            ? (profileMap.get(d.user_id) || "Üye")
+            : (d.guest_name || "") + " " + (d.guest_email || "");
+          return displayName.toLowerCase().includes(isimLower);
+        });
+
+  const paidOnly = donations.filter((d) => d.payment_status === "PAID");
   const totalFiltered = paidOnly.reduce((s, d) => s + Number(d.amount), 0);
 
   const { data: sumRows } = await supabase
@@ -50,11 +96,20 @@ export default async function AdminBagislarPage({
     REFUNDED: "İade",
   };
 
+  let periodLabel = "Tüm zamanlar";
+  if (rangeStart && rangeEnd) {
+    periodLabel = `${baslangic} – ${bitis}`;
+  } else if (monthFilter) {
+    const [y, m] = monthFilter.split("-");
+    const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    periodLabel = `${monthNames[parseInt(m!, 10) - 1]} ${y}`;
+  }
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-siyah">Bağışlar</h1>
-        <p className="mt-1 text-siyah/70">Yapılan bağışları görüntüleyin.</p>
+        <p className="mt-1 text-siyah/70">Yapılan bağışları görüntüleyin. Bekleyen bağışlar 3 gün içinde ödenmezse listeden düşer.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -64,9 +119,7 @@ export default async function AdminBagislarPage({
               <TrendingUp className="h-6 w-6 text-bordo" />
             </div>
             <div>
-              <p className="text-sm font-medium text-siyah/70">
-                {monthFilter ? `${monthFilter.slice(0, 4)} ${monthFilter.slice(5)} seçili dönem` : "Tüm zamanlar"}
-              </p>
+              <p className="text-sm font-medium text-siyah/70">{periodLabel}</p>
               <p className="text-2xl font-bold text-siyah">
                 {totalFiltered.toLocaleString("tr-TR", { minimumFractionDigits: 2 })} ₺
               </p>
@@ -86,9 +139,15 @@ export default async function AdminBagislarPage({
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-4 rounded-xl border border-siyah/10 bg-beyaz p-5 shadow-sm sm:col-span-2 lg:col-span-1">
-          <Calendar className="h-8 w-8 text-siyah/50" />
-          <AdminBagislarFilter currentAy={monthFilter ?? undefined} />
+        <div className="flex items-start gap-4 rounded-xl border border-siyah/10 bg-beyaz p-5 shadow-sm sm:col-span-2 lg:col-span-1">
+          <AdminBagislarFilter
+            currentAy={monthFilter ?? undefined}
+            baslangic={baslangic}
+            bitis={bitis}
+            isim={isim}
+            tutarMin={tutarMin}
+            tutarMax={tutarMax}
+          />
         </div>
       </div>
 
@@ -110,7 +169,7 @@ export default async function AdminBagislarPage({
                 <tr>
                   <td colSpan={6} className="p-12 text-center text-siyah/60">
                     <Heart className="mx-auto mb-4 h-12 w-12 text-siyah/30" />
-                    <p>{monthFilter ? "Bu dönemde bağış kaydı yok." : "Henüz bağış kaydı yok."}</p>
+                    <p>{periodLabel !== "Tüm zamanlar" ? "Bu filtrede bağış kaydı yok." : "Henüz bağış kaydı yok."}</p>
                   </td>
                 </tr>
               ) : (
