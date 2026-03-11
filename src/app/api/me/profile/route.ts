@@ -16,7 +16,7 @@ export async function GET() {
   if (!profile) {
     return NextResponse.json({
       success: true,
-      data: { fullName: "", email: user.email ?? "", city: "" },
+      data: { userId: user.id, fullName: "", email: user.email ?? "", city: "" },
     });
   }
 
@@ -34,6 +34,7 @@ export async function GET() {
   return NextResponse.json({
     success: true,
     data: {
+      userId: user.id,
       fullName,
       email: profile.email ?? user.email ?? "",
       city: cityName,

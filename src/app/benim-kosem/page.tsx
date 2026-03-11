@@ -88,16 +88,33 @@ export default async function BenimKosemPage() {
     .order("created_at", { ascending: false })
     .limit(50);
 
-  // Mağazadan teslim alınacak siparişler (Store cüzdanım) — sadece mağaza siparişleri
+  // Mağazadan teslim alınacak siparişler (Store cüzdanım) — üye siparişleri + aynı e-posta ile yapılmış misafir siparişleri
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-  const { data: storePickupOrders } = await supabase
+  const userEmail = (profile as { email?: string | null }).email ?? user.email ?? "";
+  const { data: ordersByUser } = await supabase
     .from("orders")
     .select("id, order_number, pickup_code, pickup_date, status, created_at")
     .eq("user_id", user.id)
     .eq("delivery_method", "store_pickup")
+    .eq("payment_status", "PAID")
     .not("pickup_code", "is", null)
     .order("created_at", { ascending: false })
     .limit(20);
+  const guestOrdersRes = userEmail
+    ? await supabase
+        .from("orders")
+        .select("id, order_number, pickup_code, pickup_date, status, created_at")
+        .is("user_id", null)
+        .eq("guest_email", userEmail)
+        .eq("delivery_method", "store_pickup")
+        .eq("payment_status", "PAID")
+        .not("pickup_code", "is", null)
+        .order("created_at", { ascending: false })
+        .limit(20)
+    : { data: null as (typeof ordersByUser) };
+  const storePickupOrders = [...(ordersByUser ?? []), ...(guestOrdersRes.data ?? [])]
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+    .slice(0, 20);
 
   const { data: pastOrders } = await supabase
     .from("orders")

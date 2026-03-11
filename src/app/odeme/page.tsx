@@ -41,6 +41,7 @@ export default function OdemePage() {
   const shippingCost = deliveryMethod === "store_pickup" ? 0 : (totalPrice >= freeThreshold ? 0 : standardCost);
   const total = totalPrice + shippingCost;
 
+  const [userId, setUserId] = useState<string | null>(null);
   const [customerInfo, setCustomerInfo] = useState({ fullName: "", email: "", phone: "" });
   const [shippingAddress, setShippingAddress] = useState({
     fullName: "",
@@ -69,6 +70,7 @@ export default function OdemePage() {
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
         if (d?.success && d.data) {
+          if (d.data.userId) setUserId(d.data.userId);
           setCustomerInfo((c) => ({
             ...c,
             fullName: d.data.fullName || c.fullName,
@@ -122,6 +124,7 @@ export default function OdemePage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          userId: userId ?? undefined,
           email: customerInfo.email,
           deliveryMethod,
           items: items.map((i) => ({
