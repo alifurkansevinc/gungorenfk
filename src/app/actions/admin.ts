@@ -952,6 +952,38 @@ export async function deleteDonation(id: string): Promise<{ ok: true } | { error
   return { ok: true };
 }
 
+const PENDING_ORDER_EXPIRE_DAYS = 3;
+
+/** Bekleyen (PENDING ödeme) siparişler 3 gün içinde ödenmezse sistemden silinir. Siparişler sayfası yüklenirken çağrılır. */
+export async function expireOldPendingOrders(): Promise<{ expired: number }> {
+  const s = createServiceRoleClient();
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - PENDING_ORDER_EXPIRE_DAYS);
+  const cutoffIso = cutoff.toISOString();
+  const { data: toDelete } = await s
+    .from("orders")
+    .select("id")
+    .eq("payment_status", "PENDING")
+    .lt("created_at", cutoffIso);
+  if (!toDelete?.length) return { expired: 0 };
+  const { error } = await s.from("orders").delete().in("id", toDelete.map((r) => r.id));
+  if (error) return { expired: 0 };
+  revalidatePath("/admin/siparisler");
+  return { expired: toDelete.length };
+}
+
+/** Sipariş siler. Ödendi (PAID) statüsündeki siparişler silinemez (DB trigger da engeller). Sadece başarısız vb. silinebilir. */
+export async function deleteOrder(id: string): Promise<{ ok: true } | { error: string }> {
+  const s = createServiceRoleClient();
+  const { data: row, error: fetchErr } = await s.from("orders").select("payment_status").eq("id", id).single();
+  if (fetchErr || !row) return { error: "Sipariş bulunamadı." };
+  if (row.payment_status === "PAID") return { error: "Ödendi statüsündeki sipariş silinemez." };
+  const { error: delErr } = await s.from("orders").delete().eq("id", id);
+  if (delErr) return { error: delErr.message };
+  revalidatePath("/admin/siparisler");
+  return { ok: true };
+}
+
 // ——— Hediye Verme (admin: üyeye hediye veya ürün bazlı indirim) ———
 function generateGiftQrCode(): string {
   return "GIFT-" + Math.random().toString(36).slice(2, 10).toUpperCase() + Date.now().toString(36).slice(-6).toUpperCase();

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   Search,
   Eye,
@@ -10,12 +10,15 @@ import {
   X,
   ChevronDown,
   CheckCircle,
-  Clock,
   Truck,
   XCircle,
   MapPin,
   CreditCard,
+  Trash2,
+  Printer,
+  Calendar,
 } from "lucide-react";
+import { expireOldPendingOrders, deleteOrder } from "@/app/actions/admin";
 
 type OrderItem = { id: string; name: string; price: number; quantity: number };
 type Order = {
@@ -64,12 +67,18 @@ function formatPrice(n: number) {
   return new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", minimumFractionDigits: 2 }).format(n);
 }
 
+type Summary = { total: number; byPayment: Record<string, number> };
+
 export default function AdminSiparislerPage() {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [paymentFilter, setPaymentFilter] = useState("");
+  const [deliveryFilter, setDeliveryFilter] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [selected, setSelected] = useState<Order | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [dropdownId, setDropdownId] = useState<string | null>(null);
@@ -77,23 +86,36 @@ export default function AdminSiparislerPage() {
   const [updating, setUpdating] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     setLoading(true);
     try {
       const params = new URLSearchParams();
+      params.set("summary", "1");
+      if (startDate) params.set("startDate", startDate);
+      if (endDate) params.set("endDate", endDate);
+      if (statusFilter) params.set("status", statusFilter);
+      if (paymentFilter) params.set("paymentStatus", paymentFilter);
+      if (deliveryFilter) params.set("deliveryMethod", deliveryFilter);
       const res = await fetch(`/api/admin/orders?${params.toString()}`, { credentials: "include" });
       const data = await res.json();
       if (data.success && data.data) setOrders(data.data);
+      if (data.summary) setSummary(data.summary);
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  };
+  }, [startDate, endDate, statusFilter, paymentFilter, deliveryFilter]);
 
   useEffect(() => {
-    fetchOrders();
-  }, []);
+    let cancelled = false;
+    (async () => {
+      const result = await expireOldPendingOrders();
+      if (result.expired > 0 && !cancelled) setNotify({ type: "ok", msg: `${result.expired} adet bekleyen sipariş silindi.` });
+      if (!cancelled) await fetchOrders();
+    })();
+    return () => { cancelled = true; };
+  }, [fetchOrders]);
 
   useEffect(() => {
     const onOutside = (e: MouseEvent) => {
@@ -142,6 +164,58 @@ export default function AdminSiparislerPage() {
     }
   };
 
+  const handleDeleteOrder = async (orderId: string) => {
+    const order = orders.find((o) => o.id === orderId);
+    if (!order || order.paymentStatus === "PAID") {
+      showNotify("err", "Ödenen sipariş silinemez.");
+      return;
+    }
+    setUpdating(true);
+    setDropdownId(null);
+    try {
+      const result = await deleteOrder(orderId);
+      if ("ok" in result && result.ok) {
+        setOrders((prev) => prev.filter((o) => o.id !== orderId));
+        if (selected?.id === orderId) setModalOpen(false);
+        showNotify("ok", "Sipariş silindi.");
+        await fetchOrders();
+      } else showNotify("err", "error" in result ? result.error : "Silinemedi.");
+    } catch {
+      showNotify("err", "İstek hatası.");
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const printKargoEtiketi = (order: Order) => {
+    if (order.deliveryMethod !== "shipping") return;
+    const addr = order.shippingAddress || "";
+    const win = window.open("", "_blank");
+    if (!win) return;
+    win.document.write(`
+      <!DOCTYPE html>
+      <html><head><meta charset="utf-8"><title>Kargo etiketi - ${order.orderNumber}</title>
+      <style>
+        body { font-family: sans-serif; padding: 24px; max-width: 400px; margin: 0 auto; }
+        .label { border: 2px solid #333; padding: 16px; }
+        .order-no { font-size: 18px; font-weight: bold; margin-bottom: 12px; }
+        .addr { white-space: pre-line; line-height: 1.5; }
+        .customer { margin-top: 8px; color: #555; }
+      </style>
+      </head><body>
+      <div class="label">
+        <div class="order-no">Sipariş: ${order.orderNumber}</div>
+        <div class="addr">${addr.replace(/\n/g, "<br>")}</div>
+        <div class="customer">${order.customer.name} · ${order.customer.phone || ""}</div>
+      </div>
+      <p style="margin-top:16px;font-size:12px;color:#666">Yazdır (Ctrl+P) veya PDF olarak kaydet</p>
+      </body></html>
+    `);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 300);
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-[400px] items-center justify-center">
@@ -166,7 +240,7 @@ export default function AdminSiparislerPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Siparişler</h1>
-          <p className="text-gray-500">Tüm siparişleri görüntüleyin ve yönetin</p>
+          <p className="text-gray-500">Tüm siparişleri görüntüleyin ve yönetin. Ödenen sipariş silinemez; bekleyenler 3 gün sonra otomatik silinir.</p>
         </div>
         <button
           type="button"
@@ -178,9 +252,34 @@ export default function AdminSiparislerPage() {
         </button>
       </div>
 
+      {summary && (
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase text-gray-500">Toplam</p>
+            <p className="text-2xl font-bold text-gray-900">{summary.total}</p>
+          </div>
+          <div className="rounded-xl border border-green-100 bg-green-50/50 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase text-green-700">Ödendi</p>
+            <p className="text-2xl font-bold text-green-800">{summary.byPayment.PAID ?? 0}</p>
+          </div>
+          <div className="rounded-xl border border-yellow-100 bg-yellow-50/50 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase text-yellow-700">Bekliyor</p>
+            <p className="text-2xl font-bold text-yellow-800">{summary.byPayment.PENDING ?? 0}</p>
+          </div>
+          <div className="rounded-xl border border-red-100 bg-red-50/50 p-4 shadow-sm">
+            <p className="text-xs font-medium uppercase text-red-700">Başarısız</p>
+            <p className="text-2xl font-bold text-red-800">{summary.byPayment.FAILED ?? 0}</p>
+          </div>
+        </div>
+      )}
+
       <div className="rounded-2xl border border-gray-100 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center">
-          <div className="relative flex-1">
+        <div className="flex items-center gap-2 text-gray-600 mb-3">
+          <Calendar className="h-5 w-5" />
+          <span className="text-sm font-medium">Filtreler</span>
+        </div>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:flex-wrap">
+          <div className="relative flex-1 min-w-[200px]">
             <Search className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
@@ -190,7 +289,20 @@ export default function AdminSiparislerPage() {
               className="w-full rounded-xl border border-gray-200 py-2.5 pl-10 pr-4 focus:border-bordo focus:outline-none focus:ring-1 focus:ring-bordo"
             />
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 items-center">
+            <input
+              type="date"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-bordo focus:outline-none"
+            />
+            <span className="text-gray-400">–</span>
+            <input
+              type="date"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm focus:border-bordo focus:outline-none"
+            />
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
@@ -211,6 +323,30 @@ export default function AdminSiparislerPage() {
               <option value="PENDING">Bekliyor</option>
               <option value="FAILED">Başarısız</option>
             </select>
+            <select
+              value={deliveryFilter}
+              onChange={(e) => setDeliveryFilter(e.target.value)}
+              className="rounded-xl border border-gray-200 px-4 py-2.5 text-sm focus:border-bordo focus:outline-none"
+            >
+              <option value="">Teslimat</option>
+              <option value="shipping">Kargo</option>
+              <option value="store_pickup">Mağazadan</option>
+            </select>
+            {(startDate || endDate || statusFilter || paymentFilter || deliveryFilter) && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStartDate("");
+                  setEndDate("");
+                  setStatusFilter("");
+                  setPaymentFilter("");
+                  setDeliveryFilter("");
+                }}
+                className="rounded-xl border border-gray-200 px-3 py-2.5 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                Filtreleri temizle
+              </button>
+            )}
           </div>
         </div>
       </div>
@@ -287,7 +423,7 @@ export default function AdminSiparislerPage() {
                               <ChevronDown className="h-5 w-5 text-gray-500" />
                             </button>
                             {dropdownId === order.id && (
-                              <div className="absolute right-0 top-full z-50 mt-1 w-48 rounded-xl border border-gray-100 bg-white py-2 shadow-xl">
+                              <div className="absolute right-0 top-full z-50 mt-1 w-52 rounded-xl border border-gray-100 bg-white py-2 shadow-xl">
                                 <p className="border-b border-gray-100 px-3 py-2 text-xs font-medium uppercase text-gray-400">
                                   Durum güncelle
                                 </p>
@@ -303,6 +439,20 @@ export default function AdminSiparislerPage() {
                                       {statusConfig[status].label}
                                     </button>
                                   )
+                                )}
+                                {order.paymentStatus === "FAILED" && (
+                                  <>
+                                    <div className="my-1 border-t border-gray-100" />
+                                    <button
+                                      type="button"
+                                      disabled={updating}
+                                      onClick={() => handleDeleteOrder(order.id)}
+                                      className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                      Siparişi sil
+                                    </button>
+                                  </>
                                 )}
                               </div>
                             )}
@@ -393,13 +543,23 @@ export default function AdminSiparislerPage() {
                   <span className="font-bold text-gray-900">Toplam: {formatPrice(selected.total)}</span>
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className={`rounded-full px-3 py-1 text-xs font-medium ${paymentConfig[selected.paymentStatus]?.bg} ${paymentConfig[selected.paymentStatus]?.color}`}>
                   {paymentConfig[selected.paymentStatus]?.label ?? selected.paymentStatus}
                 </span>
                 <span className={`rounded-full px-3 py-1 text-xs font-medium ${statusConfig[selected.status]?.bg} ${statusConfig[selected.status]?.color}`}>
                   {statusConfig[selected.status]?.label ?? selected.status}
                 </span>
+                {selected.deliveryMethod === "shipping" && (
+                  <button
+                    type="button"
+                    onClick={() => printKargoEtiketi(selected)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    <Printer className="h-4 w-4" />
+                    Kargo etiketi yazdır
+                  </button>
+                )}
               </div>
             </div>
           </div>

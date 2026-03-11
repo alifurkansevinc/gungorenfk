@@ -15,8 +15,26 @@ export async function GET(req: NextRequest) {
   const startDate = searchParams.get("startDate");
   const endDate = searchParams.get("endDate");
   const limit = searchParams.get("limit");
+  const status = searchParams.get("status");
+  const paymentStatus = searchParams.get("paymentStatus");
+  const deliveryMethod = searchParams.get("deliveryMethod");
+  const withSummary = searchParams.get("summary") === "1";
 
   const supabase = createServiceRoleClient();
+
+  let summary: { total: number; byPayment: Record<string, number> } | undefined;
+  if (withSummary) {
+    const { data: allRows } = await supabase
+      .from("orders")
+      .select("payment_status");
+    const byPayment: Record<string, number> = { PENDING: 0, PAID: 0, FAILED: 0, REFUNDED: 0 };
+    for (const r of allRows ?? []) {
+      const ps = (r as { payment_status: string }).payment_status ?? "PENDING";
+      byPayment[ps] = (byPayment[ps] ?? 0) + 1;
+    }
+    summary = { total: allRows?.length ?? 0, byPayment };
+  }
+
   let query = supabase
     .from("orders")
     .select("id, order_number, user_id, guest_email, guest_name, guest_phone, shipping_address, subtotal, shipping_cost, total, status, payment_status, payment_method, delivery_method, pickup_date, pickup_code, created_at, updated_at")
@@ -24,6 +42,9 @@ export async function GET(req: NextRequest) {
 
   if (startDate) query = query.gte("created_at", startDate);
   if (endDate) query = query.lte("created_at", endDate + "T23:59:59.999Z");
+  if (status) query = query.eq("status", status);
+  if (paymentStatus) query = query.eq("payment_status", paymentStatus);
+  if (deliveryMethod) query = query.eq("delivery_method", deliveryMethod);
   if (limit) query = query.limit(parseInt(limit, 10));
 
   const { data: orders, error } = await query;
@@ -85,7 +106,7 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  return NextResponse.json({ success: true, data: result });
+  return NextResponse.json({ success: true, data: result, ...(summary ? { summary } : {}) });
 }
 
 /** Admin: Sipariş durumu güncelle (status, vb.). */
@@ -114,5 +135,28 @@ export async function PUT(req: NextRequest) {
   const supabase = createServiceRoleClient();
   const { error } = await supabase.from("orders").update(updates).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ success: true });
+}
+
+/** Admin: Sipariş sil. Sadece ödeme durumu PAID olmayan siparişler silinebilir. */
+export async function DELETE(req: NextRequest) {
+  const supabaseAuth = await createClient();
+  const { data: { user } } = await supabaseAuth.auth.getUser();
+  if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { data: adminRow } = await supabaseAuth.from("admin_users").select("id").eq("user_id", user.id).single();
+  const hasBypass = await (await import("@/app/admin/actions")).hasValidBypass();
+  if (!adminRow && !hasBypass) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+
+  const { searchParams } = req.nextUrl;
+  const id = searchParams.get("id");
+  if (!id) return NextResponse.json({ error: "id gerekli" }, { status: 400 });
+
+  const supabase = createServiceRoleClient();
+  const { data: row, error: fetchErr } = await supabase.from("orders").select("payment_status").eq("id", id).single();
+  if (fetchErr || !row) return NextResponse.json({ error: "Sipariş bulunamadı." }, { status: 404 });
+  if (row.payment_status === "PAID") return NextResponse.json({ error: "Ödendi statüsündeki sipariş silinemez." }, { status: 400 });
+
+  const { error: delErr } = await supabase.from("orders").delete().eq("id", id);
+  if (delErr) return NextResponse.json({ error: delErr.message }, { status: 500 });
   return NextResponse.json({ success: true });
 }
