@@ -119,14 +119,14 @@ export async function GET(req: NextRequest) {
       addr.zipCode,
     ].filter(Boolean);
     const shippingAddressRaw = {
-      fullName: fullName || (o.guest_name as string) ?? "",
+      fullName: fullName || ((o.guest_name as string) ?? ""),
       address: (addr.address as string) ?? "",
       neighborhood: (addr.neighborhood as string) ?? "",
       district: (addr.district as string) ?? "",
       city: (addr.city as string) ?? "",
       zipCode: (addr.zipCode as string) ?? "",
-      phone: phone || (o.guest_phone as string) ?? "",
-      email: email || (o.guest_email as string) ?? "",
+      phone: phone || ((o.guest_phone as string) ?? ""),
+      email: email || ((o.guest_email as string) ?? ""),
     };
     return {
       id: o.id,
