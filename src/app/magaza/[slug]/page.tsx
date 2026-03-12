@@ -100,6 +100,7 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
               price={effectivePrice}
               slug={product.slug}
               sizes={(product as { sizes?: string[] }).sizes}
+              stockBySize={(product as { stock_by_size?: Record<string, number> | null }).stock_by_size}
             />
           </div>
         </div>

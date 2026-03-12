@@ -19,6 +19,7 @@ type Product = {
   is_active: boolean;
   images?: string[];
   sizes?: string[];
+  stock_by_size?: Record<string, number> | null;
 } | null;
 
 export function UrunFormu({ product }: { product?: Product }) {
@@ -114,16 +115,29 @@ export function UrunFormu({ product }: { product?: Product }) {
         />
       </div>
       <div>
-        <label className={labelClass}>Bedenler</label>
-        <p className="mt-1 text-xs text-gray-500">Ürünün satışa sunulduğu bedenleri işaretleyin (en az biri).</p>
-        <div className="mt-2 flex flex-wrap gap-4">
+        <label className={labelClass}>Bedenler ve stok</label>
+        <p className="mt-1 text-xs text-gray-500">Ürünün satışa sunulduğu bedenleri işaretleyin; her beden için stok adedi girin. Satışta stok otomatik düşer.</p>
+        <div className="mt-3 space-y-3">
           {STORE_SIZE_OPTIONS.map(({ value, label }) => {
             const defaultChecked = product?.sizes?.includes(value) ?? (value === "tek_beden");
+            const defaultStock = product?.stock_by_size?.[value] ?? 0;
             return (
-              <label key={value} className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" name="sizes" value={value} defaultChecked={defaultChecked} className="h-4 w-4 rounded border-gray-300 text-bordo focus:ring-bordo" />
-                <span className="text-sm text-gray-700">{label}</span>
-              </label>
+              <div key={value} className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" name="sizes" value={value} defaultChecked={defaultChecked} className="h-4 w-4 rounded border-gray-300 text-bordo focus:ring-bordo" />
+                  <span className="text-sm font-medium text-gray-700">{label}</span>
+                </label>
+                <label className="flex items-center gap-2 text-sm text-gray-600">
+                  <span>Stok:</span>
+                  <input
+                    type="number"
+                    name={`stock_${value}`}
+                    min={0}
+                    defaultValue={defaultStock}
+                    className="w-20 rounded-lg border border-gray-200 px-2 py-1.5 text-gray-900 focus:border-bordo focus:outline-none focus:ring-1 focus:ring-bordo"
+                  />
+                </label>
+              </div>
             );
           })}
         </div>

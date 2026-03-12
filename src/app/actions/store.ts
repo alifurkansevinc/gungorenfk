@@ -4,6 +4,16 @@ import { revalidatePath } from "next/cache";
 import { getAdminSupabase } from "@/app/admin/actions";
 import { STORE_SIZE_VALUES } from "@/lib/store-sizes";
 
+function collectStockBySize(formData: FormData, sizes: string[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const size of sizes) {
+    const v = formData.get(`stock_${size}`) as string | null;
+    const n = v != null && v !== "" ? parseInt(String(v), 10) : 0;
+    out[size] = Number.isNaN(n) || n < 0 ? 0 : n;
+  }
+  return out;
+}
+
 function collectImageUrls(formData: FormData): string[] {
   const urls: string[] = [];
   let i = 0;
@@ -31,6 +41,8 @@ export async function createProduct(formData: FormData) {
   const sizes = sizesRaw.length > 0 ? sizesRaw.filter((s) => STORE_SIZE_VALUES.includes(s as typeof STORE_SIZE_VALUES[number])) : ["tek_beden"];
   const sizesFinal = sizes.length > 0 ? sizes : ["tek_beden"];
 
+  const stock_by_size = collectStockBySize(formData, sizesFinal);
+
   const { data: product, error } = await supabase
     .from("store_products")
     .insert({
@@ -43,6 +55,7 @@ export async function createProduct(formData: FormData) {
       sort_order,
       is_active: true,
       sizes: sizesFinal,
+      stock_by_size,
     })
     .select("id")
     .single();
@@ -73,6 +86,7 @@ export async function updateProduct(id: string, formData: FormData) {
   const sizesRaw = formData.getAll("sizes") as string[];
   const sizes = sizesRaw.length > 0 ? sizesRaw.filter((s) => STORE_SIZE_VALUES.includes(s as typeof STORE_SIZE_VALUES[number])) : ["tek_beden"];
   const sizesFinal = sizes.length > 0 ? sizes : ["tek_beden"];
+  const stock_by_size = collectStockBySize(formData, sizesFinal);
 
   const { error } = await supabase
     .from("store_products")
@@ -86,6 +100,7 @@ export async function updateProduct(id: string, formData: FormData) {
       sort_order,
       is_active,
       sizes: sizesFinal,
+      stock_by_size,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);

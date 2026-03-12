@@ -324,7 +324,7 @@ export async function getFeaturedProducts(limit = 4) {
   const supabase = await createClient();
   const { data } = await supabase
     .from("store_products")
-    .select("id, name, slug, description, price, image_url, sku")
+    .select("id, name, slug, description, price, image_url, sku, sizes, stock_by_size")
     .eq("is_active", true)
     .order("sort_order")
     .limit(limit);

@@ -67,6 +67,24 @@ async function processPaymentCallback(req: NextRequest, token: string): Promise<
         })
         .eq("id", order.id);
 
+      // Sipariş kalemlerine göre stok düş
+      const { data: orderItems } = await supabase
+        .from("order_items")
+        .select("product_id, size, quantity")
+        .eq("order_id", order.id);
+      for (const item of orderItems ?? []) {
+        const productId = (item as { product_id: string }).product_id;
+        const size = ((item as { size: string | null }).size ?? "tek_beden").trim() || "tek_beden";
+        const qty = Math.max(1, Number((item as { quantity: number }).quantity) || 1);
+        const { data: prod } = await supabase.from("store_products").select("stock_by_size").eq("id", productId).single();
+        if (!prod) continue;
+        const stock = (prod.stock_by_size as Record<string, number> | null) ?? {};
+        const current = Math.max(0, Number(stock[size]) || 0);
+        const next = Math.max(0, current - qty);
+        const nextStock = { ...stock, [size]: next };
+        await supabase.from("store_products").update({ stock_by_size: nextStock, updated_at: new Date().toISOString() }).eq("id", productId);
+      }
+
       const orderTotal = Number(order.total) || 0;
       let userIdToLevelUp: string | null = null;
       if (order.user_id && orderTotal > 0) {

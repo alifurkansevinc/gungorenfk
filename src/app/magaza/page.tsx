@@ -52,6 +52,11 @@ export default async function MagazaPage() {
             const productDiscount = Math.max(levelDiscountPercent, memberDiscounts[p.id] ?? 0);
             const effectivePrice = getEffectiveProductPrice(listPrice, productDiscount);
             const hasDiscount = productDiscount > 0 && effectivePrice < listPrice;
+            const stockBySize = (p as { stock_by_size?: Record<string, number> | null }).stock_by_size ?? {};
+            const sizes = (p as { sizes?: string[] }).sizes ?? ["tek_beden"];
+            const hasStockData = Object.keys(stockBySize).length > 0;
+            const totalStock = sizes.reduce((sum, s) => sum + Math.max(0, Number(stockBySize[s]) || 0), 0);
+            const isOutOfStock = hasStockData && totalStock <= 0;
             return (
               <Link
                 key={p.id}
@@ -67,6 +72,9 @@ export default async function MagazaPage() {
                     sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
                     unoptimized
                   />
+                  {isOutOfStock && (
+                    <span className="absolute top-2 left-2 rounded-lg bg-siyah/80 px-2.5 py-1 text-xs font-bold text-beyaz">Kalmadı</span>
+                  )}
                   {hasDiscount && (
                     <span className="absolute top-2 right-2 rounded-full bg-bordo px-2 py-0.5 text-xs font-bold text-beyaz">%{productDiscount} indirim</span>
                   )}
