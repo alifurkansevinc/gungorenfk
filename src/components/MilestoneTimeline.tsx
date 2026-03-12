@@ -44,16 +44,14 @@ export function MilestoneTimeline({
 
   return (
     <div className="w-full">
-      {/* Yatay kaydırmalı liste: seçilen ortada ve büyük */}
-      <div className="relative overflow-x-auto overflow-y-hidden pb-2 scroll-smooth">
-        {/* Akış çizgisi */}
-        <div
-          className="absolute left-0 top-[7.5rem] sm:top-[8.5rem] h-0.5 w-full min-w-full bg-gradient-to-r from-bordo/50 via-bordo/30 to-bordo/50"
-          aria-hidden
-        />
+      {/* Yatay kaydırmalı liste: seçilen ortada ve büyük — mobil uyumlu */}
+      <div className="relative overflow-x-auto overflow-y-hidden pb-2 scroll-smooth -mx-2 px-2 sm:mx-0 sm:px-0">
+        {/* Timeline çizgisi — bordo / beyaz tasarım, seçilen büyük kupanın altında */}
+        <div className="absolute left-0 top-[9.5rem] sm:top-[13rem] h-0.5 w-full min-w-full bg-gradient-to-r from-transparent via-beyaz/50 to-transparent" aria-hidden />
+        <div className="absolute left-0 top-[9.5rem] sm:top-[13rem] h-1 w-full min-w-full rounded-full bg-gradient-to-r from-bordo/90 via-bordo to-bordo/90 shadow-[0_0_10px_rgba(139,21,56,0.4)]" aria-hidden />
         <ul
           ref={listRef}
-          className="relative flex flex-nowrap gap-6 sm:gap-8 min-w-max px-[max(1rem,50vw-80px)] sm:px-[max(1.5rem,50vw-100px)]"
+          className="relative flex flex-nowrap gap-4 sm:gap-6 min-w-max px-[max(0.5rem,50vw-100px)] sm:px-[max(1rem,50vw-140px)]"
         >
           {items.map((item) => {
             const isSelected = selectedId === item.id;
@@ -66,20 +64,20 @@ export function MilestoneTimeline({
                   data-milestone-id={item.id}
                   onClick={() => setSelectedId(item.id)}
                   className={`
-                    relative z-10 flex flex-col items-center gap-2 bg-transparent px-2 py-2 transition-all duration-300 ease-out
-                    w-[100px] sm:w-[120px]
-                    ${isSelected ? "!w-[140px] sm:!w-[180px]" : ""}
+                    relative z-10 flex flex-col items-center gap-1.5 sm:gap-2 bg-transparent px-1.5 py-2 transition-all duration-300 ease-out touch-manipulation
+                    w-[88px] min-w-[88px] sm:w-[110px] sm:min-w-[110px]
+                    ${isSelected ? "!w-[160px] !min-w-[160px] sm:!w-[220px] sm:!min-w-[220px]" : ""}
                   `}
                 >
                   {item.year && (
-                    <span className={`font-display font-bold tracking-tight text-bordo transition-all duration-300 ${isSelected ? "text-lg sm:text-xl" : "text-base sm:text-lg"}`}>
+                    <span className={`font-display font-bold tracking-tight text-bordo transition-all duration-300 ${isSelected ? "text-base sm:text-lg" : "text-sm sm:text-base"}`}>
                       {item.year}
                     </span>
                   )}
                   <div
                     className={`
                     relative flex-shrink-0 transition-all duration-300 ease-out
-                    ${isSelected ? "h-32 w-32 sm:h-40 sm:w-40" : "h-24 w-24 sm:h-32 sm:w-32"}
+                    ${isSelected ? "h-36 w-36 sm:h-52 sm:w-52" : "h-20 w-20 sm:h-28 sm:w-28"}
                   `}
                   >
                     <Image
@@ -87,12 +85,12 @@ export function MilestoneTimeline({
                       alt={item.name}
                       fill
                       className="object-contain object-center"
-                      sizes="(max-width: 640px) 128px, 160px"
+                      sizes="(max-width: 640px) 144px, 208px"
                       unoptimized
                       quality={100}
                     />
                   </div>
-                  <span className={`text-center font-semibold text-beyaz/90 line-clamp-2 transition-all duration-300 ${isSelected ? "text-xs sm:text-sm" : "text-[10px] sm:text-xs"}`}>
+                  <span className={`text-center font-semibold text-beyaz/95 transition-all duration-300 w-full min-w-0 hyphens-auto break-words ${isSelected ? "text-[11px] leading-tight sm:text-sm" : "text-[10px] leading-tight sm:text-xs"}`}>
                     {item.name}
                   </span>
                 </button>
@@ -102,34 +100,28 @@ export function MilestoneTimeline({
         </ul>
       </div>
 
-      {/* Dinamik hikaye alanı — dokununca / tıklanınca seçilen kupanın hikayesi */}
-      <div
-        ref={storyRef}
-        key={selectedId ?? "none"}
-        className="mt-8 rounded-2xl border border-beyaz/15 bg-gradient-to-b from-beyaz/10 to-beyaz/[0.02] p-6 transition-all duration-300 sm:p-8"
-      >
+      {/* Kupa açıklaması — sade, küçük tipografi, konteyner yok */}
+      <div ref={storyRef} key={selectedId ?? "none"} className="mt-6 sm:mt-8">
         {selected ? (
           <>
             {selected.year && (
-              <p className="text-xs font-semibold uppercase tracking-wider text-bordo sm:text-sm">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-bordo/90 sm:text-xs">
                 {selected.year}
               </p>
             )}
-            <h3 className="mt-1 font-display text-xl font-bold text-beyaz sm:text-2xl">
+            <h3 className="mt-0.5 font-display text-sm font-bold text-beyaz sm:text-base">
               {selected.name}
             </h3>
             {selected.description ? (
-              <div className="mt-4 border-t border-beyaz/10 pt-4">
-                <p className="text-sm leading-relaxed text-beyaz/90 whitespace-pre-line sm:text-base">
-                  {selected.description}
-                </p>
-              </div>
+              <p className="mt-2 text-xs leading-relaxed text-beyaz/80 whitespace-pre-line sm:text-sm">
+                {selected.description}
+              </p>
             ) : (
-              <p className="mt-3 text-sm text-beyaz/60">Bu kupa için henüz hikaye eklenmemiş.</p>
+              <p className="mt-1.5 text-xs text-beyaz/50">Bu kupa için henüz hikaye eklenmemiş.</p>
             )}
           </>
         ) : (
-          <p className="text-center text-beyaz/60">Yukarıdan bir kupa seçin, hikayesini okuyun.</p>
+          <p className="text-center text-xs text-beyaz/50">Yukarıdan bir kupa seçin, hikayesini okuyun.</p>
         )}
       </div>
     </div>
