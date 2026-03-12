@@ -20,11 +20,22 @@ import {
 import { expireOldPendingOrders, deleteOrder } from "@/app/actions/admin";
 
 type OrderItem = { id: string; name: string; price: number; quantity: number; size?: string | null; image_url?: string | null };
+type ShippingAddressRaw = {
+  fullName: string;
+  address: string;
+  neighborhood: string;
+  district: string;
+  city: string;
+  zipCode: string;
+  phone: string;
+  email: string;
+};
 type Order = {
   id: string;
   orderNumber: string;
   customer: { name: string; email: string; phone?: string };
   shippingAddress: string;
+  shippingAddressRaw?: ShippingAddressRaw;
   items: OrderItem[];
   subtotal: number;
   shippingCost: number;
@@ -36,6 +47,8 @@ type Order = {
   pickupCode: string | null;
   createdAt: string;
 };
+
+const KARGO_LOGO_URL = "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/Futbolcular/logobordo-02.png";
 
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   PENDING: { label: "Beklemede", color: "text-yellow-800", bg: "bg-yellow-100" },
@@ -192,24 +205,76 @@ export default function AdminSiparislerPage() {
 
   const printKargoEtiketi = (order: Order) => {
     if (order.deliveryMethod !== "shipping") return;
-    const addr = order.shippingAddress || "—";
+    const raw = order.shippingAddressRaw;
     const orderNo = escapeHtml(order.orderNumber);
-    const addrSafe = escapeHtml(addr).replace(/\n/g, "<br>");
-    const name = escapeHtml(order.customer.name);
-    const phone = escapeHtml(order.customer.phone || "");
+    const name = escapeHtml(order.customer.name || (raw?.fullName ?? ""));
+    const phone = escapeHtml(order.customer.phone || raw?.phone || "");
+    const email = escapeHtml(order.customer.email || raw?.email || "");
+    const addrLine1 = raw?.address ? escapeHtml(raw.address) : "";
+    const addrLine2 = [raw?.neighborhood, raw?.district].filter(Boolean).join(", ");
+    const cityZip = [raw?.city, raw?.zipCode].filter(Boolean).join(" ");
+    const addrFallback = order.shippingAddress || "—";
+    const senderName = "Güngören Belediyesi Spor Kulübü";
+    const senderAddr = "Güngören Spor Kompleksi, Güngören";
+
+    const itemsHtml = (order.items || [])
+      .map(
+        (it) => {
+          const iname = escapeHtml(it.name);
+          const qty = it.quantity || 1;
+          const sz = it.size && it.size !== "tek_beden" ? escapeHtml(it.size) : "";
+          const img = it.image_url ? `<img src="${escapeHtml(it.image_url)}" alt="" class="item-img" />` : "";
+          return `<tr><td class="item-cell">${img}<div class="item-info"><strong>${iname}</strong>${sz ? ` · ${sz}` : ""} <span class="qty">×${qty}</span></div></td></tr>`;
+        }
+      )
+      .join("");
+
     const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Kargo etiketi - ${orderNo}</title>
-<style>body{font-family:sans-serif;padding:24px;max-width:420px;margin:0 auto}
-.label{border:2px solid #222;padding:20px;font-size:14px}
-.order-no{font-size:18px;font-weight:bold;margin-bottom:12px}
-.addr{line-height:1.5;margin:8px 0}
-.customer{color:#555;margin-top:8px}
-@media print{body{padding:0}}</style></head><body>
-<div class="label">
-  <div class="order-no">Sipariş: ${orderNo}</div>
-  <div class="addr">${addrSafe}</div>
-  <div class="customer">${name}${phone ? " · " + phone : ""}</div>
+<style>
+  @page { size: A5; margin: 12mm; }
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; margin: 0; padding: 12px; font-size: 11px; color: #1a1a1a; }
+  .page { width: 148mm; min-height: 210mm; padding: 10px; }
+  .logo { height: 36px; object-fit: contain; object-position: left; margin-bottom: 14px; }
+  .code { font-size: 16px; font-weight: 800; letter-spacing: 0.05em; color: #8B1538; margin-bottom: 12px; border-bottom: 2px solid #8B1538; padding-bottom: 6px; }
+  .block { margin-bottom: 14px; }
+  .block-title { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #666; margin-bottom: 4px; }
+  .sender { color: #333; line-height: 1.4; }
+  .receiver { line-height: 1.5; }
+  .receiver .name { font-weight: 700; font-size: 12px; }
+  .receiver .addr { margin: 2px 0; }
+  .receiver .contact { margin-top: 4px; color: #555; font-size: 10px; }
+  table.items { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 10px; }
+  .item-cell { padding: 6px 0; border-bottom: 1px solid #eee; vertical-align: middle; }
+  .item-cell .item-img { width: 32px; height: 32px; object-fit: contain; border-radius: 4px; margin-right: 8px; vertical-align: middle; display: inline-block; }
+  .item-cell .item-info { display: inline-block; vertical-align: middle; max-width: calc(100% - 44px); }
+  .qty { color: #8B1538; font-weight: 600; }
+  .hint { margin-top: 12px; font-size: 10px; color: #888; }
+  @media print { body { padding: 0; } .page { box-shadow: none; min-height: auto; } }
+</style></head><body>
+<div class="page">
+  <img src="${KARGO_LOGO_URL}" alt="Güngören FK" class="logo" />
+  <div class="code">Sipariş kodu: ${orderNo}</div>
+  <div class="block">
+    <div class="block-title">Gönderici</div>
+    <div class="sender">${escapeHtml(senderName)}<br/>${escapeHtml(senderAddr)}</div>
+  </div>
+  <div class="block">
+    <div class="block-title">Alıcı</div>
+    <div class="receiver">
+      <div class="name">${name}</div>
+      <div class="addr">${addrLine1 || escapeHtml(addrFallback)}</div>
+      ${addrLine2 ? `<div class="addr">${escapeHtml(addrLine2)}</div>` : ""}
+      ${cityZip ? `<div class="addr">${escapeHtml(cityZip)}</div>` : ""}
+      <div class="contact">${phone ? "Tel: " + phone : ""}${phone && email ? " · " : ""}${email ? "E-posta: " + email : ""}</div>
+    </div>
+  </div>
+  <div class="block">
+    <div class="block-title">Ürünler</div>
+    <table class="items"><tbody>${itemsHtml || "<tr><td>—</td></tr>"}</tbody></table>
+  </div>
+  <p class="hint">Yazdır (Ctrl+P) veya PDF olarak kaydet · A5</p>
 </div>
-<p style="margin-top:16px;font-size:12px;color:#666">Yazdır (Ctrl+P) veya PDF olarak kaydet</p>
 </body></html>`;
     const win = window.open("", "_blank");
     if (!win) {
@@ -221,7 +286,7 @@ export default function AdminSiparislerPage() {
     win.focus();
     setTimeout(() => {
       win.print();
-    }, 400);
+    }, 500);
   };
 
   if (loading) {

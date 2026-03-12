@@ -118,6 +118,16 @@ export async function GET(req: NextRequest) {
       addr.city,
       addr.zipCode,
     ].filter(Boolean);
+    const shippingAddressRaw = {
+      fullName: fullName || (o.guest_name as string) ?? "",
+      address: (addr.address as string) ?? "",
+      neighborhood: (addr.neighborhood as string) ?? "",
+      district: (addr.district as string) ?? "",
+      city: (addr.city as string) ?? "",
+      zipCode: (addr.zipCode as string) ?? "",
+      phone: phone || (o.guest_phone as string) ?? "",
+      email: email || (o.guest_email as string) ?? "",
+    };
     return {
       id: o.id,
       orderNumber: o.order_number,
@@ -127,6 +137,7 @@ export async function GET(req: NextRequest) {
         phone,
       },
       shippingAddress: addressParts.join(", ") || (o.delivery_method === "store_pickup" ? "Mağazadan teslim" : ""),
+      shippingAddressRaw,
       items: (itemsByOrder.get(o.id) ?? []).map((it) => ({
         ...it,
         image_url: (it as { product_id?: string }).product_id ? productImages[(it as { product_id: string }).product_id] ?? null : null,
