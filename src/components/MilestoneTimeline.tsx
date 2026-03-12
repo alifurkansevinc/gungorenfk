@@ -37,10 +37,10 @@ export function MilestoneTimeline({
       <div className="relative overflow-x-auto overflow-y-hidden pb-2">
         {/* Akış çizgisi (yatay, milestone'ların altında) */}
         <div
-          className="absolute left-0 top-[5.5rem] h-0.5 w-full min-w-full bg-gradient-to-r from-bordo/50 via-bordo/30 to-bordo/50"
+          className="absolute left-0 top-[7.5rem] sm:top-[8.5rem] h-0.5 w-full min-w-full bg-gradient-to-r from-bordo/50 via-bordo/30 to-bordo/50"
           aria-hidden
         />
-        <ul className="relative flex flex-nowrap gap-4 sm:gap-6 px-2 sm:px-4 min-w-max justify-start sm:justify-center">
+        <ul className="relative flex flex-nowrap gap-6 sm:gap-8 px-2 sm:px-4 min-w-max justify-start sm:justify-center">
           {items.map((item) => {
             const isSelected = selectedId === item.id;
             const src = item.image_url || placeholderImage;
@@ -51,12 +51,9 @@ export function MilestoneTimeline({
                   type="button"
                   onClick={() => setSelectedId(item.id)}
                   className={`
-                    relative z-10 flex flex-col items-center gap-2 rounded-2xl border-2 px-3 py-3 transition-all duration-300 ease-out
-                    w-[100px] sm:w-[120px]
-                    ${isSelected
-                      ? "border-bordo bg-bordo/25 shadow-[0_0_28px_rgba(139,21,56,0.4)] scale-110"
-                      : "border-beyaz/25 bg-siyah/50 hover:border-beyaz/50 hover:bg-siyah/60 hover:scale-105"
-                    }
+                    relative z-10 flex flex-col items-center gap-2 bg-transparent px-2 py-2 transition-all duration-300 ease-out
+                    w-[120px] sm:w-[160px]
+                    ${isSelected ? "scale-110" : "hover:scale-105"}
                   `}
                 >
                   {item.year && (
@@ -64,14 +61,16 @@ export function MilestoneTimeline({
                       {item.year}
                     </span>
                   )}
-                  <div className="relative h-14 w-14 sm:h-20 sm:w-20 flex-shrink-0">
+                  {/* Kupa görseli — çerçevesiz, büyük ve net */}
+                  <div className="relative h-24 w-24 sm:h-32 sm:w-32 flex-shrink-0">
                     <Image
                       src={src}
                       alt={item.name}
                       fill
-                      className="object-contain drop-shadow-lg"
-                      sizes="72px"
+                      className="object-contain object-center"
+                      sizes="(max-width: 640px) 96px, 128px"
                       unoptimized
+                      quality={100}
                     />
                   </div>
                   <span className="text-center text-[10px] font-semibold text-beyaz/90 line-clamp-2 sm:text-xs">

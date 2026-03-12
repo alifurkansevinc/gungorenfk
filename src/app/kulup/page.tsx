@@ -21,11 +21,11 @@ export default async function KulupPage() {
 
   return (
     <div className="min-h-screen bg-[#f8f8f8]">
-      {/* Hero — başlık yok, sadece kulübümüz alanı */}
+      {/* Hero */}
       <section className="bg-siyah py-8 sm:py-10 text-beyaz">
         <div className="mx-auto max-w-4xl px-6 text-center">
           <h1 className="font-display text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl">
-            Kulübümüz
+            Kupalarımız
           </h1>
           <p className="mt-2 text-beyaz/70 text-sm sm:text-base">
             Kazandığımız kupalar ve hikayeleri. Bir kupa seçin, hikayesini okuyun.
