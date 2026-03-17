@@ -1,9 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import Link from "next/link";
 import { AdminToast } from "./AdminToast";
 import { usePathname } from "next/navigation";
+import { canAccessMenu, hrefToMenuKey } from "@/lib/admin-roles";
+import type { AdminRole } from "@/lib/admin-roles";
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -31,7 +33,7 @@ import {
   Gift,
 } from "lucide-react";
 
-const menuItems = [
+const allMenuItems = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
   { href: "/admin/admins", label: "Admin kullanıcıları", icon: ShieldCheck },
   { href: "/admin/one-cikan", label: "Öne Çıkan", icon: LayoutGrid },
@@ -55,10 +57,15 @@ const menuItems = [
   { href: "/admin/kupa-muzesi", label: "Hakkımızda & Kupa Müzesi", icon: Trophy },
 ];
 
-export function AdminShell({ children }: { children: React.ReactNode }) {
+export function AdminShell({ role, children }: { role: AdminRole; children: React.ReactNode }) {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  const menuItems = useMemo(
+    () => allMenuItems.filter((item) => canAccessMenu(role, hrefToMenuKey(item.href))),
+    [role]
+  );
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -84,7 +91,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
           </button>
         </div>
         <nav className="min-h-0 flex-1 space-y-1 overflow-y-auto p-4 [scrollbar-width:thin]">
-          {menuItems.map((item) => {
+          {menuItems.map((item: (typeof allMenuItems)[number]) => {
             const isActive =
               pathname === item.href ||
               (item.href !== "/admin" && pathname.startsWith(item.href));

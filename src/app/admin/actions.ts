@@ -113,22 +113,54 @@ export async function signInAdmin(
   }
 }
 
+type AdminRole = "admin" | "operator" | "club_manager" | "football_director" | "event_coordinator";
+
 /**
- * E-posta ile yeni admin ekler. Sadece mevcut admin tarafından çağrılmalı.
- * Kullanıcı önce Supabase Auth'da kayıtlı olmalı (site üzerinden veya Dashboard'dan).
+ * Yeni panel kullanıcısı ekler (e-posta + şifre + rol).
+ * Şifre verilirse Supabase Auth'da kullanıcı oluşturulur; verilmezse mevcut kullanıcı aranır.
+ * Sadece admin rolündeki kullanıcılar çağırabilir (sayfa seviyesinde kontrol).
  */
-export async function addAdminByEmail(email: string): Promise<{ ok: boolean; error?: string }> {
+export async function addAdminUser(
+  email: string,
+  password: string | null,
+  role: AdminRole
+): Promise<{ ok: boolean; error?: string }> {
   const trimmed = email?.trim().toLowerCase();
   if (!trimmed) return { ok: false, error: "E-posta girin." };
+  const validRoles: AdminRole[] = ["admin", "operator", "club_manager", "football_director", "event_coordinator"];
+  if (!validRoles.includes(role)) return { ok: false, error: "Geçersiz rol." };
   try {
     const supabase = createServiceRoleClient();
-    const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    if (error) return { ok: false, error: error.message };
-    const user = data?.users?.find((u) => u.email?.toLowerCase() === trimmed);
-    if (!user) return { ok: false, error: "Bu e-posta ile kayıtlı kullanıcı bulunamadı. Önce site veya Supabase Auth üzerinden kayıt olmalı." };
-    const { error: insertErr } = await supabase.from("admin_users").insert({ user_id: user.id }).select().single();
+    let userId: string;
+
+    if (password && password.length >= 6) {
+      const { data: createData, error: createErr } = await supabase.auth.admin.createUser({
+        email: trimmed,
+        password,
+        email_confirm: true,
+      });
+      if (createErr) return { ok: false, error: createErr.message };
+      if (!createData.user) return { ok: false, error: "Kullanıcı oluşturulamadı." };
+      userId = createData.user.id;
+    } else {
+      const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+      if (error) return { ok: false, error: error.message };
+      const user = data?.users?.find((u) => u.email?.toLowerCase() === trimmed);
+      if (!user)
+        return {
+          ok: false,
+          error: "Bu e-posta ile kayıtlı kullanıcı yok. Şifre girerek yeni kullanıcı oluşturabilirsiniz.",
+        };
+      userId = user.id;
+    }
+
+    const { error: insertErr } = await supabase
+      .from("admin_users")
+      .insert({ user_id: userId, role })
+      .select()
+      .single();
     if (insertErr) {
-      if (insertErr.code === "23505") return { ok: false, error: "Bu kullanıcı zaten admin." };
+      if (insertErr.code === "23505") return { ok: false, error: "Bu kullanıcı zaten panele ekli." };
       return { ok: false, error: insertErr.message };
     }
     return { ok: true };
@@ -136,6 +168,14 @@ export async function addAdminByEmail(email: string): Promise<{ ok: boolean; err
     const msg = e instanceof Error ? e.message : String(e);
     return { ok: false, error: msg };
   }
+}
+
+/**
+ * E-posta ile yeni admin ekler (mevcut Auth kullanıcısı). Rol varsayılan admin.
+ * Yeni kullanıcı + şifre + rol için addAdminUser kullanın.
+ */
+export async function addAdminByEmail(email: string): Promise<{ ok: boolean; error?: string }> {
+  return addAdminUser(email, null, "admin");
 }
 
 /**
