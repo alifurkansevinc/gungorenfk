@@ -45,7 +45,7 @@ async function processPaymentCallback(req: NextRequest, token: string): Promise<
 
     const { data: order, error: findError } = await supabase
       .from("orders")
-      .select("id, order_number, notes, user_id, total, guest_email")
+      .select("id, order_number, notes, user_id, total, guest_email, receipt_token")
       .eq("payment_id", token)
       .single();
 
@@ -119,16 +119,19 @@ async function processPaymentCallback(req: NextRequest, token: string): Promise<
           }
         }
       }
+      const receiptToken = (order as { receipt_token?: string | null }).receipt_token;
+      const tokenParam = receiptToken ? `&token=${encodeURIComponent(receiptToken)}` : "";
+
       if (userIdToLevelUp) {
         const levelResult = await checkAndLevelUp(userIdToLevelUp);
         if (levelResult.leveledUp && levelResult.newLevelId) {
           return NextResponse.redirect(
-            new URL(`/odeme/basarili?orderNumber=${order.order_number}&levelUp=1&newLevel=${levelResult.newLevelId}`, base)
+            new URL(`/odeme/basarili?orderNumber=${order.order_number}&levelUp=1&newLevel=${levelResult.newLevelId}${tokenParam}`, base)
           );
         }
       }
 
-      return NextResponse.redirect(new URL(`/odeme/basarili?orderNumber=${order.order_number}`, base));
+      return NextResponse.redirect(new URL(`/odeme/basarili?orderNumber=${order.order_number}${tokenParam}`, base));
     }
 
     const errorMessage = result.errorMessage || "Ödeme başarısız.";

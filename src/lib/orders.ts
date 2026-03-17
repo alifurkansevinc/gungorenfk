@@ -22,17 +22,34 @@ export type ReceiptData = {
   guestEmail?: string | null;
 } | null;
 
-/** Sipariş numarası ile makbuz verisi (sunucu tarafı; ödeme başarılı sayfası). */
-export async function getReceiptByOrderNumber(orderNumber: string | null): Promise<ReceiptData> {
+/** Erişim: token eşleşmesi veya siparişin user_id'si verilen userId ile aynı. */
+function canAccessOrder(
+  order: { user_id?: string | null; receipt_token?: string | null },
+  options?: { token?: string | null; userId?: string | null }
+): boolean {
+  if (!order) return false;
+  const token = options?.token?.trim();
+  const userId = options?.userId ?? null;
+  if (token && order.receipt_token && order.receipt_token === token) return true;
+  if (userId && order.user_id === userId) return true;
+  return false;
+}
+
+/** Sipariş numarası ile makbuz verisi. Erişim: token eşleşmesi veya options.userId === order.user_id. */
+export async function getReceiptByOrderNumber(
+  orderNumber: string | null,
+  options?: { token?: string | null; userId?: string | null }
+): Promise<ReceiptData> {
   if (!orderNumber?.trim()) return null;
   const supabase = createServiceRoleClient();
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .select("id, order_number, total, subtotal, shipping_cost, delivery_method, pickup_date, pickup_code, created_at, payment_status, guest_name, guest_email")
+    .select("id, order_number, total, subtotal, shipping_cost, delivery_method, pickup_date, pickup_code, created_at, payment_status, guest_name, guest_email, user_id, receipt_token")
     .eq("order_number", orderNumber.trim())
     .single();
 
   if (orderError || !order || order.payment_status !== "PAID") return null;
+  if (!canAccessOrder(order, options)) return null;
 
   const { data: items } = await supabase
     .from("order_items")
@@ -59,9 +76,50 @@ export async function getReceiptByOrderNumber(orderNumber: string | null): Promi
   };
 }
 
-/** Sipariş numarası ile sipariş + kalemler + ürün resimleri (RLS ile sadece sahibi görebilir; Store QR sayfası için). */
-export async function getOrderWithItemsForCurrentUser(orderNumber: string | null): Promise<OrderWithItemsForUser> {
+/** Sipariş + kalemler + ürün resimleri. Erişim: token eşleşmesi veya RLS ile sahip. */
+export async function getOrderWithItemsForCurrentUser(
+  orderNumber: string | null,
+  receiptToken?: string | null
+): Promise<OrderWithItemsForUser> {
   if (!orderNumber?.trim()) return null;
+
+  const token = receiptToken?.trim();
+  if (token) {
+    const service = createServiceRoleClient();
+    const { data: order, error: orderError } = await service
+      .from("orders")
+      .select("id, order_number, total")
+      .eq("order_number", orderNumber.trim())
+      .eq("receipt_token", token)
+      .single();
+    if (orderError || !order || order.total == null) return null;
+
+    const { data: orderItems } = await service
+      .from("order_items")
+      .select("product_id, name, price, quantity, size")
+      .eq("order_id", order.id);
+    const productIds = [...new Set((orderItems ?? []).map((i) => (i as { product_id: string | null }).product_id).filter(Boolean))] as string[];
+    let imageByProduct: Record<string, string | null> = {};
+    if (productIds.length > 0) {
+      const { data: products } = await service.from("store_products").select("id, image_url").in("id", productIds);
+      for (const p of products ?? []) {
+        const row = p as { id: string; image_url: string | null };
+        imageByProduct[row.id] = row.image_url ?? null;
+      }
+    }
+    const items = (orderItems ?? []).map((i) => {
+      const row = i as { product_id: string | null; name: string; price: number; quantity: number; size?: string | null };
+      return {
+        name: row.name,
+        price: Number(row.price),
+        quantity: row.quantity,
+        size: row.size ?? null,
+        image_url: row.product_id ? imageByProduct[row.product_id] ?? null : null,
+      };
+    });
+    return { orderNumber: order.order_number, items, total: Number(order.total) };
+  }
+
   const supabase = await createClient();
   const { data: order, error: orderError } = await supabase
     .from("orders")

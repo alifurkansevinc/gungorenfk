@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { initializeCheckoutForm, type PaymentRequest, type CartItemForIyzico } from "@/lib/iyzico";
+import { getStoreDiscountForLevel, getMemberProductDiscountsForUser, getEffectiveProductPrice } from "@/lib/data";
 
 const DEFAULT_SHIPPING_COST = 29.9;
 const DEFAULT_FREE_THRESHOLD = 500;
@@ -63,19 +65,76 @@ export async function POST(req: NextRequest) {
     if (!items?.length) {
       return NextResponse.json({ success: false, error: "Sepetinizde ürün yok." }, { status: 400 });
     }
+    const productIds = [...new Set(items.map((i) => i.productId).filter(Boolean))] as string[];
+    if (productIds.length === 0 || items.some((i) => !i.productId)) {
+      return NextResponse.json({ success: false, error: "Sipariş kalemlerinde ürün bilgisi eksik. Lütfen sepeti güncelleyin." }, { status: 400 });
+    }
     if (deliveryMethod === "shipping" && (!shippingAddress?.city || (!shippingAddress?.address && !shippingAddress?.addressLine))) {
       return NextResponse.json({ success: false, error: "Teslimat adresi gereklidir." }, { status: 400 });
     }
 
     const supabase = createServiceRoleClient();
+    const { data: products } = await supabase
+      .from("store_products")
+      .select("id, name, price, sizes, stock_by_size")
+      .in("id", productIds)
+      .eq("is_active", true);
+    const productMap = new Map((products ?? []).map((p) => [p.id, p]));
+    const missing = items.filter((i) => !productMap.get(i.productId!));
+    if (missing.length > 0) {
+      return NextResponse.json({ success: false, error: "Sepetinizdeki bazı ürünler artık mevcut değil. Lütfen sepeti güncelleyin." }, { status: 400 });
+    }
+
+    let levelDiscount = 0;
+    let memberDiscounts: Record<string, number> = {};
+    const authClient = await createClient();
+    const { data: { user } } = await authClient.auth.getUser();
+    const effectiveUserId = user?.id ?? null;
+    if (effectiveUserId) {
+      const { data: profile } = await authClient.from("fan_profiles").select("fan_level_id").eq("user_id", effectiveUserId).single();
+      const levelId = (profile as { fan_level_id?: number } | null)?.fan_level_id ?? 1;
+      [levelDiscount, memberDiscounts] = await Promise.all([
+        getStoreDiscountForLevel(levelId),
+        getMemberProductDiscountsForUser(effectiveUserId),
+      ]);
+    }
+
+    const validatedItems: { productId: string; name: string; price: number; quantity: number; size: string | null; id: string }[] = [];
+    let subtotal = 0;
+    for (const i of items) {
+      const product = productMap.get(i.productId!);
+      if (!product) continue;
+      const listPrice = Number(product.price) || 0;
+      const discountPercent = Math.max(levelDiscount, memberDiscounts[product.id] ?? 0);
+      const effectivePrice = getEffectiveProductPrice(listPrice, discountPercent);
+      const qty = Math.max(1, Math.min(99, Number(i.quantity) || 1));
+      const size = (i.size?.trim() || "tek_beden") as string;
+      const stockBySize = (product.stock_by_size as Record<string, number> | null) ?? {};
+      if (Object.keys(stockBySize).length > 0) {
+        const stock = Math.max(0, Number(stockBySize[size]) || 0);
+        if (stock < qty) {
+          return NextResponse.json({ success: false, error: `"${product.name}" için yeterli stok yok. Lütfen sepeti güncelleyin.` }, { status: 400 });
+        }
+      }
+      validatedItems.push({
+        id: i.id,
+        productId: product.id,
+        name: product.name,
+        price: effectivePrice,
+        quantity: qty,
+        size: size === "tek_beden" ? null : size,
+      });
+      subtotal += effectivePrice * qty;
+    }
+    subtotal = Math.round(subtotal * 100) / 100;
+
     const { data: settingsRow } = await supabase.from("site_settings").select("value").eq("key", "shipping").single();
     const settings = (settingsRow?.value as { freeShippingThreshold?: number; standardShippingCost?: number }) ?? {};
     const freeThreshold = Number(settings.freeShippingThreshold) || DEFAULT_FREE_THRESHOLD;
     const standardShipping = Number(settings.standardShippingCost) ?? DEFAULT_SHIPPING_COST;
 
-    const subtotal = items.reduce((sum: number, i: { price: number; quantity: number }) => sum + i.price * i.quantity, 0);
     const shippingCost = deliveryMethod === "store_pickup" ? 0 : (subtotal >= freeThreshold ? 0 : standardShipping);
-    const total = subtotal + shippingCost;
+    const total = Math.round((subtotal + shippingCost) * 100) / 100;
 
     const now = new Date();
     const pickupDate = deliveryMethod === "store_pickup" ? formatDateForDB(addBusinessDays(now, 3)) : null;
@@ -93,6 +152,7 @@ export async function POST(req: NextRequest) {
     }
 
     const orderNumber = generateOrderNumber();
+    const receiptToken = crypto.randomUUID();
     const fullName = shippingAddress?.fullName || "Müşteri";
     const nameParts = fullName.trim().split(" ");
     const firstName = nameParts[0] || "Müşteri";
@@ -135,6 +195,7 @@ export async function POST(req: NextRequest) {
         delivery_method: deliveryMethod,
         pickup_date: pickupDate,
         pickup_code: pickupCode,
+        receipt_token: receiptToken,
       })
       .select("id")
       .single();
@@ -144,13 +205,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Sipariş oluşturulamadı." }, { status: 500 });
     }
 
-    const orderItems = items.map((i: { productId?: string; name: string; price: number; quantity: number; size?: string }) => ({
+    const orderItems = validatedItems.map((i) => ({
       order_id: order.id,
-      product_id: i.productId || null,
+      product_id: i.productId,
       name: i.name,
       price: i.price,
       quantity: i.quantity,
-      size: i.size || null,
+      size: i.size,
     }));
     const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
     if (itemsError) {
@@ -160,10 +221,10 @@ export async function POST(req: NextRequest) {
     }
 
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
-    const basketForIyzico: CartItemForIyzico[] = items.map((i: { id: string; name: string; price: number; quantity: number; category?: string }) => ({
+    const basketForIyzico: CartItemForIyzico[] = validatedItems.map((i) => ({
       id: i.id,
       name: i.name,
-      category: i.category,
+      category: "Ürün",
       price: i.price,
       quantity: i.quantity,
     }));

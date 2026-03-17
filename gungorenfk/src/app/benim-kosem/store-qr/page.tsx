@@ -7,13 +7,12 @@ const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `h
 export default async function StoreQrPage({
   searchParams,
 }: {
-  searchParams: Promise<{ code?: string; orderNumber?: string; token?: string }>;
+  searchParams: Promise<{ code?: string; orderNumber?: string }>;
 }) {
   const params = await searchParams;
   const code = params.code || "";
   const orderNumber = params.orderNumber || "";
-  const token = params.token ?? null;
-  const order = orderNumber ? await getOrderWithItemsForCurrentUser(orderNumber, token) : null;
+  const order = orderNumber ? await getOrderWithItemsForCurrentUser(orderNumber) : null;
 
   if (!code) {
     return (
@@ -59,10 +58,7 @@ export default async function StoreQrPage({
                     <div className="h-14 w-14 rounded-lg bg-siyah/10 flex items-center justify-center text-siyah/40 text-xs shrink-0">Ürün</div>
                   )}
                   <div className="min-w-0 flex-1">
-                    <p className="font-medium text-siyah text-sm truncate">
-                      {item.name}
-                      {item.size ? ` · Beden: ${item.size}` : ""}
-                    </p>
+                    <p className="font-medium text-siyah text-sm truncate">{item.name}</p>
                     <p className="text-xs text-siyah/60">Adet: {item.quantity} · {item.price.toFixed(2)} ₺</p>
                   </div>
                 </li>
