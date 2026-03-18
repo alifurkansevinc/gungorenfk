@@ -8,16 +8,16 @@ import { AdminRouteGuard } from "./AdminRouteGuard";
 export default async function AdminPanelLayout({
   children,
 }: { children: React.ReactNode }) {
-  let role: AdminRole = "admin";
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) redirect("/admin/giris?reason=no_session");
+
   const bypass = await hasValidBypass();
-  if (!bypass) {
-    const supabase = await createClient();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) redirect("/admin/giris?reason=no_session");
-    const { isAdmin, role: adminRole } = await getAdminStatusAndRole(user.id);
-    if (!isAdmin) redirect("/admin/giris?reason=not_admin");
-    if (adminRole) role = adminRole;
+  const { isAdmin, role: dbRole } = await getAdminStatusAndRole(user.id);
+  if (!isAdmin) {
+    if (!bypass) redirect("/admin/giris?reason=not_admin");
   }
+  const role: AdminRole = isAdmin ? (dbRole ?? "admin") : "admin";
 
   return (
     <AdminShell role={role}>

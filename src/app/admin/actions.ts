@@ -291,6 +291,7 @@ export async function getAdminUserRoleByEmail(
 
 /**
  * E-posta ile kullanıcının panel rolünü günceller ya da yoksa ekler.
+ * Mevcut satır varsa açık UPDATE ile rol yazılır (rolün gerçekten güncellenmesi için).
  */
 export async function updateAdminRoleByEmail(
   email: string,
@@ -306,6 +307,19 @@ export async function updateAdminRoleByEmail(
     const user = data?.users?.find((u) => u.email?.toLowerCase() === trimmed);
     if (!user) return { ok: false, error: "Bu e-posta ile kayıtlı kullanıcı bulunamadı." };
 
+    const { data: existing } = await supabase
+      .from("admin_users")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (existing && hasRoleColumn) {
+      const { error: updateErr } = await supabase
+        .from("admin_users")
+        .update({ role })
+        .eq("user_id", user.id);
+      if (updateErr) return { ok: false, error: updateErr.message };
+      return { ok: true };
+    }
     const payload = hasRoleColumn ? { user_id: user.id, role } : { user_id: user.id };
     const { error: upsertErr } = await supabase.from("admin_users").upsert(payload, { onConflict: "user_id" });
     if (upsertErr) return { ok: false, error: upsertErr.message };
