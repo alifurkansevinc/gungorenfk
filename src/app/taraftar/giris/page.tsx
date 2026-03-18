@@ -10,6 +10,10 @@ function TaraftarGirisContent() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawRedirect = searchParams.get("redirect") || "";
@@ -79,6 +83,44 @@ function TaraftarGirisContent() {
           {loading ? "Giriş yapılıyor..." : "Giriş Yap"}
         </button>
       </form>
+
+      <div className="mt-6 rounded-xl border border-siyah/10 bg-siyah/[0.03] p-4">
+        <h2 className="text-sm font-semibold text-siyah">Şifremi unuttum</h2>
+        <p className="mt-1 text-xs text-siyah/60">
+          E-posta adresinizi yazıp sıfırlama linki gönderin. Gelen linke tıklayıp yeni şifre belirleyin.
+        </p>
+        {resetError && <p className="mt-2 rounded bg-red-50 p-2 text-sm text-red-800">{resetError}</p>}
+        {resetSent && <p className="mt-2 rounded bg-green-50 p-2 text-sm text-green-800">E-posta gönderildi. Gelen linke tıklayıp yeni şifre belirleyin.</p>}
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            setResetError(null);
+            setResetLoading(true);
+            const supabase = createClient();
+            const redirectToUrl = typeof window !== "undefined" ? `${window.location.origin}/api/auth/callback` : "";
+            const { error: err } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), { redirectTo: redirectToUrl });
+            setResetLoading(false);
+            if (err) {
+              setResetError(err.message);
+              return;
+            }
+            setResetSent(true);
+          }}
+          className="mt-3 flex gap-2"
+        >
+          <input
+            type="email"
+            value={resetEmail}
+            onChange={(e) => setResetEmail(e.target.value)}
+            placeholder="E-posta adresiniz"
+            required
+            className="flex-1 rounded-lg border border-siyah/20 px-3 py-2.5 text-sm text-siyah focus:border-bordo focus:outline-none focus:ring-1 focus:ring-bordo"
+          />
+          <button type="submit" disabled={resetLoading} className="rounded-lg bg-siyah px-4 py-2.5 text-sm font-medium text-beyaz hover:bg-siyah/90 disabled:opacity-50">
+            {resetLoading ? "..." : "Link gönder"}
+          </button>
+        </form>
+      </div>
 
       <p className="mt-6 text-center text-sm text-siyah/70">
         Hesabın yok mu?{" "}
