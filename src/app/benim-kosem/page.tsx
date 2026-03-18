@@ -5,6 +5,7 @@ import { getSquad, getFanLevels, getLevelBenefits, getGiftQuotaForLevel } from "
 import type { FanLevel } from "@/types/db";
 import { FanLevelBadge } from "@/app/taraftar/FanLevelBadge";
 import { FavoriOyuncuSec } from "./FavoriOyuncuSec";
+import { signOutCurrentUser } from "@/app/actions/auth";
 
 export const metadata = {
   title: "Benim Köşem | Güngören FK",
@@ -231,12 +232,24 @@ export default async function BenimKosemPage() {
     <div className="min-h-screen min-w-0 overflow-x-hidden bg-[#f8f8f8]">
       <div className="border-b border-siyah/10 bg-siyah text-beyaz">
         <div className="mx-auto max-w-4xl px-4 py-5 sm:px-6 sm:py-6 lg:px-8 min-w-0">
-          <nav className="text-sm text-beyaz/60 truncate">
-            <Link href="/" className="hover:text-beyaz">Anasayfa</Link>
-            <span className="mx-2">/</span>
-            <span className="text-beyaz">Benim Köşem</span>
-          </nav>
-          <h1 className="font-display mt-2 text-2xl font-bold sm:text-3xl break-words">Benim Köşem</h1>
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <nav className="text-sm text-beyaz/60 truncate">
+                <Link href="/" className="hover:text-beyaz">Anasayfa</Link>
+                <span className="mx-2">/</span>
+                <span className="text-beyaz">Benim Köşem</span>
+              </nav>
+              <h1 className="font-display mt-2 text-2xl font-bold sm:text-3xl break-words">Benim Köşem</h1>
+            </div>
+            <form action={signOutCurrentUser}>
+              <button
+                type="submit"
+                className="shrink-0 rounded-lg border border-beyaz/20 px-4 py-2 text-sm font-medium text-beyaz transition-colors hover:bg-beyaz/10"
+              >
+                Çıkış Yap
+              </button>
+            </form>
+          </div>
         </div>
       </div>
 

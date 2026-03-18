@@ -6,6 +6,7 @@ import { AdminToast } from "./AdminToast";
 import { usePathname } from "next/navigation";
 import { canAccessMenu, hrefToMenuKey } from "@/lib/admin-roles";
 import type { AdminRole } from "@/lib/admin-roles";
+import { signOutCurrentUser } from "@/app/actions/auth";
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -195,9 +196,15 @@ export function AdminShell({ role, children }: { role: AdminRole; children: Reac
               <ExternalLink className="h-4 w-4" />
               <span className="hidden sm:inline">Siteyi Görüntüle</span>
             </Link>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-bordo text-sm font-bold text-beyaz">
-              A
-            </div>
+            <form action={signOutCurrentUser}>
+              <button
+                type="submit"
+                className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-beyaz px-4 py-2 text-sm font-medium text-siyah transition-colors hover:bg-gray-50"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Çıkış Yap</span>
+              </button>
+            </form>
           </div>
         </header>
         <main className="p-4 lg:p-8">{children}</main>
