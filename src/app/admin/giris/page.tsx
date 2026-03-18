@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { signInAdmin, verifyBypass, createFirstAdminUser, hasAnyAdmin } from "../actions";
+import { signInAdmin, createFirstAdminUser, hasAnyAdmin } from "../actions";
 
 function getReasonMessage(reason: string | null): string | null {
   if (reason === "no_session")
@@ -16,10 +16,8 @@ function AdminGirisForm() {
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [bypassCode, setBypassCode] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [bypassLoading, setBypassLoading] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
@@ -84,23 +82,6 @@ function AdminGirisForm() {
       window.location.href = "/admin/giris?created=1";
     } finally {
       setFirstUserLoading(false);
-    }
-  }
-
-  async function handleBypass(e: React.FormEvent) {
-    e.preventDefault();
-    setError(null);
-    setBypassLoading(true);
-    try {
-      const result = await verifyBypass(bypassCode);
-      if (!result.ok) {
-        setError(result.error ?? "Geçersiz bypass kodu");
-        return;
-      }
-      window.location.href = "/admin";
-      return;
-    } finally {
-      setBypassLoading(false);
     }
   }
 
@@ -170,7 +151,7 @@ function AdminGirisForm() {
       <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4">
         <h2 className="text-sm font-semibold text-amber-900">Şifremi unuttum</h2>
         <p className="mt-1 text-xs text-amber-800">
-          E-posta adresinizi yazıp &quot;Sıfırlama linki gönder&quot;e tıklayın. Gelen linki <strong>aynı tarayıcıda</strong> açın. Supabase Redirect URLs’e <code className="rounded bg-amber-200 px-1">https://siteniz.com/api/auth/callback</code> ekleyin.
+          E-posta adresinizi yazıp &quot;Sıfırlama linki gönder&quot;e tıklayın. Supabase, giriş yaptığınız e-posta adresine sıfırlama linki yollar. Linki <strong>aynı tarayıcıda</strong> açın ve Supabase Redirect URLs’e <code className="rounded bg-amber-200 px-1">https://siteniz.com/api/auth/callback</code> ekli olsun.
         </p>
         {resetError && <p className="mt-2 rounded bg-red-100 p-2 text-sm text-red-800">{resetError}</p>}
         {resetSent && <p className="mt-2 rounded bg-green-100 p-2 text-sm text-green-800">E-posta gönderildi. Gelen linke tıklayıp yeni şifre belirleyin.</p>}
@@ -198,24 +179,6 @@ function AdminGirisForm() {
           />
           <button type="submit" disabled={resetLoading} className="rounded bg-amber-600 px-4 py-2 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50">
             {resetLoading ? "..." : "Sıfırlama linki gönder"}
-          </button>
-        </form>
-      </div>
-
-      <div className="mt-10 rounded-xl border border-siyah/10 bg-siyah/5 p-4">
-        <p className="text-sm font-medium text-siyah/80">Geliştirici bypass</p>
-        <p className="mt-1 text-xs text-siyah/60">.env içinde ADMIN_BYPASS_SECRET ile aynı kodu girin (isteğe bağlı).</p>
-        <form onSubmit={handleBypass} className="mt-3 flex gap-2">
-          <input
-            type="password"
-            value={bypassCode}
-            onChange={(e) => setBypassCode(e.target.value)}
-            placeholder="Bypass kodu"
-            className="flex-1 rounded border border-black/20 px-3 py-2 text-sm"
-            autoComplete="off"
-          />
-          <button type="submit" disabled={bypassLoading} className="rounded bg-siyah px-4 py-2 text-sm font-medium text-beyaz hover:bg-siyah/90 disabled:opacity-50">
-            {bypassLoading ? "..." : "Giriş"}
           </button>
         </form>
       </div>
