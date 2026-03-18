@@ -1,9 +1,7 @@
 import { getAdminSupabase } from "../../actions";
 import { hasAdminUserRoleColumn } from "../../actions";
 import { createServiceRoleClient } from "@/lib/supabase/service";
-import { AdminKullaniciForm } from "./AdminKullaniciForm";
-import { RolDegistirForm } from "./RolDegistirForm";
-import { SifreSifirlaForm } from "./SifreSifirlaForm";
+import { KullaniciYonetimi } from "./KullaniciYonetimi";
 import { ADMIN_ROLE_LABELS } from "@/lib/admin-roles";
 import type { AdminRole } from "@/lib/admin-roles";
 
@@ -32,24 +30,17 @@ export default async function AdminAdminsPage() {
     <div>
       <h1 className="text-2xl font-bold text-siyah">Panel kullanıcıları</h1>
       <p className="mt-1 text-siyah/70">
-        Admin panele giriş yapabilecek hesaplar. Yeni kullanıcı eklerken e-posta, şifre ve rol belirleyin; sadece admin rolü bu sayfayı görür.
+        E-posta ile ara, rol değiştir, şifre sıfırla veya yeni kullanıcı oluştur. Tek ekrandan yönetim.
       </p>
-      {!hasRoleColumn && (
-        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-          `admin_users.role` sütunu bulunamadı. Rol yönetimi için `supabase/migrations/055_admin_users_role.sql` çalıştırılmalı.
-        </div>
-      )}
 
-      <AdminKullaniciForm />
-
-      <RolDegistirForm />
-
-      <SifreSifirlaForm />
+      <div className="mt-6">
+        <KullaniciYonetimi />
+      </div>
 
       <div className="mt-8">
-        <h2 className="text-lg font-semibold text-siyah">Mevcut kullanıcılar</h2>
+        <h2 className="text-lg font-semibold text-siyah">Mevcut panel kullanıcıları</h2>
         {(!adminRows || adminRows.length === 0) ? (
-        <p className="mt-2 text-siyah/60">Henüz kullanıcı yok. Yukarıdaki form ile ekleyin.</p>
+          <p className="mt-2 text-siyah/60">Henüz kullanıcı yok. Yukarıdan ekleyin.</p>
         ) : (
           <ul className="mt-3 space-y-2">
             {adminRows.map((row) => (
@@ -68,14 +59,6 @@ export default async function AdminAdminsPage() {
             ))}
           </ul>
         )}
-      </div>
-
-      <div className="mt-10 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
-        <h3 className="font-semibold">İlk admin nasıl eklenir?</h3>
-        <ol className="mt-2 list-inside list-decimal space-y-1">
-          <li>Yukarıdaki formdan e-posta, şifre ve rol "Admin" seçerek ilk admini oluşturabilirsiniz.</li>
-          <li>Veya Supabase Dashboard → Authentication → Users üzerinden kullanıcı oluşturup SQL ile <code className="rounded bg-amber-100 px-1">INSERT INTO admin_users (user_id, role) VALUES ('UUID', 'admin');</code> ekleyin.</li>
-        </ol>
       </div>
     </div>
   );
