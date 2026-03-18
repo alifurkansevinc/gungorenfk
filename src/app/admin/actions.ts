@@ -112,6 +112,29 @@ export type AdminUserRoleLookup = {
   panelRoleLabel: string;
 };
 
+/**
+ * Layout için: user_id'nin admin_users'da olup olmadığını ve rolünü service role ile alır (RLS bypass).
+ * Böylece oturumlu kullanıcı RLS yüzünden kendi kaydını göremese bile panel açılır.
+ */
+export async function getAdminStatusAndRole(userId: string): Promise<{
+  isAdmin: boolean;
+  role?: "admin" | "operator" | "club_manager" | "football_director" | "event_coordinator";
+}> {
+  if (!userId) return { isAdmin: false };
+  try {
+    const supabase = createServiceRoleClient();
+    const hasRoleColumn = await hasAdminUserRoleColumn();
+    const { data, error } = hasRoleColumn
+      ? await supabase.from("admin_users").select("id, role").eq("user_id", userId).maybeSingle()
+      : await supabase.from("admin_users").select("id").eq("user_id", userId).maybeSingle();
+    if (error || !data) return { isAdmin: false };
+    const role = hasRoleColumn ? (data as { role?: AdminRole }).role : "admin";
+    return { isAdmin: true, role: role ?? "admin" };
+  } catch {
+    return { isAdmin: false };
+  }
+}
+
 export async function hasAdminUserRoleColumn(): Promise<boolean> {
   try {
     const supabase = createServiceRoleClient();
