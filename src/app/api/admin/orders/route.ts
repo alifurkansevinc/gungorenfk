@@ -7,9 +7,10 @@ export async function GET(req: NextRequest) {
   const supabaseAuth = await createClient();
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { data: adminRow } = await supabaseAuth.from("admin_users").select("id").eq("user_id", user.id).single();
-  const hasBypass = await (await import("@/app/admin/actions")).hasValidBypass();
-  if (!adminRow && !hasBypass) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { checkIsAdmin, hasValidBypass } = await import("@/app/admin/actions");
+  const hasBypass = await hasValidBypass();
+  const { isAdmin } = await checkIsAdmin(user.id);
+  if (!isAdmin && !hasBypass) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { searchParams } = req.nextUrl;
   const startDate = searchParams.get("startDate");
@@ -164,9 +165,10 @@ export async function PUT(req: NextRequest) {
   const supabaseAuth = await createClient();
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { data: adminRow } = await supabaseAuth.from("admin_users").select("id").eq("user_id", user.id).single();
-  const hasBypass = await (await import("@/app/admin/actions")).hasValidBypass();
-  if (!adminRow && !hasBypass) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { checkIsAdmin, hasValidBypass } = await import("@/app/admin/actions");
+  const hasBypass = await hasValidBypass();
+  const { isAdmin } = await checkIsAdmin(user.id);
+  if (!isAdmin && !hasBypass) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
   const { id, status } = body as { id?: string; status?: string };
@@ -193,9 +195,10 @@ export async function DELETE(req: NextRequest) {
   const supabaseAuth = await createClient();
   const { data: { user } } = await supabaseAuth.auth.getUser();
   if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const { data: adminRow } = await supabaseAuth.from("admin_users").select("id").eq("user_id", user.id).single();
-  const hasBypass = await (await import("@/app/admin/actions")).hasValidBypass();
-  if (!adminRow && !hasBypass) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  const { checkIsAdmin, hasValidBypass } = await import("@/app/admin/actions");
+  const hasBypass = await hasValidBypass();
+  const { isAdmin } = await checkIsAdmin(user.id);
+  if (!isAdmin && !hasBypass) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
 
   const { searchParams } = req.nextUrl;
   const id = searchParams.get("id");

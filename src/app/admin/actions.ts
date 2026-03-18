@@ -60,13 +60,19 @@ export async function hasValidBypass(): Promise<boolean> {
 }
 
 /**
- * Admin sayfalarında kullan: bypass ise service role (RLS yok), değilse session client.
- * Böylece bypass ile girişte de taraftar/maç/kadro vb. veriler görünür.
+ * Admin sayfalarında kullan: bypass veya admin_users'da kayıtlı kullanıcı ise service role döner (tüm sipariş/bağış vb. görünür).
+ * Aksi halde session client (RLS uygulanır; sadece kendi verisi görünür).
  */
 export async function getAdminSupabase() {
   const bypass = await hasValidBypass();
   if (bypass) return createServiceRoleClient();
-  return createClient();
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (user) {
+    const { isAdmin } = await checkIsAdmin(user.id);
+    if (isAdmin) return createServiceRoleClient();
+  }
+  return supabase;
 }
 
 /**
