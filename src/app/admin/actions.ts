@@ -115,6 +115,14 @@ export async function signInAdmin(
 
 type AdminRole = "admin" | "operator" | "club_manager" | "football_director" | "event_coordinator";
 
+export type AdminUserRoleLookup = {
+  email: string;
+  userId: string;
+  authExists: boolean;
+  panelRole: AdminRole | null;
+  panelRoleLabel: string;
+};
+
 /**
  * Yeni panel kullanıcısı ekler (e-posta + şifre + rol).
  * Şifre verilirse Supabase Auth'da kullanıcı oluşturulur; verilmezse mevcut kullanıcı aranır.
@@ -179,11 +187,10 @@ export async function addAdminUser(
       return { ok: true };
     }
 
-    const { error: insertErr } = await supabase.from("admin_users").insert({ user_id: userId, role }).select().single();
-    if (insertErr) {
-      if (insertErr.code === "23505") return { ok: false, error: "Bu kullanıcı zaten panele ekli." };
-      return { ok: false, error: insertErr.message };
-    }
+    const { error: insertErr } = await supabase
+      .from("admin_users")
+      .upsert({ user_id: userId, role }, { onConflict: "user_id" });
+    if (insertErr) return { ok: false, error: insertErr.message };
     return { ok: true };
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
@@ -197,6 +204,74 @@ export async function addAdminUser(
  */
 export async function addAdminByEmail(email: string): Promise<{ ok: boolean; error?: string }> {
   return addAdminUser(email, null, "admin");
+}
+
+/**
+ * E-posta ile kullanıcının auth ve panel rolünü getirir.
+ */
+export async function getAdminUserRoleByEmail(
+  email: string
+): Promise<{ ok: boolean; error?: string; data?: AdminUserRoleLookup }> {
+  const trimmed = email?.trim().toLowerCase();
+  if (!trimmed) return { ok: false, error: "E-posta girin." };
+  try {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    if (error) return { ok: false, error: error.message };
+    const user = data?.users?.find((u) => u.email?.toLowerCase() === trimmed);
+    if (!user) {
+      return { ok: false, error: "Bu e-posta ile kayıtlı kullanıcı bulunamadı." };
+    }
+
+    const { data: adminRow, error: adminErr } = await supabase
+      .from("admin_users")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (adminErr) return { ok: false, error: adminErr.message };
+
+    const panelRole = (adminRow?.role ?? null) as AdminRole | null;
+    return {
+      ok: true,
+      data: {
+        email: trimmed,
+        userId: user.id,
+        authExists: true,
+        panelRole,
+        panelRoleLabel: panelRole ? panelRole : "Taraftar / panel yetkisi yok",
+      },
+    };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg };
+  }
+}
+
+/**
+ * E-posta ile kullanıcının panel rolünü günceller ya da yoksa ekler.
+ */
+export async function updateAdminRoleByEmail(
+  email: string,
+  role: AdminRole
+): Promise<{ ok: boolean; error?: string }> {
+  const trimmed = email?.trim().toLowerCase();
+  if (!trimmed) return { ok: false, error: "E-posta girin." };
+  try {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+    if (error) return { ok: false, error: error.message };
+    const user = data?.users?.find((u) => u.email?.toLowerCase() === trimmed);
+    if (!user) return { ok: false, error: "Bu e-posta ile kayıtlı kullanıcı bulunamadı." };
+
+    const { error: upsertErr } = await supabase
+      .from("admin_users")
+      .upsert({ user_id: user.id, role }, { onConflict: "user_id" });
+    if (upsertErr) return { ok: false, error: upsertErr.message };
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg };
+  }
 }
 
 /**

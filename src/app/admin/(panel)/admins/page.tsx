@@ -1,6 +1,7 @@
 import { getAdminSupabase } from "../../actions";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { AdminKullaniciForm } from "./AdminKullaniciForm";
+import { RolDegistirForm } from "./RolDegistirForm";
 import { SifreSifirlaForm } from "./SifreSifirlaForm";
 import { ADMIN_ROLE_LABELS } from "@/lib/admin-roles";
 import type { AdminRole } from "@/lib/admin-roles";
@@ -31,6 +32,8 @@ export default async function AdminAdminsPage() {
       </p>
 
       <AdminKullaniciForm />
+
+      <RolDegistirForm />
 
       <SifreSifirlaForm />
 
