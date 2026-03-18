@@ -40,7 +40,7 @@ function getHakKazandiklarim(levelSlug: string): string[] {
 export default async function BenimKosemPage() {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/taraftar/kayit");
+  if (!user) redirect("/taraftar/giris?redirect=/benim-kosem");
 
   const { data: profile } = await supabase
     .from("fan_profiles")

@@ -32,7 +32,8 @@ export function Header() {
     return () => subscription.unsubscribe();
   }, []);
 
-  const navLinks = signedIn ? [...NAV_BASE, { href: "/benim-kosem", label: "Benim Köşem" }] : [...NAV_BASE];
+  const benimKosemLink = signedIn ? { href: "/benim-kosem", label: "Benim Köşem" as const } : { href: "/taraftar/giris?redirect=/benim-kosem", label: "Benim Köşem" as const };
+  const navLinks = [...NAV_BASE, benimKosemLink];
 
   return (
     <header className="sticky top-0 z-50 bg-siyah">
