@@ -1,4 +1,5 @@
 import { getAdminSupabase } from "../../actions";
+import { hasAdminUserRoleColumn } from "../../actions";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { AdminKullaniciForm } from "./AdminKullaniciForm";
 import { RolDegistirForm } from "./RolDegistirForm";
@@ -8,10 +9,13 @@ import type { AdminRole } from "@/lib/admin-roles";
 
 export default async function AdminAdminsPage() {
   const supabase = await getAdminSupabase();
-  const { data: adminRows } = await supabase
-    .from("admin_users")
-    .select("id, user_id, role")
-    .order("created_at", { ascending: false });
+  const hasRoleColumn = await hasAdminUserRoleColumn();
+  const { data: adminRowsRaw } = hasRoleColumn
+    ? await supabase.from("admin_users").select("id, user_id, role, created_at")
+    : await supabase.from("admin_users").select("id, user_id, created_at");
+  const adminRows = [...(adminRowsRaw ?? [])].sort(
+    (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+  );
 
   let emails: Record<string, string> = {};
   if (adminRows && adminRows.length > 0) {
@@ -30,6 +34,11 @@ export default async function AdminAdminsPage() {
       <p className="mt-1 text-siyah/70">
         Admin panele giriş yapabilecek hesaplar. Yeni kullanıcı eklerken e-posta, şifre ve rol belirleyin; sadece admin rolü bu sayfayı görür.
       </p>
+      {!hasRoleColumn && (
+        <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
+          `admin_users.role` sütunu bulunamadı. Rol yönetimi için `supabase/migrations/055_admin_users_role.sql` çalıştırılmalı.
+        </div>
+      )}
 
       <AdminKullaniciForm />
 
@@ -51,7 +60,9 @@ export default async function AdminAdminsPage() {
                 <span className="font-mono text-sm text-siyah/70">{row.user_id}</span>
                 {emails[row.user_id] && <span className="text-siyah">{emails[row.user_id]}</span>}
                 <span className="rounded bg-siyah/10 px-2 py-0.5 text-sm font-medium text-siyah">
-                  {ADMIN_ROLE_LABELS[(row.role ?? "admin") as AdminRole]}
+                  {hasRoleColumn
+                    ? ADMIN_ROLE_LABELS[((row as { role?: AdminRole }).role ?? "admin") as AdminRole]
+                    : "Admin"}
                 </span>
               </li>
             ))}

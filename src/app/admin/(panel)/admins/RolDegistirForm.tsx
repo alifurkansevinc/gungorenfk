@@ -1,9 +1,9 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ADMIN_ROLE_LABELS } from "@/lib/admin-roles";
 import type { AdminRole } from "@/lib/admin-roles";
-import { getAdminUserRoleByEmail, updateAdminRoleByEmail } from "../../actions";
+import { getAdminUserRoleByEmail, updateAdminRoleByEmail, hasAdminUserRoleColumn } from "../../actions";
 
 const ROLES: AdminRole[] = ["admin", "operator", "club_manager", "football_director", "event_coordinator"];
 
@@ -15,8 +15,13 @@ export function RolDegistirForm() {
   const [lookupLoading, setLookupLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [roleColumnExists, setRoleColumnExists] = useState<boolean | null>(null);
 
   const canUpdate = useMemo(() => email.trim().length > 0, [email]);
+
+  useEffect(() => {
+    hasAdminUserRoleColumn().then((exists) => setRoleColumnExists(exists));
+  }, []);
 
   async function handleLookup() {
     const trimmed = email.trim();
@@ -62,6 +67,11 @@ export function RolDegistirForm() {
       <p className="mt-1 text-sm text-siyah/60">
         E-posta girip önce mevcut rolü görün, sonra yeni rolü seçip güncelleyin. Panel yetkisi olmayan kullanıcılar için mevcut durum &quot;Taraftar / panel yetkisi yok&quot; olarak görünür.
       </p>
+      {roleColumnExists === false && (
+        <p className="mt-3 rounded bg-amber-100 p-2 text-sm text-amber-900">
+          `admin_users.role` sütunu bulunamadı. Bu formun çalışması için `supabase/migrations/055_admin_users_role.sql` uygulanmalı.
+        </p>
+      )}
       {error && <p className="mt-3 rounded bg-red-100 p-2 text-sm text-red-800">{error}</p>}
       {success && <p className="mt-3 rounded bg-green-100 p-2 text-sm text-green-800">{success}</p>}
       <div className="mt-4 space-y-3">
@@ -77,7 +87,7 @@ export function RolDegistirForm() {
           <button
             type="button"
             onClick={handleLookup}
-            disabled={!canUpdate || lookupLoading}
+            disabled={!canUpdate || lookupLoading || roleColumnExists === false}
             className="rounded bg-siyah px-4 py-2 text-sm font-medium text-beyaz hover:bg-siyah/90 disabled:opacity-50"
           >
             {lookupLoading ? "..." : "Rolü getir"}
@@ -102,7 +112,7 @@ export function RolDegistirForm() {
         </div>
         <button
           type="submit"
-          disabled={!canUpdate || loading}
+          disabled={!canUpdate || loading || roleColumnExists === false}
           className="w-full rounded bg-bordo px-4 py-2 text-sm font-medium text-beyaz hover:bg-bordo/90 disabled:opacity-50"
         >
           {loading ? "..." : "Rolü değiştir"}

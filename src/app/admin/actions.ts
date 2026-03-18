@@ -123,6 +123,24 @@ export type AdminUserRoleLookup = {
   panelRoleLabel: string;
 };
 
+export async function hasAdminUserRoleColumn(): Promise<boolean> {
+  try {
+    const supabase = createServiceRoleClient();
+    const { data, error } = await supabase
+      .schema("information_schema")
+      .from("columns")
+      .select("column_name")
+      .eq("table_schema", "public")
+      .eq("table_name", "admin_users")
+      .eq("column_name", "role")
+      .maybeSingle();
+    if (error) return false;
+    return !!data;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Yeni panel kullanıcısı ekler (e-posta + şifre + rol).
  * Şifre verilirse Supabase Auth'da kullanıcı oluşturulur; verilmezse mevcut kullanıcı aranır.
@@ -139,6 +157,7 @@ export async function addAdminUser(
   if (!validRoles.includes(role)) return { ok: false, error: "Geçersiz rol." };
   try {
     const supabase = createServiceRoleClient();
+    const hasRoleColumn = await hasAdminUserRoleColumn();
     let userId: string;
 
     if (password && password.length >= 6) {
@@ -174,22 +193,24 @@ export async function addAdminUser(
       userId = user.id;
     }
 
+    const selectColumns = hasRoleColumn ? "id, role" : "id";
     const { data: existingAdmin, error: existingErr } = await supabase
       .from("admin_users")
-      .select("id, role")
+      .select(selectColumns)
       .eq("user_id", userId)
       .maybeSingle();
     if (existingErr) return { ok: false, error: existingErr.message };
 
     if (existingAdmin) {
-      const { error: updateErr } = await supabase.from("admin_users").update({ role }).eq("id", existingAdmin.id);
-      if (updateErr) return { ok: false, error: updateErr.message };
+      if (hasRoleColumn) {
+        const { error: updateErr } = await supabase.from("admin_users").update({ role }).eq("user_id", userId);
+        if (updateErr) return { ok: false, error: updateErr.message };
+      }
       return { ok: true };
     }
 
-    const { error: insertErr } = await supabase
-      .from("admin_users")
-      .upsert({ user_id: userId, role }, { onConflict: "user_id" });
+    const payload = hasRoleColumn ? { user_id: userId, role } : { user_id: userId };
+    const { error: insertErr } = await supabase.from("admin_users").upsert(payload, { onConflict: "user_id" });
     if (insertErr) return { ok: false, error: insertErr.message };
     return { ok: true };
   } catch (e) {
@@ -216,6 +237,7 @@ export async function getAdminUserRoleByEmail(
   if (!trimmed) return { ok: false, error: "E-posta girin." };
   try {
     const supabase = createServiceRoleClient();
+    const hasRoleColumn = await hasAdminUserRoleColumn();
     const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
     if (error) return { ok: false, error: error.message };
     const user = data?.users?.find((u) => u.email?.toLowerCase() === trimmed);
@@ -223,14 +245,12 @@ export async function getAdminUserRoleByEmail(
       return { ok: false, error: "Bu e-posta ile kayıtlı kullanıcı bulunamadı." };
     }
 
-    const { data: adminRow, error: adminErr } = await supabase
-      .from("admin_users")
-      .select("role")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    const { data: adminRow, error: adminErr } = hasRoleColumn
+      ? await supabase.from("admin_users").select("role").eq("user_id", user.id).maybeSingle()
+      : await supabase.from("admin_users").select("id").eq("user_id", user.id).maybeSingle();
     if (adminErr) return { ok: false, error: adminErr.message };
 
-    const panelRole = (adminRow?.role ?? null) as AdminRole | null;
+    const panelRole = hasRoleColumn ? ((adminRow as { role?: AdminRole } | null)?.role ?? null) : "admin";
     return {
       ok: true,
       data: {
@@ -238,7 +258,11 @@ export async function getAdminUserRoleByEmail(
         userId: user.id,
         authExists: true,
         panelRole,
-        panelRoleLabel: panelRole ? panelRole : "Taraftar / panel yetkisi yok",
+        panelRoleLabel: hasRoleColumn
+          ? panelRole
+            ? panelRole
+            : "Taraftar / panel yetkisi yok"
+          : "Eski şema: role sütunu yok, tüm adminler admin sayılıyor",
       },
     };
   } catch (e) {
@@ -258,14 +282,14 @@ export async function updateAdminRoleByEmail(
   if (!trimmed) return { ok: false, error: "E-posta girin." };
   try {
     const supabase = createServiceRoleClient();
+    const hasRoleColumn = await hasAdminUserRoleColumn();
     const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
     if (error) return { ok: false, error: error.message };
     const user = data?.users?.find((u) => u.email?.toLowerCase() === trimmed);
     if (!user) return { ok: false, error: "Bu e-posta ile kayıtlı kullanıcı bulunamadı." };
 
-    const { error: upsertErr } = await supabase
-      .from("admin_users")
-      .upsert({ user_id: user.id, role }, { onConflict: "user_id" });
+    const payload = hasRoleColumn ? { user_id: user.id, role } : { user_id: user.id };
+    const { error: upsertErr } = await supabase.from("admin_users").upsert(payload, { onConflict: "user_id" });
     if (upsertErr) return { ok: false, error: upsertErr.message };
     return { ok: true };
   } catch (e) {
@@ -301,6 +325,7 @@ export async function createFirstAdminUser(
   if (!password || password.length < 6) return { ok: false, error: "Şifre en az 6 karakter olmalı." };
   try {
     const supabase = createServiceRoleClient();
+    const hasRoleColumn = await hasAdminUserRoleColumn();
     const { count, error: countErr } = await supabase.from("admin_users").select("id", { count: "exact", head: true });
     if (countErr) return { ok: false, error: countErr.message };
     if ((count ?? 0) > 0) return { ok: false, error: "Zaten en az bir panel kullanıcısı var. Giriş yapın." };
@@ -313,11 +338,8 @@ export async function createFirstAdminUser(
     if (createErr) return { ok: false, error: createErr.message };
     if (!createData.user) return { ok: false, error: "Kullanıcı oluşturulamadı." };
 
-    const { error: insertErr } = await supabase
-      .from("admin_users")
-      .insert({ user_id: createData.user.id, role: "admin" })
-      .select()
-      .single();
+    const payload = hasRoleColumn ? { user_id: createData.user.id, role: "admin" } : { user_id: createData.user.id };
+    const { error: insertErr } = await supabase.from("admin_users").insert(payload).select().single();
     if (insertErr) return { ok: false, error: insertErr.message };
     return { ok: true };
   } catch (e) {
