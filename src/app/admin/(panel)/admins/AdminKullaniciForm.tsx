@@ -41,7 +41,7 @@ export function AdminKullaniciForm() {
         E-posta ve şifre ile yeni kullanıcı oluşturulur; şifre boş bırakılırsa bu e-posta ile mevcut Auth kullanıcısı panele eklenir (rol atanır).
       </p>
       {error && <p className="mt-3 rounded bg-red-100 p-2 text-sm text-red-800">{error}</p>}
-      {success && <p className="mt-3 rounded bg-green-100 p-2 text-sm text-green-800">Kullanıcı eklendi.</p>}
+      {success && <p className="mt-3 rounded bg-green-100 p-2 text-sm text-green-800">Kullanıcı işlendi. Rol güncellenmiş olabilir.</p>}
       <div className="mt-4 space-y-3">
         <input
           type="email"

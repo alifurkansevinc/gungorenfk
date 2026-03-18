@@ -139,9 +139,21 @@ export async function addAdminUser(
         password,
         email_confirm: true,
       });
-      if (createErr) return { ok: false, error: createErr.message };
-      if (!createData.user) return { ok: false, error: "Kullanıcı oluşturulamadı." };
-      userId = createData.user.id;
+      if (createErr) {
+        const isDuplicateEmail =
+          createErr.message.toLowerCase().includes("already") ||
+          createErr.message.toLowerCase().includes("duplicate") ||
+          createErr.message.toLowerCase().includes("exists");
+        if (!isDuplicateEmail) return { ok: false, error: createErr.message };
+        const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
+        if (error) return { ok: false, error: error.message };
+        const user = data?.users?.find((u) => u.email?.toLowerCase() === trimmed);
+        if (!user) return { ok: false, error: "Bu e-posta ile kayıtlı kullanıcı bulunamadı." };
+        userId = user.id;
+      } else {
+        if (!createData.user) return { ok: false, error: "Kullanıcı oluşturulamadı." };
+        userId = createData.user.id;
+      }
     } else {
       const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
       if (error) return { ok: false, error: error.message };
@@ -154,11 +166,20 @@ export async function addAdminUser(
       userId = user.id;
     }
 
-    const { error: insertErr } = await supabase
+    const { data: existingAdmin, error: existingErr } = await supabase
       .from("admin_users")
-      .insert({ user_id: userId, role })
-      .select()
-      .single();
+      .select("id, role")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (existingErr) return { ok: false, error: existingErr.message };
+
+    if (existingAdmin) {
+      const { error: updateErr } = await supabase.from("admin_users").update({ role }).eq("id", existingAdmin.id);
+      if (updateErr) return { ok: false, error: updateErr.message };
+      return { ok: true };
+    }
+
+    const { error: insertErr } = await supabase.from("admin_users").insert({ user_id: userId, role }).select().single();
     if (insertErr) {
       if (insertErr.code === "23505") return { ok: false, error: "Bu kullanıcı zaten panele ekli." };
       return { ok: false, error: insertErr.message };
@@ -176,6 +197,58 @@ export async function addAdminUser(
  */
 export async function addAdminByEmail(email: string): Promise<{ ok: boolean; error?: string }> {
   return addAdminUser(email, null, "admin");
+}
+
+/**
+ * En az bir panel kullanıcısı (admin) var mı? Giriş sayfasında ilk kullanıcı formunu göstermek için kullanılır.
+ */
+export async function hasAnyAdmin(): Promise<boolean> {
+  try {
+    const supabase = createServiceRoleClient();
+    const { count, error } = await supabase.from("admin_users").select("id", { count: "exact", head: true });
+    if (error) return false;
+    return (count ?? 0) > 0;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Hiç admin yokken ilk panel kullanıcısını oluşturur (giriş sayfasından çağrılır).
+ * Sadece admin_users boşken çalışır; yoksa hata döner.
+ */
+export async function createFirstAdminUser(
+  email: string,
+  password: string
+): Promise<{ ok: boolean; error?: string }> {
+  const trimmed = email?.trim().toLowerCase();
+  if (!trimmed) return { ok: false, error: "E-posta girin." };
+  if (!password || password.length < 6) return { ok: false, error: "Şifre en az 6 karakter olmalı." };
+  try {
+    const supabase = createServiceRoleClient();
+    const { count, error: countErr } = await supabase.from("admin_users").select("id", { count: "exact", head: true });
+    if (countErr) return { ok: false, error: countErr.message };
+    if ((count ?? 0) > 0) return { ok: false, error: "Zaten en az bir panel kullanıcısı var. Giriş yapın." };
+
+    const { data: createData, error: createErr } = await supabase.auth.admin.createUser({
+      email: trimmed,
+      password,
+      email_confirm: true,
+    });
+    if (createErr) return { ok: false, error: createErr.message };
+    if (!createData.user) return { ok: false, error: "Kullanıcı oluşturulamadı." };
+
+    const { error: insertErr } = await supabase
+      .from("admin_users")
+      .insert({ user_id: createData.user.id, role: "admin" })
+      .select()
+      .single();
+    if (insertErr) return { ok: false, error: insertErr.message };
+    return { ok: true };
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    return { ok: false, error: msg };
+  }
 }
 
 /**

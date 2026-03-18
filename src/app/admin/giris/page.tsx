@@ -3,7 +3,7 @@
 import { Suspense, useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
-import { signInAdmin, verifyBypass } from "../actions";
+import { signInAdmin, verifyBypass, createFirstAdminUser, hasAnyAdmin } from "../actions";
 
 function getReasonMessage(reason: string | null): string | null {
   if (reason === "no_session")
@@ -24,10 +24,20 @@ function AdminGirisForm() {
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
+  const [firstUserEmail, setFirstUserEmail] = useState("");
+  const [firstUserPassword, setFirstUserPassword] = useState("");
+  const [firstUserLoading, setFirstUserLoading] = useState(false);
+  const [firstUserError, setFirstUserError] = useState<string | null>(null);
+  const [firstUserSuccess, setFirstUserSuccess] = useState(false);
+  const [showFirstUserForm, setShowFirstUserForm] = useState<boolean | null>(null);
   const reasonFromParams = searchParams.get("reason");
   const [reasonMessage, setReasonMessage] = useState<string | null>(() =>
     getReasonMessage(reasonFromParams)
   );
+
+  useEffect(() => {
+    hasAnyAdmin().then((has) => setShowFirstUserForm(!has));
+  }, []);
 
   useEffect(() => {
     const msg = getReasonMessage(reasonFromParams);
@@ -57,6 +67,26 @@ function AdminGirisForm() {
     }
   }
 
+  async function handleFirstUserSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setFirstUserError(null);
+    setFirstUserSuccess(false);
+    setFirstUserLoading(true);
+    try {
+      const result = await createFirstAdminUser(firstUserEmail, firstUserPassword);
+      if (!result.ok) {
+        setFirstUserError(result.error ?? "Oluşturulamadı.");
+        return;
+      }
+      setFirstUserSuccess(true);
+      setFirstUserEmail("");
+      setFirstUserPassword("");
+      window.location.href = "/admin/giris?created=1";
+    } finally {
+      setFirstUserLoading(false);
+    }
+  }
+
   async function handleBypass(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -78,9 +108,50 @@ function AdminGirisForm() {
     <div className="mx-auto max-w-md px-4 py-16">
       <h1 className="text-2xl font-bold text-siyah">Admin girişi</h1>
       <p className="mt-1 text-sm text-siyah/60">E-posta ve şifre ile giriş yapın. Hesabınızın admin olması gerekir.</p>
-      <p className="mt-2 text-xs text-siyah/50">İlk admin: Supabase Dashboard → Authentication → Users’da kullanıcı oluşturun; SQL Editor’da <code className="rounded bg-siyah/10 px-1">SELECT add_first_admin('kullanıcı-uuid');</code> çalıştırın (migration 025 gerekli).</p>
+
+      {showFirstUserForm === false && (
+        <p className="mt-2 text-xs text-siyah/50">Yeni panel kullanıcısı eklemek için giriş yaptıktan sonra Panel kullanıcıları sayfasını kullanın.</p>
+      )}
+
+      {showFirstUserForm === true && (
+        <div className="mt-8 rounded-xl border border-green-200 bg-green-50 p-4">
+          <h2 className="text-sm font-semibold text-green-900">İlk panel kullanıcısını oluştur</h2>
+          <p className="mt-1 text-xs text-green-800">Henüz hiç kullanıcı yok. Aşağıdaki formla ilk admin hesabını oluşturun; ardından giriş yapabilirsiniz.</p>
+          {firstUserError && <p className="mt-2 rounded bg-red-100 p-2 text-sm text-red-800">{firstUserError}</p>}
+          {firstUserSuccess && <p className="mt-2 rounded bg-green-200 p-2 text-sm text-green-800">Hesap oluşturuldu. Giriş yapabilirsiniz.</p>}
+          <form onSubmit={handleFirstUserSubmit} className="mt-3 space-y-3">
+            <input
+              type="email"
+              value={firstUserEmail}
+              onChange={(e) => setFirstUserEmail(e.target.value)}
+              placeholder="E-posta"
+              required
+              className="w-full rounded border border-green-300 bg-white px-3 py-2 text-sm"
+            />
+            <input
+              type="password"
+              value={firstUserPassword}
+              onChange={(e) => setFirstUserPassword(e.target.value)}
+              placeholder="Şifre (en az 6 karakter)"
+              required
+              minLength={6}
+              className="w-full rounded border border-green-300 bg-white px-3 py-2 text-sm"
+            />
+            <button
+              type="submit"
+              disabled={firstUserLoading}
+              className="w-full rounded bg-green-600 py-2 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              {firstUserLoading ? "Oluşturuluyor..." : "İlk kullanıcıyı oluştur"}
+            </button>
+          </form>
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+        {searchParams.get("created") === "1" && (
+          <p className="rounded bg-green-100 p-2 text-sm text-green-800">Hesap oluşturuldu. Aşağıdan giriş yapın.</p>
+        )}
         {reasonMessage && <p className="rounded bg-amber-100 p-2 text-sm text-amber-800">{reasonMessage}</p>}
         {error && <p className="rounded bg-red-100 p-2 text-sm text-red-800">{error}</p>}
         <div>
