@@ -21,7 +21,7 @@ export default function MesafeliSatisSozlesmesiPage() {
         <div className="rounded-2xl border border-siyah/10 bg-white p-6 shadow-sm sm:p-8">
           <h1 className="text-2xl font-bold text-siyah sm:text-3xl">Mesafeli Satış Sözleşmesi</h1>
           <p className="mt-3 text-sm text-siyah/70">
-            Son güncelleme tarihi: <strong>[GG/AA/YYYY]</strong>
+            Son güncelleme tarihi: <strong>01.01.2026</strong>
           </p>
 
           <div className="mt-8 space-y-8 text-sm leading-7 text-siyah/85">
@@ -33,7 +33,10 @@ export default function MesafeliSatisSozlesmesiPage() {
                 Hakkında Kanun ve ilgili Mesafeli Sözleşmeler Yönetmeliği kapsamında kurulmuştur.
               </p>
               <p className="mt-2">
-                <strong>Satıcı:</strong> [KULÜP/ŞİRKET UNVANI], [MERSİS/VERGİ NO], [ADRES], [E-POSTA], [TELEFON]
+                <strong>Satıcı:</strong> Güngören Belediyesi Spor Kulübü. <strong>Adres:</strong> Merkez Mahallesi,
+                Fevzi Çakmak Caddesi Güngören Stadyumu No:17 D:3 Güngören–İstanbul. <strong>Vergi dairesi:</strong>{" "}
+                Güngören. <strong>Vergi numarası:</strong> 4380761641. <strong>Telefon:</strong> +90 553 019 46 73.{" "}
+                <strong>E-posta:</strong> destek@gungoren.com.
               </p>
               <p className="mt-1">
                 <strong>Alıcı:</strong> Sipariş sırasında sisteme girilen ad-soyad/unvan, adres ve iletişim bilgileri
@@ -61,7 +64,9 @@ export default function MesafeliSatisSozlesmesiPage() {
               <h2 className="text-base font-semibold text-siyah">4. Teslimat Koşulları</h2>
               <ul className="mt-2 list-disc space-y-1 pl-5">
                 <li>Teslimat adresi, sipariş aşamasında alıcı tarafından beyan edilen adrestir.</li>
-                <li>Siparişler, stok ve operasyon durumuna göre [X] iş günü içinde kargoya verilir.</li>
+                <li>
+                  Siparişler, stok ve operasyon durumuna göre en geç <strong>5 iş günü</strong> içinde kargoya verilir.
+                </li>
                 <li>Kargo kaynaklı gecikmelerde satıcı makul ölçüde bilgilendirme yapar.</li>
                 <li>Mağazadan teslim seçeneği varsa, teslim tarih/aralığı sipariş ekranında gösterilir.</li>
               </ul>
@@ -79,7 +84,9 @@ export default function MesafeliSatisSozlesmesiPage() {
                   uygun olmayan ürünler) kullanılamayabilir.
                 </li>
                 <li>İade için ürünün kullanılmamış, tekrar satılabilir durumda ve orijinal ambalajında olması gerekir.</li>
-                <li>İade süreçleri için iletişim: [DESTEK E-POSTA] / [TELEFON]</li>
+                <li>
+                  İade süreçleri için iletişim: <strong>destek@gungoren.com</strong> / <strong>+90 553 019 46 73</strong>
+                </li>
               </ul>
             </section>
 

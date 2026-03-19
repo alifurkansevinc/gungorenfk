@@ -32,6 +32,7 @@ const columns = [
     title: "Yasal",
     links: [
       { href: "/mesafeli-satis-sozlesmesi", label: "Mesafeli Satış Sözleşmesi" },
+      { href: "/gizlilik-sozlesmesi", label: "Gizlilik Sözleşmesi" },
     ],
   },
 ];
@@ -78,7 +79,7 @@ export function Footer() {
         <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
           <p className="text-sm text-white/60">© {new Date().getFullYear()} Güngören FK. Tüm hakları saklıdır.</p>
           <div className="flex flex-wrap justify-center gap-6 text-sm">
-            <Link href="/" className="text-white/60 hover:text-beyaz transition-colors">Gizlilik</Link>
+            <Link href="/gizlilik-sozlesmesi" className="text-white/60 hover:text-beyaz transition-colors">Gizlilik</Link>
             <Link href="/" className="text-white/60 hover:text-beyaz transition-colors">Kullanım koşulları</Link>
             <Link href="/" className="text-white/60 hover:text-beyaz transition-colors">İletişim</Link>
           </div>
