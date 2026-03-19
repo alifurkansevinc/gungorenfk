@@ -150,9 +150,7 @@ function AdminGirisForm() {
 
       <div className="mt-8 rounded-xl border border-amber-200 bg-amber-50 p-4">
         <h2 className="text-sm font-semibold text-amber-900">Şifremi unuttum</h2>
-        <p className="mt-1 text-xs text-amber-800">
-          E-posta adresinizi yazıp &quot;Sıfırlama linki gönder&quot;e tıklayın. Supabase, giriş yaptığınız e-posta adresine sıfırlama linki yollar. Linki <strong>aynı tarayıcıda</strong> açın ve Supabase Redirect URLs’e <code className="rounded bg-amber-200 px-1">https://siteniz.com/api/auth/callback</code> ekli olsun.
-        </p>
+        <p className="mt-1 text-xs text-amber-800">Şifremi unuttum</p>
         {resetError && <p className="mt-2 rounded bg-red-100 p-2 text-sm text-red-800">{resetError}</p>}
         {resetSent && <p className="mt-2 rounded bg-green-100 p-2 text-sm text-green-800">E-posta gönderildi. Gelen linke tıklayıp yeni şifre belirleyin.</p>}
         <form
