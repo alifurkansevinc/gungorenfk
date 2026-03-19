@@ -177,6 +177,15 @@ export async function getAdminStatusAndRole(userId: string): Promise<{
 export async function hasAdminUserRoleColumn(): Promise<boolean> {
   try {
     const supabase = createServiceRoleClient();
+    // Önce doğrudan kolon sorgusu: kolon yoksa Postgres 42703 döner.
+    const { error: roleSelectErr } = await supabase
+      .from("admin_users")
+      .select("role")
+      .limit(1);
+    if (!roleSelectErr) return true;
+    if ((roleSelectErr as { code?: string }).code === "42703") return false;
+
+    // Fallback: information_schema kontrolü.
     const { data, error } = await supabase
       .schema("information_schema")
       .from("columns")
