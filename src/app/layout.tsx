@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CartProvider } from "@/context/CartContext";
 import { RecoveryRedirect } from "@/components/RecoveryRedirect";
+import { getSiteUrl } from "@/lib/site-url";
 
 const oswald = Oswald({
   variable: "--font-display",
@@ -18,9 +19,35 @@ const outfit = Outfit({
   weight: ["300", "400", "500", "600", "700"],
 });
 
+const siteUrl = getSiteUrl();
+const defaultTitle = "Güngören FK | Resmi İnternet Sitesi";
+const defaultDescription =
+  "Güngören Belediye Spor Kulübü resmi internet sitesi. Haberler, maçlar, kadro ve taraftar.";
+const defaultOgImage =
+  "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/Futbolcular/logobordo-02.png";
+
 export const metadata: Metadata = {
-  title: "Güngören FK | Resmi İnternet Sitesi",
-  description: "Güngören Belediye Spor Kulübü resmi internet sitesi. Haberler, maçlar, kadro ve taraftar.",
+  metadataBase: new URL(siteUrl),
+  title: defaultTitle,
+  description: defaultDescription,
+  openGraph: {
+    type: "website",
+    locale: "tr_TR",
+    siteName: "Güngören FK",
+    title: "Güngören FK | Resmi İnternet Sitesi",
+    description: defaultDescription,
+    url: siteUrl,
+    images: [{ url: defaultOgImage, alt: "Güngören FK" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Güngören FK | Resmi İnternet Sitesi",
+    description: defaultDescription,
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
   icons: {
     icon: "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/Futbolcular/logobordo-02.png",
     apple: "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/Futbolcular/logobordo-02.png",
