@@ -88,11 +88,6 @@ function AdminGirisForm() {
   return (
     <div className="mx-auto max-w-md px-4 py-16">
       <h1 className="text-2xl font-bold text-siyah">Admin girişi</h1>
-      <p className="mt-1 text-sm text-siyah/60">E-posta ve şifre ile giriş yapın. Hesabınızın admin olması gerekir.</p>
-
-      {showFirstUserForm === false && (
-        <p className="mt-2 text-xs text-siyah/50">Yeni panel kullanıcısı eklemek için giriş yaptıktan sonra Panel kullanıcıları sayfasını kullanın.</p>
-      )}
 
       {showFirstUserForm === true && (
         <div className="mt-8 rounded-xl border border-green-200 bg-green-50 p-4">
