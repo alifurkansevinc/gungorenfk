@@ -28,6 +28,12 @@ const columns = [
       { href: "/kulup/teknik-heyet", label: "Teknik Heyet" },
     ],
   },
+  {
+    title: "Yasal",
+    links: [
+      { href: "/mesafeli-satis-sozlesmesi", label: "Mesafeli Satış Sözleşmesi" },
+    ],
+  },
 ];
 
 export function Footer() {
@@ -56,7 +62,20 @@ export function Footer() {
             </div>
           ))}
         </div>
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
+        <div className="mt-10 flex justify-center">
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {["Visa", "Mastercard", "Troy"].map((label) => (
+              <span
+                key={label}
+                className="rounded-md border border-white/20 bg-white/5 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-white/80"
+              >
+                {label}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-8 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 sm:flex-row">
           <p className="text-sm text-white/60">© {new Date().getFullYear()} Güngören FK. Tüm hakları saklıdır.</p>
           <div className="flex flex-wrap justify-center gap-6 text-sm">
             <Link href="/" className="text-white/60 hover:text-beyaz transition-colors">Gizlilik</Link>
