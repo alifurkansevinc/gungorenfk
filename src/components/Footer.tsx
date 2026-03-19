@@ -30,23 +30,12 @@ const columns = [
   },
 ];
 
-/** Yerel varlıklar: Visa/MC (Simple Icons), TROY resmi siteden (troyodeme.com). */
+const STORE_BASE = "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/store";
+
 const PAYMENT_LOGOS = [
-  {
-    name: "Visa",
-    src: "/payment/visa.svg",
-    className: "h-5 w-[46px] shrink-0 object-contain object-left",
-  },
-  {
-    name: "Mastercard",
-    src: "/payment/mastercard.svg",
-    className: "h-6 w-10 shrink-0 object-contain",
-  },
-  {
-    name: "Troy",
-    src: "/payment/troy.png",
-    className: "h-6 w-[72px] max-w-[72px] shrink-0 object-cover object-left",
-  },
+  { name: "Visa", src: `${STORE_BASE}/visa.svg` },
+  { name: "Troy", src: `${STORE_BASE}/troy.svg` },
+  { name: "Mastercard", src: `${STORE_BASE}/mastercard.svg` },
 ] as const;
 
 export function Footer() {
@@ -100,16 +89,16 @@ export function Footer() {
           </div>
 
           <div
-            className="flex flex-nowrap items-center justify-center gap-6 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            className="flex flex-nowrap items-center justify-center gap-8"
             role="img"
-            aria-label="Visa, Mastercard ve Troy ile ödeme"
+            aria-label="Visa, Troy ve Mastercard ile ödeme"
           >
-            {PAYMENT_LOGOS.map(({ name, src, className }) => (
+            {PAYMENT_LOGOS.map(({ name, src }) => (
               <img
                 key={name}
                 src={src}
                 alt={name}
-                className={`${className} select-none`}
+                className="h-7 w-auto max-h-7 shrink-0 select-none object-contain sm:h-8 sm:max-h-8"
                 loading="lazy"
                 decoding="async"
               />
