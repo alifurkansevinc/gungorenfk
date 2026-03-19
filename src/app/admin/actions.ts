@@ -118,6 +118,22 @@ export type AdminUserRoleLookup = {
   panelRoleLabel: string;
 };
 
+async function findAuthUserByEmail(
+  supabase: ReturnType<typeof createServiceRoleClient>,
+  email: string
+): Promise<{ id: string; email: string } | null> {
+  const trimmed = email.trim().toLowerCase();
+  const { data, error } = await supabase
+    .schema("auth")
+    .from("users")
+    .select("id, email")
+    .eq("email", trimmed)
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return null;
+  return { id: data.id as string, email: (data.email as string) ?? trimmed };
+}
+
 /**
  * Layout için: user_id'nin admin_users'da olup olmadığını ve rolünü service role ile alır (RLS bypass).
  * Böylece oturumlu kullanıcı RLS yüzünden kendi kaydını göremese bile panel açılır.
@@ -190,9 +206,7 @@ export async function addAdminUser(
           createErr.message.toLowerCase().includes("duplicate") ||
           createErr.message.toLowerCase().includes("exists");
         if (!isDuplicateEmail) return { ok: false, error: createErr.message };
-        const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
-        if (error) return { ok: false, error: error.message };
-        const user = data?.users?.find((u) => u.email?.toLowerCase() === trimmed);
+        const user = await findAuthUserByEmail(supabase, trimmed);
         if (!user) return { ok: false, error: "Bu e-posta ile kayıtlı kullanıcı bulunamadı." };
         userId = user.id;
       } else {
@@ -200,9 +214,7 @@ export async function addAdminUser(
         userId = createData.user.id;
       }
     } else {
-      const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
-      if (error) return { ok: false, error: error.message };
-      const user = data?.users?.find((u) => u.email?.toLowerCase() === trimmed);
+      const user = await findAuthUserByEmail(supabase, trimmed);
       if (!user)
         return {
           ok: false,
@@ -256,9 +268,7 @@ export async function getAdminUserRoleByEmail(
   try {
     const supabase = createServiceRoleClient();
     const hasRoleColumn = await hasAdminUserRoleColumn();
-    const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    if (error) return { ok: false, error: error.message };
-    const user = data?.users?.find((u) => u.email?.toLowerCase() === trimmed);
+    const user = await findAuthUserByEmail(supabase, trimmed);
     if (!user) {
       return { ok: false, error: "Bu e-posta ile kayıtlı kullanıcı bulunamadı." };
     }
@@ -302,9 +312,7 @@ export async function updateAdminRoleByEmail(
   try {
     const supabase = createServiceRoleClient();
     const hasRoleColumn = await hasAdminUserRoleColumn();
-    const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    if (error) return { ok: false, error: error.message };
-    const user = data?.users?.find((u) => u.email?.toLowerCase() === trimmed);
+    const user = await findAuthUserByEmail(supabase, trimmed);
     if (!user) return { ok: false, error: "Bu e-posta ile kayıtlı kullanıcı bulunamadı." };
 
     const { data: existing } = await supabase
@@ -389,9 +397,7 @@ export async function resetUserPasswordByEmail(email: string, newPassword: strin
   if (!newPassword || newPassword.length < 6) return { ok: false, error: "Yeni şifre en az 6 karakter olmalı." };
   try {
     const supabase = createServiceRoleClient();
-    const { data, error } = await supabase.auth.admin.listUsers({ page: 1, perPage: 1000 });
-    if (error) return { ok: false, error: error.message };
-    const user = data?.users?.find((u) => u.email?.toLowerCase() === trimmed);
+    const user = await findAuthUserByEmail(supabase, trimmed);
     if (!user) return { ok: false, error: "Bu e-posta ile kayıtlı kullanıcı bulunamadı." };
     const { error: updateErr } = await supabase.auth.admin.updateUserById(user.id, { password: newPassword });
     if (updateErr) return { ok: false, error: updateErr.message };
