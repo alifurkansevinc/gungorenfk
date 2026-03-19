@@ -123,6 +123,23 @@ async function findAuthUserByEmail(
   email: string
 ): Promise<{ id: string; email: string } | null> {
   const trimmed = email.trim().toLowerCase();
+  // 1) Önce Admin API ile sayfalı tarama (en güvenilir yol)
+  let page = 1;
+  const perPage = 1000;
+  while (page <= 20) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage });
+    if (!error) {
+      const users = data?.users ?? [];
+      const found = users.find((u) => u.email?.toLowerCase() === trimmed);
+      if (found?.id) return { id: found.id, email: found.email ?? trimmed };
+      if (users.length < perPage) break;
+    } else {
+      break;
+    }
+    page += 1;
+  }
+
+  // 2) Fallback: auth.users üzerinden direkt sorgu
   const { data, error } = await supabase
     .schema("auth")
     .from("users")
