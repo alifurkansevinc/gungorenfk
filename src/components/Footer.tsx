@@ -63,8 +63,8 @@ export function Footer() {
           ))}
         </div>
 
-        <div className="mt-10 space-y-5 border-t border-white/10 pt-6">
-          <div className="flex flex-col items-center gap-4 sm:flex-row sm:flex-wrap sm:justify-between sm:gap-x-6 sm:gap-y-3">
+        <div className="mt-8 space-y-3 border-t border-white/10 pt-4">
+          <div className="flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-between sm:gap-x-6 sm:gap-y-2">
             <p className="shrink-0 text-center text-sm text-white/60 sm:text-left">
               © {new Date().getFullYear()} Güngören FK. Tüm hakları saklıdır.
             </p>
@@ -89,19 +89,24 @@ export function Footer() {
           </div>
 
           <div
-            className="flex flex-nowrap items-center justify-center gap-8"
+            className="flex flex-nowrap items-center justify-center gap-4 py-0.5"
             role="img"
             aria-label="Visa, Troy ve Mastercard ile ödeme"
           >
             {PAYMENT_LOGOS.map(({ name, src }) => (
-              <img
+              <span
                 key={name}
-                src={src}
-                alt={name}
-                className="h-7 w-auto max-h-7 shrink-0 select-none object-contain sm:h-8 sm:max-h-8"
-                loading="lazy"
-                decoding="async"
-              />
+                className="flex h-5 w-14 shrink-0 items-center justify-center"
+                title={name}
+              >
+                <img
+                  src={src}
+                  alt={name}
+                  className="max-h-full max-w-full select-none object-contain"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </span>
             ))}
           </div>
         </div>
