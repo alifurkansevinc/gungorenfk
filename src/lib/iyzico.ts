@@ -202,3 +202,38 @@ export async function retrieveCheckoutForm(token: string): Promise<{
     errorMessage?: string;
   }>;
 }
+
+/**
+ * Tam veya kısmi iade — Checkout Form sonrası kaydedilen iyzico **paymentId** ile.
+ * @see https://docs.iyzico.com — Refund V2 (`/v2/payment/refund`)
+ */
+export async function refundPaymentV2(params: {
+  paymentId: string;
+  price: number;
+}): Promise<{
+  status?: string;
+  paymentId?: string;
+  price?: string;
+  currency?: string;
+  refundHostReference?: string;
+  errorCode?: string;
+  errorMessage?: string;
+}> {
+  const body = {
+    locale: LOCALE_TR,
+    conversationId: generateConversationId(),
+    paymentId: params.paymentId,
+    price: formatPrice(params.price),
+    currency: CURRENCY_TRY,
+    ip: "85.34.78.112",
+  };
+  return iyzicoPost("/v2/payment/refund", body) as Promise<{
+    status?: string;
+    paymentId?: string;
+    price?: string;
+    currency?: string;
+    refundHostReference?: string;
+    errorCode?: string;
+    errorMessage?: string;
+  }>;
+}

@@ -16,6 +16,7 @@ import {
   Trash2,
   Printer,
   Calendar,
+  RotateCcw,
 } from "lucide-react";
 import { expireOldPendingOrders, deleteOrder } from "@/app/actions/admin";
 
@@ -46,6 +47,7 @@ type Order = {
   pickupDate: string | null;
   pickupCode: string | null;
   createdAt: string;
+  paymentMethod?: string | null;
 };
 
 const KARGO_LOGO_URL = "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/Futbolcular/logobordo-02.png";
@@ -102,6 +104,7 @@ export default function AdminSiparislerPage() {
   const [statusModalOrder, setStatusModalOrder] = useState<Order | null>(null);
   const [notify, setNotify] = useState<{ type: "ok" | "err"; msg: string } | null>(null);
   const [updating, setUpdating] = useState(false);
+  const [refunding, setRefunding] = useState(false);
 
   const fetchOrders = useCallback(async () => {
     setLoading(true);
@@ -193,6 +196,44 @@ export default function AdminSiparislerPage() {
       showNotify("err", "İstek hatası.");
     } finally {
       setUpdating(false);
+    }
+  };
+
+  const handleFullRefund = async (order: Order) => {
+    if (
+      !confirm(
+        `${order.orderNumber} siparişi için TAM İADE yapılacak:\n\n• iyzico üzerinden tutar geri ödenir\n• Stoklar ürünlere iade edilir\n• Taraftar mağaza harcaması (varsa) düşülür\n• Sipariş: ödeme İade, durum İptal\n\nDevam?`
+      )
+    ) {
+      return;
+    }
+    setRefunding(true);
+    setNotify(null);
+    try {
+      const res = await fetch("/api/admin/orders/refund", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ orderId: order.id }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        showNotify("err", json.error || "İade başarısız.");
+        return;
+      }
+      showNotify(
+        "ok",
+        json.data?.refundHostReference
+          ? `İade tamam (ref: ${json.data.refundHostReference})`
+          : "İade tamamlandı."
+      );
+      setModalOpen(false);
+      setSelected(null);
+      await fetchOrders();
+    } catch (e) {
+      showNotify("err", e instanceof Error ? e.message : "Ağ hatası");
+    } finally {
+      setRefunding(false);
     }
   };
 
@@ -624,6 +665,17 @@ export default function AdminSiparislerPage() {
                   >
                     <Printer className="h-4 w-4" />
                     Kargo etiketi yazdır
+                  </button>
+                )}
+                {selected.paymentStatus === "PAID" && (selected.paymentMethod ?? "").toLowerCase() === "iyzico" && (
+                  <button
+                    type="button"
+                    disabled={refunding}
+                    onClick={() => handleFullRefund(selected)}
+                    className="inline-flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                  >
+                    {refunding ? <Loader2 className="h-4 w-4 animate-spin" /> : <RotateCcw className="h-4 w-4" />}
+                    Tam iade (iyzico + stok)
                   </button>
                 )}
               </div>
