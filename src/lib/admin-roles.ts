@@ -76,11 +76,19 @@ const ROLE_MENUS: Record<Exclude<AdminRole, "admin">, readonly string[]> = {
   ],
 };
 
-/** href'ten menü anahtarı (path) çıkar: /admin/maclar -> maclar, /admin -> "" */
+/**
+ * Path'ten menü/yetki anahtarı: yalnızca ilk segment (bölüm).
+ * Örn. /admin/magaza/yeni ve /admin/magaza/duzenle/uuid → "magaza"
+ * Böylece AdminRouteGuard alt sayfalarda da doğru rolle eşleşir.
+ */
 export function hrefToMenuKey(href: string): string {
-  if (href === "/admin" || href === "/admin/") return MENU_KEYS.dashboard;
+  const pathOnly = href.split("?")[0] ?? href;
+  if (pathOnly === "/admin" || pathOnly === "/admin/") return MENU_KEYS.dashboard;
   const prefix = "/admin/";
-  return href.startsWith(prefix) ? href.slice(prefix.length).replace(/\/$/, "") : href;
+  if (!pathOnly.startsWith(prefix)) return pathOnly;
+  const rest = pathOnly.slice(prefix.length).replace(/\/$/, "");
+  const first = rest.split("/").filter(Boolean)[0];
+  return first ?? MENU_KEYS.dashboard;
 }
 
 /** Bu rol bu menüye erişebilir mi? */
