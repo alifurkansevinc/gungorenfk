@@ -5,6 +5,7 @@ import { getProductBySlug, getFeaturedProducts, getStoreDiscountForLevel, getEff
 import { notFound } from "next/navigation";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { AddToCartButton } from "@/components/AddToCartButton";
+import { isFormaProductName } from "@/lib/forma-name-print";
 import { ProductImageGallery } from "@/components/ProductImageGallery";
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
@@ -101,6 +102,7 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
               slug={product.slug}
               sizes={(product as { sizes?: string[] }).sizes}
               stockBySize={(product as { stock_by_size?: Record<string, number> | null }).stock_by_size}
+              isFormaProduct={isFormaProductName(product.name)}
             />
           </div>
         </div>

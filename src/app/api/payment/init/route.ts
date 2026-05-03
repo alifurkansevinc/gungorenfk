@@ -3,6 +3,11 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { initializeCheckoutForm, type PaymentRequest, type CartItemForIyzico } from "@/lib/iyzico";
 import { getStoreDiscountForLevel, getMemberProductDiscountsForUser, getEffectiveProductPrice } from "@/lib/data";
+import {
+  isFormaProductName,
+  FORMA_NAME_PRINT_ADDON_TRY,
+  normalizeNamePrintPayload,
+} from "@/lib/forma-name-print";
 
 const DEFAULT_SHIPPING_COST = 29.9;
 const DEFAULT_FREE_THRESHOLD = 500;
@@ -44,7 +49,16 @@ export async function POST(req: NextRequest) {
     const { userId, email, items, shippingAddress, deliveryMethod: rawDeliveryMethod } = body as {
       userId?: string | null;
       email: string;
-      items: Array<{ id: string; productId?: string; name: string; price: number; quantity: number; category?: string; size?: string }>;
+      items: Array<{
+        id: string;
+        productId?: string;
+        name: string;
+        price: number;
+        quantity: number;
+        category?: string;
+        size?: string;
+        namePrint?: { fullName: string; number: string } | null;
+      }>;
       shippingAddress: {
         fullName?: string;
         email?: string;
@@ -99,7 +113,16 @@ export async function POST(req: NextRequest) {
       ]);
     }
 
-    const validatedItems: { productId: string; name: string; price: number; quantity: number; size: string | null; id: string }[] = [];
+    const validatedItems: {
+      productId: string;
+      name: string;
+      price: number;
+      quantity: number;
+      size: string | null;
+      id: string;
+      options: Record<string, unknown>;
+      iyzicoName: string;
+    }[] = [];
     let subtotal = 0;
     for (const i of items) {
       const product = productMap.get(i.productId!);
@@ -116,15 +139,46 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ success: false, error: `"${product.name}" için yeterli stok yok. Lütfen sepeti güncelleyin.` }, { status: 400 });
         }
       }
+
+      const forma = isFormaProductName(product.name);
+      const rawPrint = i.namePrint;
+      const fnTrim = rawPrint?.fullName?.trim() ?? "";
+      const numTrim = rawPrint?.number?.trim() ?? "";
+      const partialPrint = !!rawPrint && ((!fnTrim && !!numTrim) || (!!fnTrim && !numTrim));
+      if (partialPrint) {
+        return NextResponse.json(
+          { success: false, error: `"${product.name}" için isim-numara yazdırmada hem isim hem numara gereklidir.` },
+          { status: 400 }
+        );
+      }
+      const wantsPrint = !!fnTrim && !!numTrim;
+      if (wantsPrint && !forma) {
+        return NextResponse.json(
+          { success: false, error: "İsim-numara yazdırma sadece forma ürünlerinde geçerlidir." },
+          { status: 400 }
+        );
+      }
+      let options: Record<string, unknown> = {};
+      let unitPrice = effectivePrice;
+      let iyzicoName = product.name;
+      if (forma && wantsPrint && rawPrint) {
+        const normalized = normalizeNamePrintPayload(rawPrint.fullName, rawPrint.number);
+        unitPrice = Math.round((effectivePrice + FORMA_NAME_PRINT_ADDON_TRY) * 100) / 100;
+        options = { namePrint: { fullName: normalized.fullName, number: normalized.number } };
+        iyzicoName = `${product.name} (+İsim-Numara Yazdırma)`;
+      }
+
       validatedItems.push({
         id: i.id,
         productId: product.id,
         name: product.name,
-        price: effectivePrice,
+        price: unitPrice,
         quantity: qty,
         size: size === "tek_beden" ? null : size,
+        options,
+        iyzicoName,
       });
-      subtotal += effectivePrice * qty;
+      subtotal += unitPrice * qty;
     }
     subtotal = Math.round(subtotal * 100) / 100;
 
@@ -212,6 +266,7 @@ export async function POST(req: NextRequest) {
       price: i.price,
       quantity: i.quantity,
       size: i.size,
+      options: Object.keys(i.options).length ? i.options : {},
     }));
     const { error: itemsError } = await supabase.from("order_items").insert(orderItems);
     if (itemsError) {
@@ -223,7 +278,7 @@ export async function POST(req: NextRequest) {
     const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
     const basketForIyzico: CartItemForIyzico[] = validatedItems.map((i) => ({
       id: i.id,
-      name: i.name,
+      name: i.iyzicoName,
       category: "Ürün",
       price: i.price,
       quantity: i.quantity,

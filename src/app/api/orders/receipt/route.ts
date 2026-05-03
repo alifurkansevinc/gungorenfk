@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
 
   const { data: items } = await supabase
     .from("order_items")
-    .select("name, price, quantity")
+    .select("name, price, quantity, size, options")
     .eq("order_id", order.id)
     .order("created_at");
 
@@ -54,11 +54,16 @@ export async function GET(req: NextRequest) {
       shippingAddress: order.shipping_address,
       guestName: order.guest_name,
       guestEmail: order.guest_email,
-      items: (items ?? []).map((i) => ({
-        name: i.name,
-        price: Number(i.price),
-        quantity: i.quantity,
-      })),
+      items: (items ?? []).map((i) => {
+        const opts = (i as { options?: { namePrint?: { fullName: string; number: string } } | null }).options;
+        return {
+          name: i.name,
+          price: Number(i.price),
+          quantity: i.quantity,
+          size: (i as { size?: string | null }).size ?? null,
+          namePrint: opts?.namePrint ?? null,
+        };
+      }),
     },
   });
 }

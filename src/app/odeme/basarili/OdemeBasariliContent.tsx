@@ -117,7 +117,14 @@ export default function OdemeBasariliContent({
                   <tbody>
                     {receipt.items.map((item, i) => (
                       <tr key={i} className="border-b border-siyah/5">
-                        <td className="px-4 py-2 text-siyah/90">{item.name}</td>
+                        <td className="px-4 py-2 text-siyah/90">
+                          <div>{item.name}</div>
+                          {item.namePrint?.fullName && item.namePrint?.number && (
+                            <p className="mt-1 text-xs font-semibold text-bordo">
+                              İsim-Numara Yazdırma: {item.namePrint.fullName} — {item.namePrint.number}
+                            </p>
+                          )}
+                        </td>
                         <td className="px-4 py-2 text-right text-siyah/80">{item.quantity}</td>
                         <td className="px-4 py-2 text-right font-medium text-siyah">{(item.price * item.quantity).toLocaleString("tr-TR", { minimumFractionDigits: 2 })} ₺</td>
                       </tr>

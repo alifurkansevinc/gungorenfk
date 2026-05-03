@@ -84,7 +84,7 @@ export async function GET(req: NextRequest) {
 
   const { data: items } = await supabase
     .from("order_items")
-    .select("id, order_id, product_id, name, price, quantity, size")
+    .select("id, order_id, product_id, name, price, quantity, size, options")
     .in("order_id", orderIds);
 
   const productIds = [...new Set((items ?? []).map((i) => (i as { product_id: string | null }).product_id).filter(Boolean))] as string[];

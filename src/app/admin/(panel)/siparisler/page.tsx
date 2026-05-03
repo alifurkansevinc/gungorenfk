@@ -20,7 +20,17 @@ import {
 } from "lucide-react";
 import { expireOldPendingOrders, deleteOrder } from "@/app/actions/admin";
 
-type OrderItem = { id: string; name: string; price: number; quantity: number; size?: string | null; image_url?: string | null };
+type OrderItemNamePrint = { fullName: string; number: string };
+type OrderItemOptions = { namePrint?: OrderItemNamePrint } | null;
+type OrderItem = {
+  id: string;
+  name: string;
+  price: number;
+  quantity: number;
+  size?: string | null;
+  image_url?: string | null;
+  options?: OrderItemOptions;
+};
 type ShippingAddressRaw = {
   fullName: string;
   address: string;
@@ -258,6 +268,15 @@ export default function AdminSiparislerPage() {
     const senderName = "Güngören Belediyesi Spor Kulübü";
     const senderAddr = "Güngören Spor Kompleksi, Güngören";
 
+    const namePrintLines = (order.items || [])
+      .map((it) => {
+        const np = it.options?.namePrint;
+        if (!np?.fullName || !np?.number) return "";
+        return `<div class="np-line"><span class="np-title">İsim-Numara Yazdırma</span> · ${escapeHtml(it.name)}<br/><span class="np-val">${escapeHtml(np.fullName)} — ${escapeHtml(np.number)}</span></div>`;
+      })
+      .filter(Boolean)
+      .join("");
+
     const itemsHtml = (order.items || [])
       .map(
         (it) => {
@@ -265,7 +284,12 @@ export default function AdminSiparislerPage() {
           const qty = it.quantity || 1;
           const sz = it.size && it.size !== "tek_beden" ? escapeHtml(it.size) : "";
           const img = it.image_url ? `<img src="${escapeHtml(it.image_url)}" alt="" class="item-img" />` : "";
-          return `<tr><td class="item-cell">${img}<div class="item-info"><strong>${iname}</strong>${sz ? ` · ${sz}` : ""} <span class="qty">×${qty}</span></div></td></tr>`;
+          const np = it.options?.namePrint;
+          const npBlock =
+            np?.fullName && np?.number
+              ? `<div class="item-np"><strong>İsim-Numara Yazdırma</strong><br/>${escapeHtml(np.fullName)} — ${escapeHtml(np.number)}</div>`
+              : "";
+          return `<tr><td class="item-cell">${img}<div class="item-info"><strong>${iname}</strong>${sz ? ` · ${sz}` : ""} <span class="qty">×${qty}</span>${npBlock}</div></td></tr>`;
         }
       )
       .join("");
@@ -290,6 +314,13 @@ export default function AdminSiparislerPage() {
   .item-cell .item-img { width: 32px; height: 32px; object-fit: contain; border-radius: 4px; margin-right: 8px; vertical-align: middle; display: inline-block; }
   .item-cell .item-info { display: inline-block; vertical-align: middle; max-width: calc(100% - 44px); }
   .qty { color: #8B1538; font-weight: 600; }
+  .np-banner { margin: 14px 0; padding: 12px 14px; background: #fff7ed; border: 3px solid #ea580c; border-radius: 8px; }
+  .np-banner .np-head { font-size: 15px; font-weight: 900; text-transform: uppercase; letter-spacing: 0.06em; color: #9a3412; margin-bottom: 8px; }
+  .np-line { font-size: 13px; margin-bottom: 8px; color: #431407; }
+  .np-line .np-title { font-weight: 800; color: #c2410c; }
+  .np-line .np-val { font-size: 15px; font-weight: 700; }
+  .item-np { margin-top: 8px; padding: 8px 10px; background: #fff7ed; border-left: 4px solid #ea580c; font-size: 11px; line-height: 1.4; color: #431407; }
+  .item-np strong { color: #c2410c; font-size: 12px; }
   .hint { margin-top: 12px; font-size: 10px; color: #888; }
   @media print { body { padding: 0; } .page { box-shadow: none; min-height: auto; } }
 </style></head><body>
@@ -310,6 +341,7 @@ export default function AdminSiparislerPage() {
       <div class="contact">${phone ? "Tel: " + phone : ""}${phone && email ? " · " : ""}${email ? "E-posta: " + email : ""}</div>
     </div>
   </div>
+  ${namePrintLines ? `<div class="np-banner"><div class="np-head">İsim-Numara Yazdırma — Dikkat</div>${namePrintLines}</div>` : ""}
   <div class="block">
     <div class="block-title">Ürünler</div>
     <table class="items"><tbody>${itemsHtml || "<tr><td>—</td></tr>"}</tbody></table>
@@ -610,6 +642,25 @@ export default function AdminSiparislerPage() {
                   )}
                 </div>
               </div>
+              {selected.items.some((it) => it.options?.namePrint?.fullName && it.options?.namePrint?.number) && (
+                <div className="rounded-xl border-4 border-amber-500 bg-amber-50 p-5 shadow-inner">
+                  <p className="text-xl font-black uppercase tracking-wide text-amber-900">İsim-Numara Yazdırma</p>
+                  <p className="mt-1 text-sm font-medium text-amber-800">Aşağıdaki forma baskıları sipariş fişinde kayıtlıdır.</p>
+                  <ul className="mt-4 space-y-3">
+                    {selected.items
+                      .filter((it) => it.options?.namePrint?.fullName && it.options?.namePrint?.number)
+                      .map((it) => (
+                        <li key={it.id} className="rounded-lg border-2 border-amber-400 bg-white px-4 py-3 text-amber-950">
+                          <p className="text-xs font-semibold uppercase text-amber-700">{it.name}</p>
+                          <p className="mt-1 text-lg font-bold">
+                            {it.options!.namePrint!.fullName} <span className="text-amber-600">—</span>{" "}
+                            <span className="font-mono text-xl">{it.options!.namePrint!.number}</span>
+                          </p>
+                        </li>
+                      ))}
+                  </ul>
+                </div>
+              )}
               <div>
                 <h3 className="mb-2 text-sm font-semibold text-gray-700">Ürünler</h3>
                 <table className="w-full text-sm">
@@ -633,8 +684,18 @@ export default function AdminSiparislerPage() {
                           )}
                         </td>
                         <td className="py-2 text-gray-900">
-                          {item.name}
-                          {item.size && <span className="ml-1 text-xs text-gray-500">(Beden: {item.size})</span>}
+                          <div>{item.name}</div>
+                          {item.size && item.size !== "tek_beden" && (
+                            <span className="text-xs text-gray-500">Beden: {item.size}</span>
+                          )}
+                          {item.options?.namePrint?.fullName && item.options?.namePrint?.number && (
+                            <div className="mt-2 rounded-md border-l-4 border-amber-500 bg-amber-50 px-3 py-2 text-xs text-amber-950">
+                              <span className="font-extrabold uppercase text-amber-800">İsim-Numara Yazdırma</span>
+                              <p className="mt-1 text-sm font-bold">
+                                {item.options.namePrint.fullName} — {item.options.namePrint.number}
+                              </p>
+                            </div>
+                          )}
                         </td>
                         <td className="py-2 text-center">{item.quantity}</td>
                         <td className="py-2 text-right">{formatPrice(item.price)}</td>

@@ -10,6 +10,10 @@ export type CartItem = {
   quantity: number;
   slug?: string;
   size?: string;
+  /** Forma: isim-numara yazdırma (+100 TL birim fiyata dahil). */
+  namePrintAddon?: boolean;
+  namePrintFullName?: string;
+  namePrintNumber?: string;
 };
 
 const STORAGE_KEY = "gungoren_cart";

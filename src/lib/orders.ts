@@ -1,11 +1,24 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 
-export type ReceiptItem = { name: string; price: number; quantity: number; image_url?: string | null };
+export type ReceiptItem = {
+  name: string;
+  price: number;
+  quantity: number;
+  image_url?: string | null;
+  namePrint?: { fullName: string; number: string } | null;
+};
 
 export type OrderWithItemsForUser = {
   orderNumber: string;
-  items: { name: string; price: number; quantity: number; size: string | null; image_url: string | null }[];
+  items: {
+    name: string;
+    price: number;
+    quantity: number;
+    size: string | null;
+    image_url: string | null;
+    namePrint?: { fullName: string; number: string } | null;
+  }[];
   total: number;
 } | null;
 export type ReceiptData = {
@@ -53,7 +66,7 @@ export async function getReceiptByOrderNumber(
 
   const { data: items } = await supabase
     .from("order_items")
-    .select("name, price, quantity")
+    .select("name, price, quantity, options")
     .eq("order_id", order.id)
     .order("created_at");
 
@@ -68,11 +81,15 @@ export async function getReceiptByOrderNumber(
     createdAt: order.created_at,
     guestName: order.guest_name,
     guestEmail: order.guest_email,
-    items: (items ?? []).map((i) => ({
-      name: i.name,
-      price: Number(i.price),
-      quantity: i.quantity,
-    })),
+    items: (items ?? []).map((i) => {
+      const opts = (i as { options?: { namePrint?: { fullName: string; number: string } } | null }).options;
+      return {
+        name: i.name,
+        price: Number(i.price),
+        quantity: i.quantity,
+        namePrint: opts?.namePrint ?? null,
+      };
+    }),
   };
 }
 
@@ -96,7 +113,7 @@ export async function getOrderWithItemsForCurrentUser(
 
     const { data: orderItems } = await service
       .from("order_items")
-      .select("product_id, name, price, quantity, size")
+      .select("product_id, name, price, quantity, size, options")
       .eq("order_id", order.id);
     const productIds = [...new Set((orderItems ?? []).map((i) => (i as { product_id: string | null }).product_id).filter(Boolean))] as string[];
     let imageByProduct: Record<string, string | null> = {};
@@ -108,13 +125,21 @@ export async function getOrderWithItemsForCurrentUser(
       }
     }
     const items = (orderItems ?? []).map((i) => {
-      const row = i as { product_id: string | null; name: string; price: number; quantity: number; size?: string | null };
+      const row = i as {
+        product_id: string | null;
+        name: string;
+        price: number;
+        quantity: number;
+        size?: string | null;
+        options?: { namePrint?: { fullName: string; number: string } } | null;
+      };
       return {
         name: row.name,
         price: Number(row.price),
         quantity: row.quantity,
         size: row.size ?? null,
         image_url: row.product_id ? imageByProduct[row.product_id] ?? null : null,
+        namePrint: row.options?.namePrint ?? null,
       };
     });
     return { orderNumber: order.order_number, items, total: Number(order.total) };
@@ -131,7 +156,7 @@ export async function getOrderWithItemsForCurrentUser(
 
   const { data: orderItems } = await supabase
     .from("order_items")
-    .select("product_id, name, price, quantity, size")
+    .select("product_id, name, price, quantity, size, options")
     .eq("order_id", order.id);
 
   const productIds = [...new Set((orderItems ?? []).map((i) => (i as { product_id: string | null }).product_id).filter(Boolean))] as string[];
@@ -145,13 +170,21 @@ export async function getOrderWithItemsForCurrentUser(
   }
 
   const items = (orderItems ?? []).map((i) => {
-    const row = i as { product_id: string | null; name: string; price: number; quantity: number; size?: string | null };
+    const row = i as {
+      product_id: string | null;
+      name: string;
+      price: number;
+      quantity: number;
+      size?: string | null;
+      options?: { namePrint?: { fullName: string; number: string } } | null;
+    };
     return {
       name: row.name,
       price: Number(row.price),
       quantity: row.quantity,
       size: row.size ?? null,
       image_url: row.product_id ? imageByProduct[row.product_id] ?? null : null,
+      namePrint: row.options?.namePrint ?? null,
     };
   });
 

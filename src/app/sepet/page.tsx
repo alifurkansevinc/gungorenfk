@@ -33,6 +33,11 @@ export default function SepetPage() {
                     {Number(item.price).toFixed(2)} ₺ × {item.quantity}
                     {item.size && item.size !== "tek_beden" && ` · Beden: ${getSizeLabel(item.size)}`}
                   </p>
+                  {item.namePrintAddon && item.namePrintFullName && item.namePrintNumber && (
+                    <p className="mt-1 text-xs font-medium text-bordo">
+                      İsim-Numara Yazdırma: {item.namePrintFullName} — {item.namePrintNumber}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
