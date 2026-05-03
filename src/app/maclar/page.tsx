@@ -4,6 +4,7 @@ import { CheckCircle, Circle, Radio, XCircle } from "lucide-react";
 import {
   getMatches,
   getMatchSeasonsForPublic,
+  getMatchEffectiveStatus,
   getLeagueStandings,
   getLeagueStandingsSeasons,
   getNextMatch,
@@ -90,7 +91,7 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="min-h-screen">
-      {nextMatch?.status === "live" && <MatchPageRefresh enabled intervalMs={12_000} />}
+      {nextMatch && getMatchEffectiveStatus(nextMatch) === "live" && <MatchPageRefresh enabled intervalMs={12_000} />}
       {/* Hero - tam genişlik görsel */}
       <section className="relative h-[14vh] min-h-[100px] flex items-end bg-siyah">
         <Image src={DEMO_IMAGES.stadium} alt="" fill className="object-cover opacity-80" unoptimized priority />
@@ -295,7 +296,7 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
                 const result: ResultType = !hasScoreDb ? "D" : m.goals_for! > m.goals_against! ? "W" : m.goals_for! < m.goals_against! ? "L" : "D";
                 const müsabakaLabel = (m.competition && m.competition.trim()) ? m.competition : leagueName;
                 const isFinishedDb = m.status === "finished";
-                const isLiveDb = m.status === "live";
+                const isLiveDb = getMatchEffectiveStatus(m) === "live";
                 const teamHome = m.home_away === "home" ? "Güngören FK" : m.opponent_name;
                 const teamAway = m.home_away === "away" ? "Güngören FK" : m.opponent_name;
                 const scoreHome = m.home_away === "home" ? m.goals_for : m.goals_against;

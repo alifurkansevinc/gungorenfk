@@ -6,7 +6,13 @@
 import { createServiceRoleClient } from "@/lib/supabase/service";
 
 const TR_TZ_SUFFIX = "+03:00";
-const LIVE_DURATION_MS = 2 * 60 * 60 * 1000;
+/** Maç günü + uzatma (normal süre, uzatmalar); canlı sayım ve otomatik bitiş için. */
+const LIVE_DURATION_MS = 4 * 60 * 60 * 1000;
+
+/** Takvim günü (YYYY-MM-DD) İstanbul saatiyle — maç tarihi karşılaştırmaları için. */
+export function calendarDateTr(d = new Date()): string {
+  return d.toLocaleDateString("en-CA", { timeZone: "Europe/Istanbul" });
+}
 
 /** Boş saat → 15:00 (gün ortası varsayılan). */
 export function normalizeMatchTimeForKickoff(matchTime: string | null | undefined): string {
@@ -36,6 +42,33 @@ export function getMatchEndMs(matchDate: string, matchTime: string | null | unde
 export function matchEndAtIso(matchDate: string, matchTime: string | null | undefined): string | null {
   const end = getMatchEndMs(matchDate, matchTime);
   return end != null ? new Date(end).toISOString() : null;
+}
+
+/** DB henüz güncellenmese bile (service role yok / gecikme): şu an saha içi penceresinde mi? */
+export function isWithinLivePlayWindow(
+  matchDate: string,
+  matchTime: string | null | undefined,
+  nowMs: number = Date.now(),
+): boolean {
+  const kick = getMatchKickoffMs(matchDate, matchTime);
+  if (kick == null) return false;
+  return nowMs >= kick && nowMs < kick + LIVE_DURATION_MS;
+}
+
+/**
+ * Kart / detay için görünen durum: scheduled ama kickoff–bitiş arasındaysa canlı gibi davran.
+ * `live` ve `finished` DB değerlerine saygı.
+ */
+export function getEffectiveMatchStatus(
+  row: { match_date: string; match_time: string | null | undefined; status: string },
+  nowMs: number = Date.now(),
+): string {
+  const s = row.status;
+  if (s === "postponed" || s === "cancelled") return s;
+  if (s === "finished") return "finished";
+  if (s === "live") return "live";
+  if (s === "scheduled" && isWithinLivePlayWindow(row.match_date, row.match_time, nowMs)) return "live";
+  return s;
 }
 
 /**

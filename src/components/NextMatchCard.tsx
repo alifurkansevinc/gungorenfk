@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Radio } from "lucide-react";
 import { SITE_LOGO_URL } from "@/lib/demo-images";
+import { getEffectiveMatchStatus } from "@/lib/match-schedule";
 
 type NextMatch = {
   id: string;
@@ -29,7 +30,12 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
     );
   }
 
-  const isLive = match.status === "live";
+  const isLive =
+    getEffectiveMatchStatus({
+      match_date: match.match_date,
+      match_time: match.match_time ?? null,
+      status: match.status ?? "scheduled",
+    }) === "live";
   const isHome = match.home_away === "home";
   const hasLiveScore =
     isLive &&

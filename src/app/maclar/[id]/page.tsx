@@ -3,10 +3,11 @@ import Image from "next/image";
 import { Radio } from "lucide-react";
 import { getMatchById, getMatchLineupForMatch } from "@/lib/data";
 import { notFound } from "next/navigation";
-
-export const dynamic = "force-dynamic";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { MatchPageRefresh } from "@/components/MatchPageRefresh";
+import { getEffectiveMatchStatus } from "@/lib/match-schedule";
+
+export const dynamic = "force-dynamic";
 
 function PlayerLine({ num, name, captain }: { num: number | null; name: string; captain?: boolean }) {
   return (
@@ -33,14 +34,21 @@ export default async function MacDetayPage({ params }: { params: Promise<{ id: s
   const match = await getMatchById(id);
   if (!match) notFound();
 
-  const showLineup = match.status === "live" || match.status === "finished";
+  const effectiveStatus = getEffectiveMatchStatus({
+    match_date: match.match_date,
+    match_time: match.match_time ?? null,
+    status: match.status,
+  });
+
+  const showLineup = effectiveStatus === "live" || match.status === "finished";
   const lineup = showLineup ? await getMatchLineupForMatch(id) : { starters: [], substitutes: [] };
-  const refreshEnabled = !id.startsWith("demo-") && (match.status === "live" || match.status === "scheduled");
+  const refreshEnabled =
+    !id.startsWith("demo-") && (effectiveStatus === "live" || match.status === "scheduled");
 
   const statusLabel =
     match.status === "finished"
       ? "Oynandı"
-      : match.status === "live"
+      : effectiveStatus === "live"
         ? "Canlı"
         : match.status === "scheduled"
           ? "Programda"
@@ -50,14 +58,14 @@ export default async function MacDetayPage({ params }: { params: Promise<{ id: s
 
   return (
     <div className="min-h-screen">
-      <MatchPageRefresh enabled={refreshEnabled} intervalMs={match.status === "live" ? 12_000 : 60_000} />
+      <MatchPageRefresh enabled={refreshEnabled} intervalMs={effectiveStatus === "live" ? 12_000 : 60_000} />
       {/* Hero görsel */}
       <section className="relative h-[14vh] min-h-[100px] flex items-end bg-siyah">
         <Image src={DEMO_IMAGES.match} alt="" fill className="object-cover opacity-80" unoptimized priority />
         <div className="absolute inset-0 bg-gradient-to-t from-siyah via-siyah/60 to-transparent" />
         <div className="relative z-10 w-full mx-auto max-w-7xl px-4 pb-4 pt-12 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-center gap-3">
-            {match.status === "live" && (
+            {effectiveStatus === "live" && (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-red-400/50 bg-red-600/30 px-3 py-1 text-xs font-black uppercase tracking-widest text-beyaz animate-pulse">
                 <Radio className="h-4 w-4" aria-hidden />
                 Canlı
@@ -94,7 +102,7 @@ export default async function MacDetayPage({ params }: { params: Promise<{ id: s
                 <span className="text-2xl font-bold text-siyah">{match.opponent_name}</span>
               </div>
             </>
-          ) : match.status === "live" && hasScore ? (
+          ) : effectiveStatus === "live" && hasScore ? (
             <>
               <p className="text-sm font-semibold uppercase tracking-wider text-red-600">Canlı · anlık skor</p>
               <div className="mt-4 flex items-center justify-center gap-6 flex-wrap">
@@ -106,7 +114,7 @@ export default async function MacDetayPage({ params }: { params: Promise<{ id: s
               </div>
               <p className="mt-3 text-xs text-siyah/55">Skor birkaç saniye içinde güncellenir.</p>
             </>
-          ) : match.status === "live" ? (
+          ) : effectiveStatus === "live" ? (
             <>
               <p className="text-sm font-semibold uppercase tracking-wider text-red-600">Maç devam ediyor</p>
               <p className="mt-4 text-siyah/80">Skor girildiğinde burada görünecek.</p>

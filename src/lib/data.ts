@@ -1,6 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
-import { syncMatchStatusesFromSchedule } from "@/lib/match-schedule";
+import {
+  syncMatchStatusesFromSchedule,
+  calendarDateTr,
+  getEffectiveMatchStatus,
+  getMatchKickoffMs,
+  isWithinLivePlayWindow,
+} from "@/lib/match-schedule";
 import { sortSeasonLabelsDesc } from "@/lib/seasons";
 import type { MemleketCount, Match, SquadMember, BoardMember, TechnicalStaffMember, LeagueStandingRow, ClubTrophy } from "@/types/db";
 import type { FanLevel } from "@/types/db";
@@ -154,7 +160,7 @@ export async function getMatches(limit = 20, opts?: GetMatchesOptions) {
   return data;
 }
 
-/** Önümüzdeki maç veya şu an canlı maç (takvim + 2 saat kuralı; sync sonrası status). */
+/** Önümüzdeki / canlı maç: DB `live`, veya kickoff–bitiş penceresindeki `scheduled` (service role yoksa bile kartta canlı). */
 export async function getNextMatch(): Promise<{
   id: string;
   opponent_name: string;
@@ -169,31 +175,73 @@ export async function getNextMatch(): Promise<{
   goals_against: number | null;
 } | null> {
   await syncMatchStatusesFromSchedule();
-  const today = new Date().toISOString().slice(0, 10);
   const supabase = await createClient();
+  const todayTr = calendarDateTr();
+  const from = new Date();
+  from.setDate(from.getDate() - 2);
+  const fromStr = calendarDateTr(from);
 
-  const { data: live } = await supabase
+  type Row = {
+    id: string;
+    opponent_name: string;
+    home_away: string;
+    venue: string | null;
+    match_date: string;
+    match_time: string | null;
+    opponent_logo_url: string | null;
+    competition: string | null;
+    status: string;
+    goals_for: number | null;
+    goals_against: number | null;
+    updated_at?: string | null;
+  };
+
+  const { data: rows } = await supabase
     .from("matches")
-    .select("id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, competition, status, goals_for, goals_against")
-    .eq("status", "live")
+    .select(
+      "id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, competition, status, goals_for, goals_against, updated_at",
+    )
+    .in("status", ["scheduled", "live"])
     .or("is_hidden.eq.false,is_hidden.is.null")
+    .gte("match_date", fromStr)
     .order("match_date", { ascending: true })
     .order("match_time", { ascending: true, nullsFirst: true })
-    .limit(1)
-    .maybeSingle();
-  if (live) return live;
+    .limit(120);
 
-  const { data } = await supabase
-    .from("matches")
-    .select("id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, competition, status, goals_for, goals_against")
-    .eq("status", "scheduled")
-    .or("is_hidden.eq.false,is_hidden.is.null")
-    .gte("match_date", today)
-    .order("match_date", { ascending: true })
-    .order("match_time", { ascending: true, nullsFirst: true })
-    .limit(1)
-    .maybeSingle();
-  return data;
+  const list = (rows ?? []) as Row[];
+  const now = Date.now();
+
+  const dbLives = list.filter((r) => r.status === "live");
+  dbLives.sort((a, b) => String(b.updated_at ?? "").localeCompare(String(a.updated_at ?? "")));
+  if (dbLives[0]) return dbLives[0];
+
+  const inWindow = list.filter((r) => r.status === "scheduled" && isWithinLivePlayWindow(r.match_date, r.match_time, now));
+  if (inWindow.length > 0) {
+    inWindow.sort(
+      (a, b) => (getMatchKickoffMs(a.match_date, a.match_time) ?? 0) - (getMatchKickoffMs(b.match_date, b.match_time) ?? 0),
+    );
+    const pick = inWindow[0]!;
+    return { ...pick, status: "live" };
+  }
+
+  const todayScheduled = list.filter((r) => r.status === "scheduled" && r.match_date === todayTr);
+  if (todayScheduled[0]) return todayScheduled[0];
+
+  const future = list.filter((r) => r.status === "scheduled" && r.match_date >= todayTr);
+  return future[0] ?? null;
+}
+
+/** Fikstür satırı vb. için görünen durum (scheduled + saha penceresi → canlı). */
+export function getMatchEffectiveStatus(match: {
+  match_date: string;
+  match_time?: string | null;
+  status: string;
+}): string {
+  return getEffectiveMatchStatus({
+    match_date: match.match_date,
+    match_time: match.match_time ?? null,
+    status: match.status,
+  });
 }
 
 /** Tek maç; id demo-* ise demo maç, değilse veritabanından döner. */
