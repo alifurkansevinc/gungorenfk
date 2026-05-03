@@ -3,6 +3,8 @@ import Image from "next/image";
 import { Radio } from "lucide-react";
 import { getMatchById, getMatchLineupForMatch } from "@/lib/data";
 import { notFound } from "next/navigation";
+
+export const dynamic = "force-dynamic";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { MatchPageRefresh } from "@/components/MatchPageRefresh";
 
@@ -44,9 +46,11 @@ export default async function MacDetayPage({ params }: { params: Promise<{ id: s
           ? "Programda"
           : match.status;
 
+  const hasScore = match.goals_for != null && match.goals_against != null;
+
   return (
     <div className="min-h-screen">
-      <MatchPageRefresh enabled={refreshEnabled} />
+      <MatchPageRefresh enabled={refreshEnabled} intervalMs={match.status === "live" ? 12_000 : 60_000} />
       {/* Hero görsel */}
       <section className="relative h-[14vh] min-h-[100px] flex items-end bg-siyah">
         <Image src={DEMO_IMAGES.match} alt="" fill className="object-cover opacity-80" unoptimized priority />
@@ -79,7 +83,7 @@ export default async function MacDetayPage({ params }: { params: Promise<{ id: s
       <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Skor kutusu */}
         <div className="rounded-2xl border border-siyah/10 bg-beyaz p-8 shadow-sm text-center">
-          {match.status === "finished" && match.goals_for !== null && match.goals_against !== null ? (
+          {match.status === "finished" && hasScore ? (
             <>
               <p className="text-sm font-semibold uppercase tracking-wider text-siyah/60">Maç sonucu</p>
               <div className="mt-4 flex items-center justify-center gap-6 flex-wrap">
@@ -89,6 +93,18 @@ export default async function MacDetayPage({ params }: { params: Promise<{ id: s
                 </span>
                 <span className="text-2xl font-bold text-siyah">{match.opponent_name}</span>
               </div>
+            </>
+          ) : match.status === "live" && hasScore ? (
+            <>
+              <p className="text-sm font-semibold uppercase tracking-wider text-red-600">Canlı · anlık skor</p>
+              <div className="mt-4 flex items-center justify-center gap-6 flex-wrap">
+                <span className="text-2xl font-bold text-siyah">Güngören FK</span>
+                <span className="text-4xl font-bold text-bordo tabular-nums">
+                  {match.goals_for} - {match.goals_against}
+                </span>
+                <span className="text-2xl font-bold text-siyah">{match.opponent_name}</span>
+              </div>
+              <p className="mt-3 text-xs text-siyah/55">Skor birkaç saniye içinde güncellenir.</p>
             </>
           ) : match.status === "live" ? (
             <>

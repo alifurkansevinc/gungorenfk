@@ -165,6 +165,8 @@ export async function getNextMatch(): Promise<{
   opponent_logo_url: string | null;
   competition: string | null;
   status: string;
+  goals_for: number | null;
+  goals_against: number | null;
 } | null> {
   await syncMatchStatusesFromSchedule();
   const today = new Date().toISOString().slice(0, 10);
@@ -172,7 +174,7 @@ export async function getNextMatch(): Promise<{
 
   const { data: live } = await supabase
     .from("matches")
-    .select("id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, competition, status")
+    .select("id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, competition, status, goals_for, goals_against")
     .eq("status", "live")
     .or("is_hidden.eq.false,is_hidden.is.null")
     .order("match_date", { ascending: true })
@@ -183,7 +185,7 @@ export async function getNextMatch(): Promise<{
 
   const { data } = await supabase
     .from("matches")
-    .select("id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, competition, status")
+    .select("id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, competition, status, goals_for, goals_against")
     .eq("status", "scheduled")
     .or("is_hidden.eq.false,is_hidden.is.null")
     .gte("match_date", today)

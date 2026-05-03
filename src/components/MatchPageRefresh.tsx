@@ -3,15 +3,15 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
-/** Canlı / program maçında durum güncellemesi için periyodik yenileme */
-export function MatchPageRefresh({ enabled }: { enabled: boolean }) {
+/** Canlı / program maçında durum ve skor güncellemesi için periyodik yenileme */
+export function MatchPageRefresh({ enabled, intervalMs = 60_000 }: { enabled: boolean; intervalMs?: number }) {
   const router = useRouter();
   useEffect(() => {
     if (!enabled) return;
     const t = setInterval(() => {
       router.refresh();
-    }, 60_000);
+    }, intervalMs);
     return () => clearInterval(t);
-  }, [enabled, router]);
+  }, [enabled, intervalMs, router]);
   return null;
 }

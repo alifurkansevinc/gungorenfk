@@ -14,6 +14,7 @@ import { matchSeasonTabToStandingsSeason, resolveSeasonQueryParam } from "@/lib/
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { NextMatchCard } from "@/components/NextMatchCard";
 import { WeekPlayerShowcase } from "@/components/WeekPlayerShowcase";
+import { MatchPageRefresh } from "@/components/MatchPageRefresh";
 
 type ResultType = "W" | "D" | "L";
 
@@ -49,6 +50,8 @@ export const metadata = {
   title: "Sıralama & Maçlar | Güngören FK",
   description: "Güngören FK maç programı, puan durumu ve sonuçları.",
 };
+
+export const dynamic = "force-dynamic";
 
 export default async function MaclarPage({ searchParams }: { searchParams: Promise<{ sezon?: string; puan?: string }> }) {
   const sp = await searchParams;
@@ -87,6 +90,7 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
 
   return (
     <div className="min-h-screen">
+      {nextMatch?.status === "live" && <MatchPageRefresh enabled intervalMs={12_000} />}
       {/* Hero - tam genişlik görsel */}
       <section className="relative h-[14vh] min-h-[100px] flex items-end bg-siyah">
         <Image src={DEMO_IMAGES.stadium} alt="" fill className="object-cover opacity-80" unoptimized priority />

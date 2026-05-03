@@ -13,6 +13,8 @@ type NextMatch = {
   opponent_logo_url: string | null;
   competition: string | null;
   status?: string;
+  goals_for?: number | null;
+  goals_against?: number | null;
 } | null;
 
 export function NextMatchCard({ match }: { match: NextMatch }) {
@@ -29,6 +31,14 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
 
   const isLive = match.status === "live";
   const isHome = match.home_away === "home";
+  const hasLiveScore =
+    isLive &&
+    match.goals_for != null &&
+    match.goals_against != null &&
+    !Number.isNaN(Number(match.goals_for)) &&
+    !Number.isNaN(Number(match.goals_against));
+  const scoreHome = hasLiveScore ? (isHome ? match.goals_for! : match.goals_against!) : null;
+  const scoreAway = hasLiveScore ? (isHome ? match.goals_against! : match.goals_for!) : null;
   const matchLabel = isHome
     ? `Güngören FK - ${match.opponent_name}`
     : `${match.opponent_name} - Güngören FK`;
@@ -95,8 +105,17 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
               )}
             </div>
 
-            <div className="flex shrink-0 items-center gap-2 text-bordo">
-              <span className="text-2xl font-bold sm:text-3xl">VS</span>
+            <div className="flex shrink-0 flex-col items-center justify-center gap-1 text-bordo">
+              {hasLiveScore ? (
+                <>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-beyaz/70">Skor</span>
+                  <span className="text-3xl font-black tabular-nums text-beyaz sm:text-4xl">
+                    {scoreHome} - {scoreAway}
+                  </span>
+                </>
+              ) : (
+                <span className="text-2xl font-bold sm:text-3xl">VS</span>
+              )}
             </div>
 
             <div className="flex flex-1 flex-col items-center justify-center">
