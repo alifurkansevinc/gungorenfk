@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getAdminSupabase } from "@/app/admin/actions";
 import { createServiceRoleClient } from "@/lib/supabase/service";
+import { matchEndAtIso } from "@/lib/match-schedule";
 
 async function supabase() {
   return getAdminSupabase();
@@ -106,14 +107,18 @@ export async function createMatch(formData: FormData) {
     return { error: "Oylama adayı seçtiyseniz başlangıç ve bitiş saatlerini de girin." };
   }
 
+  const matchDateStr = formData.get("match_date") as string;
+  const matchTimeStr = (formData.get("match_time") as string)?.trim() || null;
+  const match_end_at = matchEndAtIso(matchDateStr, matchTimeStr);
+
   const { data: match, error: matchErr } = await s
     .from("matches")
     .insert({
       opponent_name: (formData.get("opponent_name") as string)?.trim(),
       home_away: formData.get("home_away") as "home" | "away",
       venue: (formData.get("venue") as string)?.trim() || null,
-      match_date: formData.get("match_date") as string,
-      match_time: (formData.get("match_time") as string)?.trim() || null,
+      match_date: matchDateStr,
+      match_time: matchTimeStr,
       opponent_logo_url: (formData.get("opponent_logo_url") as string)?.trim() || null,
       competition: (formData.get("competition") as string)?.trim() || null,
       season: (formData.get("season") as string)?.trim() || null,
@@ -123,6 +128,7 @@ export async function createMatch(formData: FormData) {
       man_of_the_match_id: manOfTheMatch || null,
       motm_vote_starts_at,
       motm_vote_ends_at,
+      match_end_at,
     })
     .select("id")
     .single();
@@ -177,14 +183,18 @@ export async function updateMatch(id: string, formData: FormData) {
     return { error: "Oylama adayı seçtiyseniz başlangıç ve bitiş saatlerini de girin." };
   }
 
+  const updMatchDate = formData.get("match_date") as string;
+  const updMatchTime = (formData.get("match_time") as string)?.trim() || null;
+  const updMatchEndAt = matchEndAtIso(updMatchDate, updMatchTime);
+
   const { error } = await s
     .from("matches")
     .update({
       opponent_name: (formData.get("opponent_name") as string)?.trim(),
       home_away: formData.get("home_away") as "home" | "away",
       venue: (formData.get("venue") as string)?.trim() || null,
-      match_date: formData.get("match_date") as string,
-      match_time: (formData.get("match_time") as string)?.trim() || null,
+      match_date: updMatchDate,
+      match_time: updMatchTime,
       opponent_logo_url: (formData.get("opponent_logo_url") as string)?.trim() || null,
       competition: (formData.get("competition") as string)?.trim() || null,
       season: (formData.get("season") as string)?.trim() || null,
@@ -194,6 +204,7 @@ export async function updateMatch(id: string, formData: FormData) {
       man_of_the_match_id: manOfTheMatch || null,
       motm_vote_starts_at,
       motm_vote_ends_at,
+      match_end_at: updMatchEndAt,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
@@ -315,6 +326,7 @@ export async function importMackolikMatches(): Promise<{ ok: true; imported: num
       continue;
     }
 
+    const importedEndAt = matchEndAtIso(match_date, null);
     const { error } = await s.from("matches").insert({
       opponent_name,
       home_away: isHome ? "home" : "away",
@@ -327,6 +339,7 @@ export async function importMackolikMatches(): Promise<{ ok: true; imported: num
       goals_for,
       goals_against,
       status,
+      match_end_at: importedEndAt,
     });
     if (!error) imported++;
   }

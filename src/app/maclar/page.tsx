@@ -1,6 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
-import { CheckCircle, Circle, XCircle } from "lucide-react";
+import { CheckCircle, Circle, Radio, XCircle } from "lucide-react";
 import { getMatches, getLeagueStandings, getNextMatch, getMackolikFixtureUrl } from "@/lib/data";
 import { getMackolikMatches } from "@/lib/mackolik";
 import { DEMO_IMAGES } from "@/lib/demo-images";
@@ -171,6 +171,7 @@ export default async function MaclarPage() {
                 const result: ResultType = !hasScoreDb ? "D" : m.goals_for! > m.goals_against! ? "W" : m.goals_for! < m.goals_against! ? "L" : "D";
                 const müsabakaLabel = (m.competition && m.competition.trim()) ? m.competition : leagueName;
                 const isFinishedDb = m.status === "finished";
+                const isLiveDb = m.status === "live";
                 const teamHome = m.home_away === "home" ? "Güngören FK" : m.opponent_name;
                 const teamAway = m.home_away === "away" ? "Güngören FK" : m.opponent_name;
                 const scoreHome = m.home_away === "home" ? m.goals_for : m.goals_against;
@@ -193,8 +194,21 @@ export default async function MaclarPage() {
                       </div>
                       <span className={`min-w-0 max-w-[140px] truncate text-right text-sm sm:max-w-[180px] ${teamAway === "Güngören FK" ? "font-extrabold text-siyah" : "font-medium text-siyah"}`}>{teamAway}</span>
                     </Link>
-                    <span className={`mt-2 text-[11px] font-medium ${isFinishedDb ? "text-emerald-600" : "text-bordo/90"}`}>
-                      {isFinishedDb ? "Bitti" : "Planlanan"}
+                    <span
+                      className={`mt-2 inline-flex items-center justify-center gap-1 text-[11px] font-medium ${
+                        isLiveDb ? "text-red-600" : isFinishedDb ? "text-emerald-600" : "text-bordo/90"
+                      }`}
+                    >
+                      {isLiveDb ? (
+                        <>
+                          <Radio className="h-3.5 w-3.5 shrink-0 animate-pulse" aria-hidden />
+                          Canlı
+                        </>
+                      ) : isFinishedDb ? (
+                        "Bitti"
+                      ) : (
+                        "Planlanan"
+                      )}
                     </span>
                   </div>
                 );

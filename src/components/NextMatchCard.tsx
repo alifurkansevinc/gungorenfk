@@ -1,5 +1,6 @@
 import Link from "next/link";
 import Image from "next/image";
+import { Radio } from "lucide-react";
 import { SITE_LOGO_URL } from "@/lib/demo-images";
 
 type NextMatch = {
@@ -11,6 +12,7 @@ type NextMatch = {
   match_time: string | null;
   opponent_logo_url: string | null;
   competition: string | null;
+  status?: string;
 } | null;
 
 export function NextMatchCard({ match }: { match: NextMatch }) {
@@ -25,6 +27,7 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
     );
   }
 
+  const isLive = match.status === "live";
   const isHome = match.home_away === "home";
   const matchLabel = isHome
     ? `Güngören FK - ${match.opponent_name}`
@@ -40,7 +43,6 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
   return (
     <section className="mb-14">
       <div className="group relative overflow-hidden rounded-3xl bg-siyah shadow-2xl">
-        {/* Arka plan: gradient + hafif desen */}
         <div className="absolute inset-0 bg-gradient-to-br from-bordo/90 via-siyah to-siyah" />
         <div
           className="absolute inset-0 opacity-[0.07]"
@@ -54,13 +56,21 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-beyaz/70">
             {match.competition || "Maç"}
           </p>
-          <h2 className="mb-8 text-center text-xl font-bold text-beyaz sm:text-2xl md:text-3xl">
-            Önümüzdeki maç
-          </h2>
+
+          {isLive ? (
+            <div className="mb-8 flex flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4">
+              <span className="inline-flex items-center gap-2 rounded-full border border-red-400/60 bg-red-600/25 px-4 py-2 text-sm font-black uppercase tracking-widest text-beyaz shadow-lg shadow-red-900/40 animate-pulse">
+                <Radio className="h-5 w-5 shrink-0 text-beyaz" aria-hidden />
+                Canlı
+              </span>
+              <h2 className="text-center text-xl font-bold text-beyaz sm:text-2xl md:text-3xl">{matchLabel}</h2>
+            </div>
+          ) : (
+            <h2 className="mb-8 text-center text-xl font-bold text-beyaz sm:text-2xl md:text-3xl">Önümüzdeki maç</h2>
+          )}
 
           {/* Takımlar: logolar + isimler */}
           <div className="flex flex-col items-center justify-center gap-6 sm:flex-row sm:gap-12">
-            {/* Sol: ev sahibi */}
             <div className="flex flex-1 flex-col items-center justify-center">
               {isHome ? (
                 <>
@@ -89,7 +99,6 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
               <span className="text-2xl font-bold sm:text-3xl">VS</span>
             </div>
 
-            {/* Sağ: deplasman */}
             <div className="flex flex-1 flex-col items-center justify-center">
               {isHome ? (
                 <>
@@ -115,7 +124,6 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
             </div>
           </div>
 
-          {/* Tarih, saat, yer */}
           <div className="mt-10 flex flex-wrap items-center justify-center gap-x-8 gap-y-4 border-t border-beyaz/20 pt-8">
             <div className="flex items-center gap-2 text-beyaz/90">
               <svg className="h-5 w-5 text-bordo" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -142,7 +150,7 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
             )}
           </div>
 
-          <div className="mt-8 flex justify-center">
+          <div className="mt-8 flex justify-center flex-wrap gap-3">
             <Link
               href={`/maclar/${match.id}`}
               className="inline-flex items-center gap-2 rounded-xl bg-beyaz px-6 py-3 font-bold text-siyah shadow-lg transition-all hover:bg-beyaz/90 hover:scale-105"
@@ -151,7 +159,7 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
             </Link>
             <Link
               href="/biletler"
-              className="ml-4 inline-flex items-center gap-2 rounded-xl border-2 border-beyaz/50 px-6 py-3 font-bold text-beyaz transition-all hover:bg-beyaz/10"
+              className="inline-flex items-center gap-2 rounded-xl border-2 border-beyaz/50 px-6 py-3 font-bold text-beyaz transition-all hover:bg-beyaz/10"
             >
               Bilet al
             </Link>

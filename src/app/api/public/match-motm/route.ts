@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { isMotmVotingOpen, type MatchMotmPublicCandidate } from "@/lib/match-motm";
+import { syncMatchStatusesFromSchedule } from "@/lib/match-schedule";
 
 type MotmMatchRow = {
   id: string;
@@ -16,6 +17,7 @@ type MotmMatchRow = {
 
 export async function GET(req: NextRequest) {
   try {
+    await syncMatchStatusesFromSchedule();
     const matchIdParam = req.nextUrl.searchParams.get("matchId")?.trim();
     const svc = createServiceRoleClient();
     const nowIso = new Date().toISOString();

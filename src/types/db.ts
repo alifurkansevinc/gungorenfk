@@ -57,6 +57,9 @@ export type Match = {
   home_away: "home" | "away";
   venue: string | null;
   match_date: string;
+  match_time?: string | null;
+  match_end_at?: string | null;
+  opponent_logo_url?: string | null;
   competition: string | null;
   season: string | null;
   goals_for: number | null;

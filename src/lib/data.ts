@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
+import { syncMatchStatusesFromSchedule } from "@/lib/match-schedule";
 import type { MemleketCount, Match, SquadMember, BoardMember, TechnicalStaffMember, LeagueStandingRow, ClubTrophy } from "@/types/db";
 import type { FanLevel } from "@/types/db";
 
@@ -117,6 +118,7 @@ export async function getMemleketCounts(): Promise<MemleketCount[]> {
 
 /** Maçlar listesi; veri yoksa demo döner. Pasif (is_hidden) maçlar dahil edilmez. */
 export async function getMatches(limit = 20) {
+  await syncMatchStatusesFromSchedule();
   const supabase = await createClient();
   const { data } = await supabase
     .from("matches")
@@ -128,7 +130,7 @@ export async function getMatches(limit = 20) {
   return data;
 }
 
-/** Önümüzdeki maç (ilk planlanmış, tarihe göre); admin panelinden belirlenir. */
+/** Önümüzdeki maç veya şu an canlı maç (takvim + 2 saat kuralı; sync sonrası status). */
 export async function getNextMatch(): Promise<{
   id: string;
   opponent_name: string;
@@ -138,16 +140,31 @@ export async function getNextMatch(): Promise<{
   match_time: string | null;
   opponent_logo_url: string | null;
   competition: string | null;
+  status: string;
 } | null> {
+  await syncMatchStatusesFromSchedule();
   const today = new Date().toISOString().slice(0, 10);
   const supabase = await createClient();
+
+  const { data: live } = await supabase
+    .from("matches")
+    .select("id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, competition, status")
+    .eq("status", "live")
+    .or("is_hidden.eq.false,is_hidden.is.null")
+    .order("match_date", { ascending: true })
+    .order("match_time", { ascending: true, nullsFirst: true })
+    .limit(1)
+    .maybeSingle();
+  if (live) return live;
+
   const { data } = await supabase
     .from("matches")
-    .select("id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, competition")
+    .select("id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, competition, status")
     .eq("status", "scheduled")
     .or("is_hidden.eq.false,is_hidden.is.null")
     .gte("match_date", today)
     .order("match_date", { ascending: true })
+    .order("match_time", { ascending: true, nullsFirst: true })
     .limit(1)
     .maybeSingle();
   return data;
@@ -158,9 +175,50 @@ export async function getMatchById(id: string): Promise<(Match & { id: string })
   if (id.startsWith("demo-")) {
     return DEMO_MATCHES.find((m) => m.id === id) ?? null;
   }
+  await syncMatchStatusesFromSchedule();
   const supabase = await createClient();
   const { data } = await supabase.from("matches").select("*").eq("id", id).single();
   return data;
+}
+
+/** Maç kadrosu (ilk 11 + yedek); canlı/bitti sayfalarında gösterim için. */
+export async function getMatchLineupForMatch(matchId: string): Promise<{
+  starters: (SquadMember & { id: string })[];
+  substitutes: (SquadMember & { id: string })[];
+}> {
+  if (matchId.startsWith("demo-")) return { starters: [], substitutes: [] };
+  const supabase = await createClient();
+  const { data: rows } = await supabase
+    .from("match_lineups")
+    .select("squad_member_id, role, sort_order")
+    .eq("match_id", matchId)
+    .order("sort_order");
+  if (!rows?.length) return { starters: [], substitutes: [] };
+  const ids = [...new Set(rows.map((r: { squad_member_id: string }) => r.squad_member_id))];
+  const { data: members } = await supabase
+    .from("squad")
+    .select("id, name, shirt_number, position, position_category, photo_url, bio, sort_order, is_captain, season")
+    .in("id", ids);
+  const byId = new Map(
+    (members ?? []).map((m) => {
+      const row = {
+        ...m,
+        position_category: m.position_category ?? null,
+        is_captain: m.is_captain ?? false,
+        is_active: true,
+      } as SquadMember & { id: string };
+      return [m.id, row] as const;
+    }),
+  );
+  const starters: (SquadMember & { id: string })[] = [];
+  const substitutes: (SquadMember & { id: string })[] = [];
+  for (const r of rows as { squad_member_id: string; role: string }[]) {
+    const m = byId.get(r.squad_member_id);
+    if (!m) continue;
+    if (r.role === "starter") starters.push(m);
+    else if (r.role === "substitute") substitutes.push(m);
+  }
+  return { starters, substitutes };
 }
 
 /** Tüm rozet kademeleri (açıklama ve hedefler dahil). */
