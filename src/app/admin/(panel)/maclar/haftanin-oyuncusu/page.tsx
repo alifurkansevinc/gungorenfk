@@ -53,6 +53,13 @@ export default async function HaftaninOyuncusuAdminPage({
           Oylama bittikten sonra duyurulan oyuncuyu kaydedin; kayıt ana sayfada kalıcı listelenir. Maç seçerseniz{" "}
           <strong>maçın resmi MOTM</strong> alanı da bu oyuncuya güncellenir (favori barem sayımı).
         </p>
+        <p className="mt-2 rounded-lg border border-siyah/10 bg-siyah/[0.03] px-3 py-2 text-sm text-siyah/80">
+          <strong className="text-siyah">Taraftar oy sayıları nerede?</strong>{" "}
+          <span className="text-siyah/70">
+            Her maç için <strong>Admin → Maçlar → Düzenle</strong> sayfasının üstünde &quot;Taraftar oylaması — sonuç özeti&quot;
+            tablosunda aday başına oy ve toplam oy görünür.
+          </span>
+        </p>
       </div>
 
       {sp.ok && (
