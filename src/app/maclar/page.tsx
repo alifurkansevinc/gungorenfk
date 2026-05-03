@@ -1,8 +1,9 @@
 import Link from "next/link";
 import Image from "next/image";
 import { CheckCircle, Circle, Radio, XCircle } from "lucide-react";
-import { getMatches, getLeagueStandings, getNextMatch, getMackolikFixtureUrl } from "@/lib/data";
+import { getMatches, getMatchSeasonsForPublic, getLeagueStandings, getNextMatch, getMackolikFixtureUrl } from "@/lib/data";
 import { getMackolikMatches } from "@/lib/mackolik";
+import { resolveSeasonQueryParam } from "@/lib/seasons";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { NextMatchCard } from "@/components/NextMatchCard";
 
@@ -33,17 +34,22 @@ export const metadata = {
   description: "Güngören FK maç programı, puan durumu ve sonuçları.",
 };
 
-export default async function MaclarPage() {
-  const [matches, standings, nextMatch, mackolikMatches] = await Promise.all([
-    getMatches(24),
+export default async function MaclarPage({ searchParams }: { searchParams: Promise<{ sezon?: string }> }) {
+  const sp = await searchParams;
+  const [seasonList, peek, standings, nextMatch, mackolikMatches] = await Promise.all([
+    getMatchSeasonsForPublic(),
+    getMatches(1, { season: "all" }),
     getLeagueStandings(),
     getNextMatch(),
     getMackolikFixtureUrl().then((url) => getMackolikMatches(url)),
   ]);
-  const hasRealMatches = matches.length > 0 && !matches[0].id.startsWith("demo-");
-  const useMackolik = mackolikMatches.length > 0 && !hasRealMatches;
+  const { filter } = resolveSeasonQueryParam(sp?.sezon, seasonList);
+  const matches = await getMatches(80, { season: filter });
+  const hasAnyRealDbMatch = peek.length > 0 && !peek[0].id.startsWith("demo-");
+  const useMackolik = mackolikMatches.length > 0 && !hasAnyRealDbMatch;
   const leagueName = standings.rows.length > 0 ? standings.league_name : "İstanbul 1. Amatör Lig";
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const showAllSeasons = sp?.sezon?.trim() === "tumu";
+  const activeSeasonTab = showAllSeasons ? null : typeof filter === "string" ? filter : null;
   // En üstte en yeni, en altta en eski (tarihe göre azalan)
   const sortedDbMatches = [...matches].sort((a, b) => b.match_date.localeCompare(a.match_date));
 
@@ -121,10 +127,47 @@ export default async function MaclarPage() {
 
         {/* Fikstür ve sonuçlar — Mackolik’ten veya veritabanından */}
         <section>
-          <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-siyah/60 mb-1">Fikstür ve sonuçlar</h2>
-          <p className="text-[10px] sm:text-xs text-siyah/50 mb-2 sm:mb-4">
-            {useMackolik ? "Kaynak: Mackolik.com — Güngören Belediye Spor Kulübü fikstürü." : "Sezon içi tüm karşılaşmalar ve skorlar."}
-          </p>
+          <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-siyah/60">Fikstür ve sonuçlar</h2>
+              <p className="text-[10px] sm:text-xs text-siyah/50 mt-1">
+                {useMackolik
+                  ? "Kaynak: Mackolik.com — Güngören Belediye Spor Kulübü fikstürü."
+                  : showAllSeasons
+                    ? "Tüm sezonlardaki kayıtlı maçlar."
+                    : activeSeasonTab
+                      ? `${activeSeasonTab} sezonu maçları.`
+                      : "Veritabanındaki maçlar."}
+              </p>
+            </div>
+            {!useMackolik && seasonList.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <span className="text-[10px] font-medium uppercase tracking-wider text-siyah/45">Sezon</span>
+                {seasonList.map((s) => {
+                  const on = !showAllSeasons && filter === s;
+                  return (
+                    <Link
+                      key={s}
+                      href={`/maclar?sezon=${encodeURIComponent(s)}`}
+                      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                        on ? "bg-siyah text-beyaz" : "bg-siyah/10 text-siyah hover:bg-siyah/15"
+                      }`}
+                    >
+                      {s}
+                    </Link>
+                  );
+                })}
+                <Link
+                  href="/maclar?sezon=tumu"
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                    showAllSeasons ? "bg-bordo text-beyaz" : "bg-siyah/10 text-siyah hover:bg-siyah/15"
+                  }`}
+                >
+                  Tümü
+                </Link>
+              </div>
+            )}
+          </div>
           <div className="space-y-0 overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm">
             {useMackolik ? (
               mackolikMatches.length === 0 ? (
@@ -163,8 +206,12 @@ export default async function MaclarPage() {
                   );
                 })
               )
-            ) : matches.length === 0 ? (
-              <div className="py-10 text-center text-sm text-siyah/50">Henüz maç eklenmedi.</div>
+            ) : sortedDbMatches.length === 0 ? (
+              <div className="py-10 text-center text-sm text-siyah/50">
+                {hasAnyRealDbMatch
+                  ? "Bu sezona ait maç yok. Üstteki sezon seçiciden başka sezon veya «Tümü»nü deneyin."
+                  : "Henüz maç eklenmedi."}
+              </div>
             ) : (
               sortedDbMatches.map((m, i) => {
                 const hasScoreDb = m.goals_for != null && m.goals_against != null;

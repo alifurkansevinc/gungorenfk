@@ -17,7 +17,8 @@ const LIG_OPTIONS = [
   "2.Amatör Lig",
 ] as const;
 
-const SEZON_OPTIONS = ["2025-26", "2026-27", "2027-28"] as const;
+const SEZON_OPTIONS = ["2023-24", "2024-25", "2025-26", "2026-27", "2027-28", "2028-29"] as const;
+const MAX_MOTM_CANDIDATES = 5;
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Planlandı" },
@@ -111,7 +112,11 @@ export function MacForm({
 
   const toggleMotmCandidate = (id: string) => {
     if (!lineupPool.includes(id)) return;
-    setMotmCandidates((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+    setMotmCandidates((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= MAX_MOTM_CANDIDATES) return prev;
+      return [...prev, id];
+    });
   };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -197,8 +202,8 @@ export function MacForm({
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-siyah">Sezon</label>
-            <select name="season" defaultValue={match?.season ?? ""} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2">
+            <label className="block text-sm font-medium text-siyah">Sezon *</label>
+            <select name="season" defaultValue={match?.season ?? ""} required className="mt-1 w-full rounded border border-siyah/20 px-3 py-2">
               <option value="">— Seçin —</option>
               {SEZON_OPTIONS.map((s) => (
                 <option key={s} value={s}>{s}</option>
@@ -316,7 +321,8 @@ export function MacForm({
       <div className="rounded-xl border-2 border-amber-200 bg-amber-50/40 p-4">
         <h3 className="text-sm font-semibold text-siyah">Taraftar oylaması (Maçın oyuncusu)</h3>
         <p className="mt-0.5 text-xs text-siyah/70">
-          Web sitesinde oylama penceresi ve aday listesi. Oyuncular yalnızca bu maçın <strong>ilk 11 + yedek</strong> kadrosundan seçilir; her üye tek oy kullanır (geri alınamaz).
+          Web sitesinde oylama penceresi ve aday listesi. Oyuncular yalnızca bu maçın <strong>ilk 11 + yedek</strong> kadrosundan seçilir; en fazla{" "}
+          <strong>{MAX_MOTM_CANDIDATES} aday</strong>. Her üye tek oy kullanır (geri alınamaz).
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
@@ -349,13 +355,20 @@ export function MacForm({
               {lineupPool.map((id) => {
                 const p = squadById.get(id);
                 if (!p) return null;
+                const atCap = motmCandidates.length >= MAX_MOTM_CANDIDATES && !motmCandidates.includes(id);
                 return (
-                  <label key={id} className="flex cursor-pointer items-center gap-2 rounded border border-amber-300/80 bg-beyaz px-3 py-1.5 text-sm shadow-sm">
+                  <label
+                    key={id}
+                    className={`flex cursor-pointer items-center gap-2 rounded border px-3 py-1.5 text-sm ${
+                      atCap ? "cursor-not-allowed border-siyah/10 bg-siyah/5 text-siyah/40" : "border-amber-300/80 bg-beyaz shadow-sm"
+                    }`}
+                  >
                     <input
                       type="checkbox"
                       checked={motmCandidates.includes(id)}
+                      disabled={atCap}
                       onChange={() => toggleMotmCandidate(id)}
-                      className="rounded border-amber-400 text-amber-600"
+                      className="rounded border-amber-400 text-amber-600 disabled:opacity-40"
                     />
                     <span>{p.shirt_number != null ? `${p.shirt_number}. ` : ""}{p.name}</span>
                   </label>
@@ -363,7 +376,9 @@ export function MacForm({
               })}
             </div>
           )}
-          <p className="mt-2 text-xs text-siyah/60">Seçili aday: {motmCandidates.length}</p>
+          <p className="mt-2 text-xs text-siyah/60">
+            Seçili aday: {motmCandidates.length} / {MAX_MOTM_CANDIDATES}
+          </p>
         </div>
       </div>
 

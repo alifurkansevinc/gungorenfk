@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
     });
 
     const { data: candRows } = await svc.from("match_motm_candidates").select("squad_member_id").eq("match_id", match.id);
-    const ids = [...new Set((candRows ?? []).map((r) => (r as { squad_member_id: string }).squad_member_id))];
+    const ids = [...new Set((candRows ?? []).map((r) => (r as { squad_member_id: string }).squad_member_id))].slice(0, 5);
 
     const tally = new Map<string, number>();
     const { data: voteRows } = await svc.from("match_motm_votes").select("squad_member_id").eq("match_id", match.id);

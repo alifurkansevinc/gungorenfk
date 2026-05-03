@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { DEMO_IMAGES } from "@/lib/demo-images";
+import { sortSeasonLabelsDesc } from "@/lib/seasons";
 
 export async function WeekPlayerShowcase() {
   const supabase = await createClient();
@@ -10,20 +11,24 @@ export async function WeekPlayerShowcase() {
     .select("id, season, week_number, match_id, squad_id")
     .order("season", { ascending: false })
     .order("week_number", { ascending: false })
-    .limit(24);
+    .limit(40);
 
   if (!awards?.length) {
     return (
-      <section className="border-b border-siyah/10 bg-beyaz py-10">
-        <div className="mx-auto max-w-7xl px-6">
-          <h2 className="font-display text-xl font-bold text-siyah sm:text-2xl">Haftanın oyuncuları</h2>
-          <p className="mt-2 text-sm text-siyah/60">Henüz kayıtlı haftanın oyuncusu duyurusu yok.</p>
+      <section className="border-b border-white/10 bg-black py-6">
+        <div className="mx-auto max-w-3xl px-4">
+          <h2 className="font-display text-sm font-bold uppercase tracking-[0.2em] text-zinc-500">Haftanın oyuncuları</h2>
+          <p className="mt-2 text-xs text-zinc-500">Henüz kayıtlı duyuru yok.</p>
         </div>
       </section>
     );
   }
 
-  const squadIds = [...new Set(awards.map((a) => (a as { squad_id: string }).squad_id))];
+  const seasons = sortSeasonLabelsDesc(awards.map((a) => (a as { season: string }).season));
+  const wallSeason = seasons[0]!;
+  const wallAwards = awards.filter((r) => (r as { season: string }).season === wallSeason).slice(0, 12);
+
+  const squadIds = [...new Set(wallAwards.map((a) => (a as { squad_id: string }).squad_id))];
   const { data: squadRows } = await supabase
     .from("squad")
     .select("id, name, shirt_number, photo_url, position")
@@ -32,23 +37,21 @@ export async function WeekPlayerShowcase() {
   const squadMap = new Map((squadRows ?? []).map((r) => [r.id, r]));
 
   return (
-    <section className="border-b border-siyah/10 bg-gradient-to-b from-beyaz via-bordo/[0.04] to-beyaz py-12">
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+    <section className="border-b border-white/10 bg-black py-6 sm:py-7">
+      <div className="mx-auto max-w-3xl px-4">
+        <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/10 pb-3">
           <div>
-            <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-bordo/80">Duvar</p>
-            <h2 className="font-display text-2xl font-bold text-siyah sm:text-3xl">Haftanın oyuncuları</h2>
-            <p className="mt-1 max-w-xl text-sm text-siyah/65">
-              Sezon boyunca seçilen performanslar burada kalıcı olarak listelenir.
-            </p>
+            <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-zinc-500">Duvar</p>
+            <h2 className="mt-0.5 font-display text-base font-bold text-white sm:text-lg">Haftanın oyuncuları</h2>
+            <p className="mt-0.5 text-[11px] text-zinc-500">{wallSeason} sezonu</p>
           </div>
-          <Link href="/maclar" className="text-sm font-semibold text-bordo hover:underline">
-            Tüm maçlar →
+          <Link href="/maclar" className="text-[11px] font-semibold text-bordo hover:text-bordo/90">
+            Maçlar →
           </Link>
         </div>
 
-        <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {awards.map((row) => {
+        <div className="mt-4 flex gap-3 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {wallAwards.map((row) => {
             const a = row as { id: string; season: string; week_number: number; squad_id: string };
             const p = squadMap.get(a.squad_id) as
               | { id: string; name: string; shirt_number: number | null; photo_url: string | null; position: string | null }
@@ -57,20 +60,31 @@ export async function WeekPlayerShowcase() {
             return (
               <article
                 key={a.id}
-                className="group overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-md transition hover:-translate-y-1 hover:shadow-xl"
+                className="w-[104px] shrink-0 overflow-hidden rounded-lg border border-white/10 bg-zinc-950/80 sm:w-[118px]"
               >
-                <div className="relative aspect-[4/3] bg-siyah/5">
-                  <Image src={img} alt="" fill className="object-cover object-top transition duration-500 group-hover:scale-105" sizes="280px" unoptimized />
-                  <div className="absolute left-3 top-3 rounded-full bg-bordo px-3 py-1 text-xs font-bold text-beyaz shadow">
-                    {a.season} · {a.week_number}. hafta
-                  </div>
+                <div className="relative aspect-[3/4] bg-zinc-900">
+                  <Image
+                    src={img}
+                    alt=""
+                    fill
+                    className="object-cover object-top"
+                    sizes="120px"
+                    unoptimized
+                  />
+                  <span className="absolute left-1 top-1 rounded bg-black/75 px-1.5 py-0.5 text-[9px] font-bold text-white">
+                    {a.week_number}.h
+                  </span>
                 </div>
-                <div className="p-4">
-                  <p className="font-display text-lg font-bold text-siyah">
+                <div className="px-1.5 py-2">
+                  <p className="truncate text-center text-[10px] font-bold leading-tight text-white" title={p?.name ?? ""}>
                     {p?.shirt_number != null ? `${p.shirt_number}. ` : ""}
-                    {p?.name ?? "Oyuncu"}
+                    {p?.name ?? "—"}
                   </p>
-                  {p?.position && <p className="text-sm text-siyah/60">{p.position}</p>}
+                  {p?.position && (
+                    <p className="truncate text-center text-[9px] text-zinc-500" title={p.position}>
+                      {p.position}
+                    </p>
+                  )}
                 </div>
               </article>
             );

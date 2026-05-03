@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { getAdminSupabase } from "@/app/admin/actions";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { matchEndAtIso } from "@/lib/match-schedule";
+import { seasonLabelFromMatchDate } from "@/lib/seasons";
 
 async function supabase() {
   return getAdminSupabase();
@@ -92,6 +93,9 @@ export async function createMatch(formData: FormData) {
   const { starters, substitutes } = parseMatchLineup(formData);
   const lineupSet = new Set([...starters, ...substitutes]);
 
+  if (candidateIds.length > 5) {
+    return { error: "Taraftar oylamasında en fazla 5 aday seçilebilir." };
+  }
   if ((motm_vote_starts_at && !motm_vote_ends_at) || (!motm_vote_starts_at && motm_vote_ends_at)) {
     return { error: "Taraftar oylaması için hem başlangıç hem bitiş saati girin veya ikisini de boş bırakın." };
   }
@@ -110,6 +114,8 @@ export async function createMatch(formData: FormData) {
   const matchDateStr = formData.get("match_date") as string;
   const matchTimeStr = (formData.get("match_time") as string)?.trim() || null;
   const match_end_at = matchEndAtIso(matchDateStr, matchTimeStr);
+  const seasonValue = (formData.get("season") as string)?.trim();
+  if (!seasonValue) return { error: "Sezon seçimi zorunludur." };
 
   const { data: match, error: matchErr } = await s
     .from("matches")
@@ -121,7 +127,7 @@ export async function createMatch(formData: FormData) {
       match_time: matchTimeStr,
       opponent_logo_url: (formData.get("opponent_logo_url") as string)?.trim() || null,
       competition: (formData.get("competition") as string)?.trim() || null,
-      season: (formData.get("season") as string)?.trim() || null,
+      season: seasonValue,
       goals_for: formData.get("goals_for") ? parseInt(formData.get("goals_for") as string, 10) : null,
       goals_against: formData.get("goals_against") ? parseInt(formData.get("goals_against") as string, 10) : null,
       status: (formData.get("status") as string) || "scheduled",
@@ -168,6 +174,9 @@ export async function updateMatch(id: string, formData: FormData) {
   const { starters, substitutes } = parseMatchLineup(formData);
   const lineupSet = new Set([...starters, ...substitutes]);
 
+  if (candidateIds.length > 5) {
+    return { error: "Taraftar oylamasında en fazla 5 aday seçilebilir." };
+  }
   if ((motm_vote_starts_at && !motm_vote_ends_at) || (!motm_vote_starts_at && motm_vote_ends_at)) {
     return { error: "Taraftar oylaması için hem başlangıç hem bitiş saati girin veya ikisini de boş bırakın." };
   }
@@ -186,6 +195,8 @@ export async function updateMatch(id: string, formData: FormData) {
   const updMatchDate = formData.get("match_date") as string;
   const updMatchTime = (formData.get("match_time") as string)?.trim() || null;
   const updMatchEndAt = matchEndAtIso(updMatchDate, updMatchTime);
+  const updSeason = (formData.get("season") as string)?.trim();
+  if (!updSeason) return { error: "Sezon seçimi zorunludur." };
 
   const { error } = await s
     .from("matches")
@@ -197,7 +208,7 @@ export async function updateMatch(id: string, formData: FormData) {
       match_time: updMatchTime,
       opponent_logo_url: (formData.get("opponent_logo_url") as string)?.trim() || null,
       competition: (formData.get("competition") as string)?.trim() || null,
-      season: (formData.get("season") as string)?.trim() || null,
+      season: updSeason,
       goals_for: formData.get("goals_for") ? parseInt(formData.get("goals_for") as string, 10) : null,
       goals_against: formData.get("goals_against") ? parseInt(formData.get("goals_against") as string, 10) : null,
       status: (formData.get("status") as string) || "scheduled",
@@ -312,7 +323,7 @@ export async function importMackolikMatches(): Promise<{ ok: true; imported: num
     const isPast = match_date < todayStr;
     const status = hasScore || isPast ? "finished" : "scheduled";
     const competition = (m.competition && m.competition.trim()) ? m.competition.trim() : null;
-    const season = match_date.startsWith("2025") || match_date.startsWith("2026") ? "2025-2026" : match_date.slice(0, 4) + "-" + (parseInt(match_date.slice(0, 4), 10) + 1);
+    const season = seasonLabelFromMatchDate(match_date);
 
     const { data: existing } = await s
       .from("matches")

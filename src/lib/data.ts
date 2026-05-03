@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { syncMatchStatusesFromSchedule } from "@/lib/match-schedule";
+import { sortSeasonLabelsDesc } from "@/lib/seasons";
 import type { MemleketCount, Match, SquadMember, BoardMember, TechnicalStaffMember, LeagueStandingRow, ClubTrophy } from "@/types/db";
 import type { FanLevel } from "@/types/db";
 
@@ -116,17 +117,40 @@ export async function getMemleketCounts(): Promise<MemleketCount[]> {
   }
 }
 
-/** Maçlar listesi; veri yoksa demo döner. Pasif (is_hidden) maçlar dahil edilmez. */
-export async function getMatches(limit = 20) {
+/** Veritabanında görünen maç sezonları (yeni → eski). */
+export async function getMatchSeasonsForPublic(): Promise<string[]> {
   await syncMatchStatusesFromSchedule();
   const supabase = await createClient();
   const { data } = await supabase
     .from("matches")
-    .select("id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, goals_for, goals_against, status, competition")
-    .or("is_hidden.eq.false,is_hidden.is.null")
-    .order("match_date", { ascending: false })
-    .limit(limit);
-  if (!data || data.length === 0) return DEMO_MATCHES;
+    .select("season")
+    .or("is_hidden.eq.false,is_hidden.is.null");
+  const raw = (data ?? [])
+    .map((r) => (r as { season: string | null }).season)
+    .filter((s): s is string => typeof s === "string" && s.trim().length > 0);
+  return sortSeasonLabelsDesc(raw);
+}
+
+export type GetMatchesOptions = { season?: string | "all" };
+
+/** Maçlar listesi; veri yoksa demo döner (yalnızca sezon filtresi yokken). Pasif maçlar hariç. */
+export async function getMatches(limit = 20, opts?: GetMatchesOptions) {
+  await syncMatchStatusesFromSchedule();
+  const supabase = await createClient();
+  let q = supabase
+    .from("matches")
+    .select(
+      "id, opponent_name, home_away, venue, match_date, match_time, opponent_logo_url, goals_for, goals_against, status, competition, season",
+    )
+    .or("is_hidden.eq.false,is_hidden.is.null");
+  if (opts?.season && opts.season !== "all") {
+    q = q.eq("season", opts.season);
+  }
+  const { data } = await q.order("match_date", { ascending: false }).limit(limit);
+  if (!data || data.length === 0) {
+    if (opts?.season && opts.season !== "all") return [];
+    return DEMO_MATCHES;
+  }
   return data;
 }
 
