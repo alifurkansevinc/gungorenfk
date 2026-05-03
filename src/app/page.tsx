@@ -3,7 +3,6 @@ import Image from "next/image";
 import { AnadoluTemsilcisi } from "@/components/AnadoluTemsilcisi";
 import { TaraftarBarStrip } from "@/components/TaraftarBarStrip";
 import { MatchMotmHomeBanner } from "@/components/MatchMotmHomeBanner";
-import { WeekPlayerShowcase } from "@/components/WeekPlayerShowcase";
 import { FadeInSection } from "@/components/FadeInSection";
 import { DEMO_IMAGES, HOMEPAGE_SLOGAN_IMAGE_URL } from "@/lib/demo-images";
 import { createClient } from "@/lib/supabase/server";
@@ -73,7 +72,6 @@ export default async function Home() {
       <TaraftarBarStrip />
 
       <MatchMotmHomeBanner />
-      <WeekPlayerShowcase />
 
       {/* Taraftar bar (1000 Taraftar 1 Bayrak) — detaylı bölüm */}
       <AnadoluTemsilcisi />

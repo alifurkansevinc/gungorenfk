@@ -45,8 +45,8 @@ export async function WeekPlayerShowcase() {
             <h2 className="mt-0.5 font-display text-base font-bold text-white sm:text-lg">Haftanın oyuncuları</h2>
             <p className="mt-0.5 text-[11px] text-zinc-500">{wallSeason} sezonu</p>
           </div>
-          <Link href="/maclar" className="text-[11px] font-semibold text-bordo hover:text-bordo/90">
-            Maçlar →
+          <Link href="#fikstur" className="text-[11px] font-semibold text-bordo hover:text-bordo/90">
+            Fikstür →
           </Link>
         </div>
 

@@ -13,6 +13,7 @@ import { getMackolikMatches } from "@/lib/mackolik";
 import { matchSeasonTabToStandingsSeason, resolveSeasonQueryParam } from "@/lib/seasons";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { NextMatchCard } from "@/components/NextMatchCard";
+import { WeekPlayerShowcase } from "@/components/WeekPlayerShowcase";
 
 type ResultType = "W" | "D" | "L";
 
@@ -193,8 +194,12 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
           </section>
         )}
 
+        <div className="mb-14 -mx-4 max-w-none sm:-mx-6 lg:-mx-8">
+          <WeekPlayerShowcase />
+        </div>
+
         {/* Fikstür ve sonuçlar — Mackolik’ten veya veritabanından */}
-        <section>
+        <section id="fikstur" className="scroll-mt-28">
           <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-siyah/60">Fikstür ve sonuçlar</h2>
