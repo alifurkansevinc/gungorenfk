@@ -160,7 +160,7 @@ export async function getMatches(limit = 20, opts?: GetMatchesOptions) {
   return data;
 }
 
-/** Önümüzdeki / canlı maç: DB `live`, veya kickoff–bitiş penceresindeki `scheduled` (service role yoksa bile kartta canlı). */
+/** Önümüzdeki / canlı maç: son 24 saatte skor güncellenmiş satır, DB `live`, sonra kickoff penceresindeki `scheduled`. */
 export async function getNextMatch(): Promise<{
   id: string;
   opponent_name: string;
@@ -210,6 +210,21 @@ export async function getNextMatch(): Promise<{
 
   const list = (rows ?? []) as Row[];
   const now = Date.now();
+  const recentCut = now - 24 * 60 * 60 * 1000;
+
+  /** Skor girilmiş + son 24 saatte güncellenmiş: kickoff saati yanlış / senkron gecikse bile kart bu maça ve canlı yenilemeye bağlansın. */
+  const recentlyScored = list.filter((r) => {
+    if (r.status !== "scheduled" && r.status !== "live") return false;
+    const hasGoals = r.goals_for != null || r.goals_against != null;
+    if (!hasGoals) return false;
+    const ua = r.updated_at ? new Date(r.updated_at).getTime() : 0;
+    return ua >= recentCut;
+  });
+  recentlyScored.sort((a, b) => String(b.updated_at ?? "").localeCompare(String(a.updated_at ?? "")));
+  if (recentlyScored[0]) {
+    const pick = recentlyScored[0]!;
+    return { ...pick, status: "live" };
+  }
 
   const dbLives = list.filter((r) => r.status === "live");
   dbLives.sort((a, b) => String(b.updated_at ?? "").localeCompare(String(a.updated_at ?? "")));
