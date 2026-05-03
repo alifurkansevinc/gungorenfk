@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { getAdminSupabase } from "@/app/admin/actions";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 
@@ -37,9 +38,74 @@ function parseMatchLineup(formData: FormData): { starters: string[]; substitutes
   return { starters, substitutes };
 }
 
+function parseMotmCandidates(formData: FormData): string[] {
+  return [...new Set((formData.getAll("motm_candidate") as string[]).map((x) => String(x).trim()).filter(Boolean))];
+}
+
+function parseMotmVoteTimes(formData: FormData): { starts: string | null; ends: string | null } {
+  const rawS = (formData.get("motm_vote_starts_at") as string)?.trim() || "";
+  const rawE = (formData.get("motm_vote_ends_at") as string)?.trim() || "";
+  const toIso = (raw: string): string | null => {
+    if (!raw) return null;
+    const t = new Date(raw).getTime();
+    if (Number.isNaN(t)) return null;
+    return new Date(t).toISOString();
+  };
+  return { starts: toIso(rawS), ends: toIso(rawE) };
+}
+
+async function replaceMatchMotmCandidates(
+  s: ReturnType<typeof createServiceRoleClient>,
+  matchId: string,
+  candidateIds: string[],
+  lineupIds: Set<string>
+): Promise<{ ok: true } | { error: string }> {
+  for (const c of candidateIds) {
+    if (!lineupIds.has(c)) return { error: "Oylama adayları yalnızca bu maçın kadrosundan (ilk 11 + yedek) seçilebilir." };
+  }
+  const { data: votes } = await s.from("match_motm_votes").select("squad_member_id").eq("match_id", matchId);
+  for (const v of votes ?? []) {
+    const sid = (v as { squad_member_id: string }).squad_member_id;
+    if (!candidateIds.includes(sid)) {
+      return {
+        error:
+          "Bu maçta verilmiş oylar var; aday listesinden oyu olan bir oyuncuyu çıkaramazsınız. Önce aynı adayları koruyun veya oylamayı kullanmadan önce adayları düzenleyin.",
+      };
+    }
+  }
+  await s.from("match_motm_candidates").delete().eq("match_id", matchId);
+  if (candidateIds.length > 0) {
+    const { error } = await s
+      .from("match_motm_candidates")
+      .insert(candidateIds.map((squad_member_id) => ({ match_id: matchId, squad_member_id })));
+    if (error) return { error: error.message };
+  }
+  return { ok: true };
+}
+
 export async function createMatch(formData: FormData) {
   const s = matchesClient();
   const manOfTheMatch = (formData.get("man_of_the_match_id") as string)?.trim() || null;
+  const { starts: motm_vote_starts_at, ends: motm_vote_ends_at } = parseMotmVoteTimes(formData);
+  const candidateIds = parseMotmCandidates(formData);
+  const { starters, substitutes } = parseMatchLineup(formData);
+  const lineupSet = new Set([...starters, ...substitutes]);
+
+  if ((motm_vote_starts_at && !motm_vote_ends_at) || (!motm_vote_starts_at && motm_vote_ends_at)) {
+    return { error: "Taraftar oylaması için hem başlangıç hem bitiş saati girin veya ikisini de boş bırakın." };
+  }
+  if (motm_vote_starts_at && motm_vote_ends_at) {
+    if (new Date(motm_vote_ends_at).getTime() <= new Date(motm_vote_starts_at).getTime()) {
+      return { error: "Oylama bitiş saati, başlangıçtan sonra olmalıdır." };
+    }
+  }
+  if ((motm_vote_starts_at || motm_vote_ends_at) && candidateIds.length === 0) {
+    return { error: "Oylama tarihleri doluysa en az bir aday oyuncu seçin (kadrodan)." };
+  }
+  if (candidateIds.length > 0 && (!motm_vote_starts_at || !motm_vote_ends_at)) {
+    return { error: "Oylama adayı seçtiyseniz başlangıç ve bitiş saatlerini de girin." };
+  }
+
   const { data: match, error: matchErr } = await s
     .from("matches")
     .insert({
@@ -55,6 +121,8 @@ export async function createMatch(formData: FormData) {
       goals_against: formData.get("goals_against") ? parseInt(formData.get("goals_against") as string, 10) : null,
       status: (formData.get("status") as string) || "scheduled",
       man_of_the_match_id: manOfTheMatch || null,
+      motm_vote_starts_at,
+      motm_vote_ends_at,
     })
     .select("id")
     .single();
@@ -64,7 +132,6 @@ export async function createMatch(formData: FormData) {
   if (goals.length > 0) {
     await s.from("match_goals").insert(goals.map((g) => ({ ...g, match_id: match.id })));
   }
-  const { starters, substitutes } = parseMatchLineup(formData);
   const lineupRows: { match_id: string; squad_member_id: string; role: "starter" | "substitute"; sort_order: number }[] = [];
   starters.forEach((id, i) => lineupRows.push({ match_id: match.id, squad_member_id: id, role: "starter", sort_order: i }));
   substitutes.forEach((id, i) => lineupRows.push({ match_id: match.id, squad_member_id: id, role: "substitute", sort_order: i }));
@@ -72,15 +139,44 @@ export async function createMatch(formData: FormData) {
     await s.from("match_lineups").insert(lineupRows);
   }
 
+  const candRes = await replaceMatchMotmCandidates(s, match.id, candidateIds, lineupSet);
+  if ("error" in candRes) {
+    await s.from("match_goals").delete().eq("match_id", match.id);
+    await s.from("match_lineups").delete().eq("match_id", match.id);
+    await s.from("matches").delete().eq("id", match.id);
+    return { error: candRes.error };
+  }
+
   revalidatePath("/admin/maclar");
   revalidatePath("/maclar");
   revalidatePath("/kadro");
+  revalidatePath("/");
   return { ok: true };
 }
 
 export async function updateMatch(id: string, formData: FormData) {
   const s = matchesClient();
   const manOfTheMatch = (formData.get("man_of_the_match_id") as string)?.trim() || null;
+  const { starts: motm_vote_starts_at, ends: motm_vote_ends_at } = parseMotmVoteTimes(formData);
+  const candidateIds = parseMotmCandidates(formData);
+  const { starters, substitutes } = parseMatchLineup(formData);
+  const lineupSet = new Set([...starters, ...substitutes]);
+
+  if ((motm_vote_starts_at && !motm_vote_ends_at) || (!motm_vote_starts_at && motm_vote_ends_at)) {
+    return { error: "Taraftar oylaması için hem başlangıç hem bitiş saati girin veya ikisini de boş bırakın." };
+  }
+  if (motm_vote_starts_at && motm_vote_ends_at) {
+    if (new Date(motm_vote_ends_at).getTime() <= new Date(motm_vote_starts_at).getTime()) {
+      return { error: "Oylama bitiş saati, başlangıçtan sonra olmalıdır." };
+    }
+  }
+  if ((motm_vote_starts_at || motm_vote_ends_at) && candidateIds.length === 0) {
+    return { error: "Oylama tarihleri doluysa en az bir aday oyuncu seçin (kadrodan)." };
+  }
+  if (candidateIds.length > 0 && (!motm_vote_starts_at || !motm_vote_ends_at)) {
+    return { error: "Oylama adayı seçtiyseniz başlangıç ve bitiş saatlerini de girin." };
+  }
+
   const { error } = await s
     .from("matches")
     .update({
@@ -96,6 +192,8 @@ export async function updateMatch(id: string, formData: FormData) {
       goals_against: formData.get("goals_against") ? parseInt(formData.get("goals_against") as string, 10) : null,
       status: (formData.get("status") as string) || "scheduled",
       man_of_the_match_id: manOfTheMatch || null,
+      motm_vote_starts_at,
+      motm_vote_ends_at,
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
@@ -108,7 +206,6 @@ export async function updateMatch(id: string, formData: FormData) {
   if (goals.length > 0) {
     await s.from("match_goals").insert(goals.map((g) => ({ ...g, match_id: id })));
   }
-  const { starters, substitutes } = parseMatchLineup(formData);
   const lineupRows: { match_id: string; squad_member_id: string; role: "starter" | "substitute"; sort_order: number }[] = [];
   starters.forEach((sid, i) => lineupRows.push({ match_id: id, squad_member_id: sid, role: "starter", sort_order: i }));
   substitutes.forEach((sid, i) => lineupRows.push({ match_id: id, squad_member_id: sid, role: "substitute", sort_order: i }));
@@ -116,11 +213,58 @@ export async function updateMatch(id: string, formData: FormData) {
     await s.from("match_lineups").insert(lineupRows);
   }
 
+  const candRes = await replaceMatchMotmCandidates(s, id, candidateIds, lineupSet);
+  if ("error" in candRes) return { error: candRes.error };
+
   revalidatePath("/admin/maclar");
   revalidatePath("/maclar");
   revalidatePath(`/maclar/${id}`);
   revalidatePath("/kadro");
+  revalidatePath("/");
   return { ok: true };
+}
+
+/** Haftanın oyuncusu duyurusu + maçın resmi MOTM (favori barem sayımı). */
+export async function createWeekPlayerAward(formData: FormData) {
+  const s = matchesClient();
+  const season = (formData.get("season") as string)?.trim();
+  const weekRaw = formData.get("week_number");
+  const matchId = (formData.get("match_id") as string)?.trim() || null;
+  const squadId = (formData.get("squad_id") as string)?.trim();
+  const week_number = parseInt(String(weekRaw), 10);
+  if (!season) return { error: "Sezon gerekli." };
+  if (!squadId) return { error: "Oyuncu seçin." };
+  if (Number.isNaN(week_number) || week_number < 1 || week_number > 53) return { error: "Hafta 1–53 arası olmalıdır." };
+
+  const { error: insErr } = await s.from("week_player_awards").insert({
+    season,
+    week_number,
+    match_id: matchId,
+    squad_id: squadId,
+  });
+  if (insErr) {
+    if (insErr.code === "23505") return { error: "Bu sezon ve hafta için kayıt zaten var." };
+    return { error: insErr.message };
+  }
+  if (matchId) {
+    await s
+      .from("matches")
+      .update({ man_of_the_match_id: squadId, updated_at: new Date().toISOString() })
+      .eq("id", matchId);
+  }
+  revalidatePath("/");
+  revalidatePath("/admin/maclar");
+  revalidatePath("/admin/maclar/haftanin-oyuncusu");
+  return { ok: true };
+}
+
+/** Form action: void dönüş (redirect) — Haftanın oyuncusu sayfası */
+export async function submitWeekPlayerAwardForm(formData: FormData) {
+  const res = await createWeekPlayerAward(formData);
+  if ("error" in res && res.error) {
+    redirect(`/admin/maclar/haftanin-oyuncusu?err=${encodeURIComponent(res.error)}`);
+  }
+  redirect("/admin/maclar/haftanin-oyuncusu?ok=1");
 }
 
 export async function deleteMatch(id: string) {
@@ -129,6 +273,7 @@ export async function deleteMatch(id: string) {
   if (error) return { error: error.message };
   revalidatePath("/admin/maclar");
   revalidatePath("/maclar");
+  revalidatePath("/");
   return { ok: true };
 }
 

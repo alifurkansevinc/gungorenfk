@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createMatch, updateMatch } from "@/app/actions/admin";
+import { isoToDatetimeLocalValue } from "@/lib/match-motm";
 
 const LIG_OPTIONS = [
   "Süper Lig",
@@ -39,6 +40,8 @@ type MatchRow = {
   goals_for: number | null;
   goals_against: number | null;
   status: string;
+  motm_vote_starts_at?: string | null;
+  motm_vote_ends_at?: string | null;
 };
 
 type SquadOption = { id: string; name: string; shirt_number: number | null };
@@ -52,9 +55,18 @@ type Props = {
   starters?: string[];
   substitutes?: string[];
   manOfTheMatchId?: string | null;
+  motmCandidateIds?: string[];
 };
 
-export function MacForm({ match, squad = [], matchGoals = [], starters = [], substitutes = [], manOfTheMatchId = null }: Props) {
+export function MacForm({
+  match,
+  squad = [],
+  matchGoals = [],
+  starters = [],
+  substitutes = [],
+  manOfTheMatchId = null,
+  motmCandidateIds = [],
+}: Props) {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [goalRows, setGoalRows] = useState<GoalRow[]>(() =>
@@ -65,6 +77,18 @@ export function MacForm({ match, squad = [], matchGoals = [], starters = [], sub
   const [selectedStarters, setSelectedStarters] = useState<string[]>(starters);
   const [selectedSubs, setSelectedSubs] = useState<string[]>(substitutes);
   const [motm, setMotm] = useState<string>(manOfTheMatchId ?? "");
+  const [voteStart, setVoteStart] = useState(() => isoToDatetimeLocalValue(match?.motm_vote_starts_at ?? null));
+  const [voteEnd, setVoteEnd] = useState(() => isoToDatetimeLocalValue(match?.motm_vote_ends_at ?? null));
+  const [motmCandidates, setMotmCandidates] = useState<string[]>(motmCandidateIds);
+
+  const lineupPool = useMemo(
+    () => [...new Set([...selectedStarters, ...selectedSubs])],
+    [selectedStarters, selectedSubs]
+  );
+
+  useEffect(() => {
+    setMotmCandidates((prev) => prev.filter((id) => lineupPool.includes(id)));
+  }, [lineupPool]);
 
   const addGoalRow = () => setGoalRows((r) => [...r, { minute: 0, scorer_squad_id: "", assist_squad_id: "" }]);
   const removeGoalRow = (i: number) => setGoalRows((r) => r.filter((_, j) => j !== i));
@@ -85,6 +109,11 @@ export function MacForm({ match, squad = [], matchGoals = [], starters = [], sub
     });
   };
 
+  const toggleMotmCandidate = (id: string) => {
+    if (!lineupPool.includes(id)) return;
+    setMotmCandidates((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
@@ -100,6 +129,14 @@ export function MacForm({ match, squad = [], matchGoals = [], starters = [], sub
     selectedStarters.forEach((id) => formData.append("starter", id));
     selectedSubs.forEach((id) => formData.append("substitute", id));
     if (motm) formData.set("man_of_the_match_id", motm);
+
+    formData.delete("motm_candidate");
+    formData.delete("motm_vote_starts_at");
+    formData.delete("motm_vote_ends_at");
+    motmCandidates.forEach((cid) => formData.append("motm_candidate", cid));
+    formData.set("motm_vote_starts_at", voteStart.trim() ? new Date(voteStart).toISOString() : "");
+    formData.set("motm_vote_ends_at", voteEnd.trim() ? new Date(voteEnd).toISOString() : "");
+
     const res = match ? await updateMatch(match.id, formData) : await createMatch(formData);
     if (res.error) {
       setError(res.error);
@@ -114,6 +151,8 @@ export function MacForm({ match, squad = [], matchGoals = [], starters = [], sub
 
   const dateValue = match?.match_date ? match.match_date.toString().slice(0, 10) : "";
   const selectClass = "mt-1 w-full rounded border border-siyah/20 px-3 py-2 text-sm";
+
+  const squadById = useMemo(() => new Map(squad.map((p) => [p.id, p])), [squad]);
 
   return (
     <form onSubmit={handleSubmit} className="mt-6 max-w-2xl space-y-6">
@@ -273,10 +312,65 @@ export function MacForm({ match, squad = [], matchGoals = [], starters = [], sub
         </div>
       </div>
 
-      {/* Maçın oyuncusu */}
+      {/* Taraftar oylaması */}
+      <div className="rounded-xl border-2 border-amber-200 bg-amber-50/40 p-4">
+        <h3 className="text-sm font-semibold text-siyah">Taraftar oylaması (Maçın oyuncusu)</h3>
+        <p className="mt-0.5 text-xs text-siyah/70">
+          Web sitesinde oylama penceresi ve aday listesi. Oyuncular yalnızca bu maçın <strong>ilk 11 + yedek</strong> kadrosundan seçilir; her üye tek oy kullanır (geri alınamaz).
+        </p>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className="block text-xs font-medium text-siyah">Oylama başlangıcı</label>
+            <input
+              type="datetime-local"
+              value={voteStart}
+              onChange={(e) => setVoteStart(e.target.value)}
+              className="mt-1 w-full rounded border border-siyah/20 px-3 py-2 text-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-siyah">Oylama bitişi</label>
+            <input
+              type="datetime-local"
+              value={voteEnd}
+              onChange={(e) => setVoteEnd(e.target.value)}
+              className="mt-1 w-full rounded border border-siyah/20 px-3 py-2 text-sm"
+            />
+          </div>
+        </div>
+        <p className="mt-2 text-xs text-siyah/60">İkisini de boş bırakırsanız sitede bu maç için oylama açılmaz.</p>
+
+        <div className="mt-4">
+          <p className="text-xs font-medium text-siyah">Oylamaya sunulacak adaylar (kadrodan işaretle)</p>
+          {lineupPool.length === 0 ? (
+            <p className="mt-2 text-xs text-amber-800">Önce ilk 11 veya yedek seçin.</p>
+          ) : (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {lineupPool.map((id) => {
+                const p = squadById.get(id);
+                if (!p) return null;
+                return (
+                  <label key={id} className="flex cursor-pointer items-center gap-2 rounded border border-amber-300/80 bg-beyaz px-3 py-1.5 text-sm shadow-sm">
+                    <input
+                      type="checkbox"
+                      checked={motmCandidates.includes(id)}
+                      onChange={() => toggleMotmCandidate(id)}
+                      className="rounded border-amber-400 text-amber-600"
+                    />
+                    <span>{p.shirt_number != null ? `${p.shirt_number}. ` : ""}{p.name}</span>
+                  </label>
+                );
+              })}
+            </div>
+          )}
+          <p className="mt-2 text-xs text-siyah/60">Seçili aday: {motmCandidates.length}</p>
+        </div>
+      </div>
+
+      {/* Maçın oyuncusu (resmi / barem) */}
       <div className="rounded-xl border border-siyah/10 bg-siyah/[0.02] p-4">
-        <h3 className="text-sm font-semibold text-siyah">Maçın oyuncusu</h3>
-        <p className="mt-0.5 text-xs text-siyah/60">Favori oyuncusu bu olan taraftarlar +%5 barem alır (en fazla 2 maç %10).</p>
+        <h3 className="text-sm font-semibold text-siyah">Maçın oyuncusu (resmi)</h3>
+        <p className="mt-0.5 text-xs text-siyah/60">Favori oyuncusu bu olan taraftarlar +%5 barem alır (en fazla 2 maç %10). Haftanın oyuncusu kaydı admin panelinden eklenince bu alan da güncellenebilir.</p>
         <select
           value={motm}
           onChange={(e) => setMotm(e.target.value)}

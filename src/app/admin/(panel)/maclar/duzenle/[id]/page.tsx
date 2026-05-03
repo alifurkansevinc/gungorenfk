@@ -11,11 +11,13 @@ export default async function AdminMaclarDuzenlePage({ params }: { params: Promi
     { data: goals },
     { data: lineups },
     { data: squad },
+    { data: motmCandidates },
   ] = await Promise.all([
     supabase.from("matches").select("*").eq("id", id).single(),
     supabase.from("match_goals").select("minute, scorer_squad_id, assist_squad_id").eq("match_id", id).order("minute"),
     supabase.from("match_lineups").select("squad_member_id, role").eq("match_id", id).order("sort_order"),
     supabase.from("squad").select("id, name, shirt_number").eq("is_active", true).order("sort_order"),
+    supabase.from("match_motm_candidates").select("squad_member_id").eq("match_id", id),
   ]);
   if (!match) notFound();
   const starters = (lineups ?? []).filter((r) => r.role === "starter").map((r) => r.squad_member_id);
@@ -32,6 +34,7 @@ export default async function AdminMaclarDuzenlePage({ params }: { params: Promi
         starters={starters}
         substitutes={substitutes}
         manOfTheMatchId={(match as { man_of_the_match_id?: string | null }).man_of_the_match_id ?? null}
+        motmCandidateIds={(motmCandidates ?? []).map((r) => (r as { squad_member_id: string }).squad_member_id)}
       />
     </div>
   );
