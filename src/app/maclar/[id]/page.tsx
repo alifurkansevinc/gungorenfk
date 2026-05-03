@@ -6,6 +6,26 @@ import { notFound } from "next/navigation";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { MatchPageRefresh } from "@/components/MatchPageRefresh";
 
+function PlayerLine({ num, name, captain }: { num: number | null; name: string; captain?: boolean }) {
+  return (
+    <li className="flex items-center gap-2.5 rounded-md border border-siyah/8 bg-siyah/[0.02] px-2.5 py-1.5 text-sm">
+      {num != null ? (
+        <span className="flex h-7 min-w-[1.75rem] shrink-0 items-center justify-center rounded bg-siyah px-1 text-xs font-bold text-beyaz tabular-nums">
+          {num}
+        </span>
+      ) : (
+        <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-dashed border-siyah/25 text-[10px] text-siyah/40">
+          —
+        </span>
+      )}
+      <span className="min-w-0 truncate font-medium text-siyah">
+        {name}
+        {captain ? <span className="text-siyah/55"> (K)</span> : null}
+      </span>
+    </li>
+  );
+}
+
 export default async function MacDetayPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const match = await getMatchById(id);
@@ -96,49 +116,28 @@ export default async function MacDetayPage({ params }: { params: Promise<{ id: s
           </p>
         </div>
 
-        {/* Kadro — yalnız canlı veya bitmiş maçta */}
+        {/* Kadro — yalnız canlı veya bitmiş; sol ilk 11, sağ yedek; forma numarasına göre */}
         {showLineup && (lineup.starters.length > 0 || lineup.substitutes.length > 0) && (
-          <div className="mt-10 rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm">
+          <div className="mt-10 rounded-2xl border border-siyah/10 bg-beyaz p-5 shadow-sm sm:p-6">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-siyah/60">Maç kadrosu</h2>
-            {lineup.starters.length > 0 && (
-              <div className="mt-4">
-                <p className="text-xs font-medium text-bordo">İlk 11</p>
-                <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+            <div className="mt-5 grid gap-6 md:grid-cols-2 md:gap-8">
+              <div>
+                <p className="mb-3 text-xs font-bold uppercase tracking-wider text-bordo">İlk 11</p>
+                <ul className="space-y-1.5">
                   {lineup.starters.map((p) => (
-                    <li key={p.id} className="flex items-center gap-3 rounded-lg border border-siyah/5 bg-siyah/[0.02] px-3 py-2 text-sm">
-                      {p.shirt_number != null && (
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-siyah text-xs font-bold text-beyaz">
-                          {p.shirt_number}
-                        </span>
-                      )}
-                      <span className="font-medium text-siyah">
-                        {p.name}
-                        {p.is_captain ? " (K)" : ""}
-                      </span>
-                      {p.position && <span className="ml-auto text-xs text-siyah/50">{p.position}</span>}
-                    </li>
+                    <PlayerLine key={p.id} num={p.shirt_number} name={p.name} captain={p.is_captain} />
                   ))}
                 </ul>
               </div>
-            )}
-            {lineup.substitutes.length > 0 && (
-              <div className="mt-6">
-                <p className="text-xs font-medium text-siyah/60">Yedekler</p>
-                <ul className="mt-2 grid gap-2 sm:grid-cols-2">
+              <div className="md:border-l md:border-siyah/10 md:pl-8">
+                <p className="mb-3 text-xs font-bold uppercase tracking-wider text-siyah/55">Yedekler</p>
+                <ul className="space-y-1.5">
                   {lineup.substitutes.map((p) => (
-                    <li key={p.id} className="flex items-center gap-3 rounded-lg border border-siyah/5 px-3 py-2 text-sm text-siyah/90">
-                      {p.shirt_number != null && (
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-siyah/20 text-xs font-bold">
-                          {p.shirt_number}
-                        </span>
-                      )}
-                      <span className="font-medium">{p.name}</span>
-                      {p.position && <span className="ml-auto text-xs text-siyah/50">{p.position}</span>}
-                    </li>
+                    <PlayerLine key={p.id} num={p.shirt_number} name={p.name} captain={p.is_captain} />
                   ))}
                 </ul>
               </div>
-            )}
+            </div>
           </div>
         )}
 

@@ -242,6 +242,14 @@ export async function getMatchLineupForMatch(matchId: string): Promise<{
     if (r.role === "starter") starters.push(m);
     else if (r.role === "substitute") substitutes.push(m);
   }
+  const byShirt = (a: SquadMember & { id: string }, b: SquadMember & { id: string }) => {
+    const na = a.shirt_number ?? 9999;
+    const nb = b.shirt_number ?? 9999;
+    if (na !== nb) return na - nb;
+    return a.name.localeCompare(b.name, "tr");
+  };
+  starters.sort(byShirt);
+  substitutes.sort(byShirt);
   return { starters, substitutes };
 }
 
@@ -593,12 +601,31 @@ const DEMO_STANDINGS: LeagueStandingRow[] = [
   { id: "s10", league_name: "İstanbul - 1. Amatör Lig - 5. Grup", season: "2025/2026", position: 10, team_name: "Mimarsinanspor", played: 18, goal_diff: -59, wins: 1, draws: 2, losses: 15, goals_for: 16, goals_against: 75, points: 5, updated_at: new Date().toISOString() },
 ];
 
-export async function getLeagueStandings(leagueSeason?: { league_name: string; season: string }): Promise<{ rows: LeagueStandingRow[]; league_name: string; season: string; updated_at: string | null }> {
+/** Puan tablosunda kayıtlı sezon etiketleri (yeni → eski). */
+export async function getLeagueStandingsSeasons(): Promise<string[]> {
   const supabase = await createClient();
-  const { data } = await supabase
+  const { data } = await supabase.from("league_standings").select("season");
+  const labels = [...new Set((data ?? []).map((r) => (r as { season: string }).season).filter(Boolean))];
+  return sortSeasonLabelsDesc(labels);
+}
+
+export type GetLeagueStandingsOptions = { season?: string | null };
+
+export async function getLeagueStandings(opts?: GetLeagueStandingsOptions): Promise<{
+  rows: LeagueStandingRow[];
+  league_name: string;
+  season: string;
+  updated_at: string | null;
+}> {
+  const supabase = await createClient();
+  let q = supabase
     .from("league_standings")
     .select("id, league_name, season, position, team_name, played, goal_diff, wins, draws, losses, goals_for, goals_against, points, updated_at")
     .order("position");
+  if (opts?.season) {
+    q = q.eq("season", opts.season);
+  }
+  const { data } = await q;
   if (data && data.length > 0) {
     const first = data[0] as LeagueStandingRow;
     return {
@@ -607,6 +634,9 @@ export async function getLeagueStandings(leagueSeason?: { league_name: string; s
       season: first.season,
       updated_at: first.updated_at ?? null,
     };
+  }
+  if (opts?.season) {
+    return { rows: [], league_name: "", season: opts.season, updated_at: null };
   }
   return {
     rows: DEMO_STANDINGS,

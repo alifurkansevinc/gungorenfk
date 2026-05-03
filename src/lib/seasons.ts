@@ -21,7 +21,6 @@ export function sortSeasonLabelsDesc(seasons: string[]): string[] {
   return uniq.sort((a, b) => seasonSortKey(b) - seasonSortKey(a));
 }
 
-/** URL ?sezon= — site: varsayılan en güncel sezon; tumu = filtre yok. */
 /** Maç tarihine göre futbol sezonu etiketi (TR: Temmuz–Haziran), örn. 2025-26. */
 export function seasonLabelFromMatchDate(matchDate: string): string {
   const y = parseInt(matchDate.slice(0, 4), 10);
@@ -41,4 +40,14 @@ export function resolveSeasonQueryParam(
   if (t && seasonsDesc.includes(t)) return { filter: t, activeLabel: t };
   if (seasonsDesc.length > 0) return { filter: seasonsDesc[0], activeLabel: seasonsDesc[0] };
   return { filter: "all", activeLabel: null };
+}
+
+/** Maç sekmesi "2025-26" -> Mackolik puan tablosu "2025/2026". */
+export function matchSeasonTabToStandingsSeason(tab: string): string {
+  const m = tab.trim().match(/^(\d{4})-(\d{2})$/);
+  if (!m) return tab.trim();
+  const y = parseInt(m[1], 10);
+  const yy = parseInt(m[2], 10);
+  const endFull = yy < 70 ? 2000 + yy : 1900 + yy;
+  return `${y}/${endFull}`;
 }

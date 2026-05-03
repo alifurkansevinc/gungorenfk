@@ -1,13 +1,28 @@
 import Link from "next/link";
 import Image from "next/image";
 import { CheckCircle, Circle, Radio, XCircle } from "lucide-react";
-import { getMatches, getMatchSeasonsForPublic, getLeagueStandings, getNextMatch, getMackolikFixtureUrl } from "@/lib/data";
+import {
+  getMatches,
+  getMatchSeasonsForPublic,
+  getLeagueStandings,
+  getLeagueStandingsSeasons,
+  getNextMatch,
+  getMackolikFixtureUrl,
+} from "@/lib/data";
 import { getMackolikMatches } from "@/lib/mackolik";
-import { resolveSeasonQueryParam } from "@/lib/seasons";
+import { matchSeasonTabToStandingsSeason, resolveSeasonQueryParam } from "@/lib/seasons";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { NextMatchCard } from "@/components/NextMatchCard";
 
 type ResultType = "W" | "D" | "L";
+
+function maclarHref(q: { sezon?: string; puan?: string }): string {
+  const p = new URLSearchParams();
+  if (q.sezon) p.set("sezon", q.sezon);
+  if (q.puan) p.set("puan", q.puan);
+  const s = p.toString();
+  return s ? `/maclar?${s}` : "/maclar";
+}
 
 function ResultBadge({ result }: { result: ResultType }) {
   if (result === "W")
@@ -34,22 +49,38 @@ export const metadata = {
   description: "Güngören FK maç programı, puan durumu ve sonuçları.",
 };
 
-export default async function MaclarPage({ searchParams }: { searchParams: Promise<{ sezon?: string }> }) {
+export default async function MaclarPage({ searchParams }: { searchParams: Promise<{ sezon?: string; puan?: string }> }) {
   const sp = await searchParams;
-  const [seasonList, peek, standings, nextMatch, mackolikMatches] = await Promise.all([
+  const [seasonList, peek, standingsSeasonList, nextMatch, mackolikMatches] = await Promise.all([
     getMatchSeasonsForPublic(),
     getMatches(1, { season: "all" }),
-    getLeagueStandings(),
+    getLeagueStandingsSeasons(),
     getNextMatch(),
     getMackolikFixtureUrl().then((url) => getMackolikMatches(url)),
   ]);
   const { filter } = resolveSeasonQueryParam(sp?.sezon, seasonList);
-  const matches = await getMatches(80, { season: filter });
+  const rawPuan = sp?.puan?.trim();
+  const showAllSeasons = sp?.sezon?.trim() === "tumu";
+  let standingsSeason: string | null = null;
+  if (rawPuan && standingsSeasonList.includes(rawPuan)) {
+    standingsSeason = rawPuan;
+  } else if (!showAllSeasons && typeof filter === "string" && filter !== "all") {
+    const mapped = matchSeasonTabToStandingsSeason(filter);
+    if (standingsSeasonList.includes(mapped)) standingsSeason = mapped;
+  }
+  if (!standingsSeason && standingsSeasonList.length > 0) {
+    standingsSeason = standingsSeasonList[0]!;
+  }
+
+  const [matches, standings] = await Promise.all([
+    getMatches(80, { season: filter }),
+    getLeagueStandings(standingsSeason ? { season: standingsSeason } : {}),
+  ]);
   const hasAnyRealDbMatch = peek.length > 0 && !peek[0].id.startsWith("demo-");
   const useMackolik = mackolikMatches.length > 0 && !hasAnyRealDbMatch;
   const leagueName = standings.rows.length > 0 ? standings.league_name : "İstanbul 1. Amatör Lig";
-  const showAllSeasons = sp?.sezon?.trim() === "tumu";
   const activeSeasonTab = showAllSeasons ? null : typeof filter === "string" ? filter : null;
+  const qBase = { sezon: sp?.sezon?.trim(), puan: sp?.puan?.trim() };
   // En üstte en yeni, en altta en eski (tarihe göre azalan)
   const sortedDbMatches = [...matches].sort((a, b) => b.match_date.localeCompare(a.match_date));
 
@@ -68,59 +99,96 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
         {/* Önümüzdeki maç — admin panelinden belirlenir; tek büyük kart */}
         <NextMatchCard match={nextMatch} />
 
-        {/* Puan durumu (Mackolik kaynaklı) - mobilde tam görünür, slider yok */}
-        {standings.rows.length > 0 && (
+        {/* Puan durumu — sezon seçimi ?puan= (veritabanındaki etiket, genelde 2025/2026) */}
+        {(standings.rows.length > 0 || standingsSeasonList.length > 0) && (
           <section className="mb-14">
-            <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-siyah/60 mb-2 sm:mb-4">Puan durumu</h2>
+            <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-siyah/60">Puan durumu</h2>
+              {standingsSeasonList.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <span className="text-[10px] font-medium uppercase tracking-wider text-siyah/45">Tablo sezonu</span>
+                  {standingsSeasonList.map((s) => {
+                    const on = standingsSeason === s;
+                    return (
+                      <Link
+                        key={s}
+                        href={maclarHref({ ...qBase, puan: s })}
+                        className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                          on ? "bg-bordo text-beyaz" : "bg-siyah/10 text-siyah hover:bg-siyah/15"
+                        }`}
+                      >
+                        {s}
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
             <p className="text-xs sm:text-sm text-siyah/70 mb-2 sm:mb-3">
-              {standings.league_name} — {standings.season}
-              {standings.updated_at && (
-                <span className="ml-1 sm:ml-2">(Son güncelleme: {new Date(standings.updated_at).toLocaleDateString("tr-TR")})</span>
+              {standings.league_name ? (
+                <>
+                  {standings.league_name} — {standings.season}
+                  {standings.updated_at && (
+                    <span className="ml-1 sm:ml-2">(Son güncelleme: {new Date(standings.updated_at).toLocaleDateString("tr-TR")})</span>
+                  )}
+                </>
+              ) : (
+                <span className="text-siyah/55">Bu sezon için kayıtlı puan tablosu yok.</span>
               )}
             </p>
-            <div className="overflow-hidden rounded-xl border border-siyah/10 bg-beyaz">
-              <div className="overflow-x-auto overflow-y-visible">
-                <table className="w-full text-left text-[11px] sm:text-sm table-fixed">
-                  <thead>
-                    <tr className="border-b border-siyah/10 bg-siyah/5">
-                      <th className="w-6 sm:w-8 px-1 py-1.5 sm:px-2 sm:py-2 font-semibold text-siyah/70">#</th>
-                      <th className="min-w-0 px-1 py-1.5 sm:px-2 sm:py-2 font-semibold text-siyah/70 truncate">Takım</th>
-                      <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">O</th>
-                      <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">G</th>
-                      <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">B</th>
-                      <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">M</th>
-                      <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">A</th>
-                      <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">Y</th>
-                      <th className="w-7 sm:w-9 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">Av</th>
-                      <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">P</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {standings.rows.map((r) => {
-                      const isGungoren = r.team_name.toLowerCase().includes("güngören") || r.team_name.toLowerCase().includes("gungoren");
-                      const rowBg = isGungoren ? "bg-bordo/20" : "";
-                      return (
-                      <tr
-                        key={r.position}
-                        className={`border-b border-siyah/5 ${isGungoren ? "font-semibold" : "hover:bg-siyah/[0.02]"}`}
-                      >
-                        <td className={`px-1 py-1.5 sm:px-2 sm:py-2 text-siyah/80 ${rowBg} ${isGungoren ? "rounded-l-lg" : ""}`}>{r.position}</td>
-                        <td className={`min-w-0 px-1 py-1.5 sm:px-2 sm:py-2 font-medium text-siyah truncate ${rowBg}`} title={r.team_name}>{r.team_name}</td>
-                        <td className={`px-0.5 py-1.5 sm:py-2 text-center text-siyah/80 ${rowBg}`}>{r.played}</td>
-                        <td className={`px-0.5 py-1.5 sm:py-2 text-center text-siyah/80 ${rowBg}`}>{r.wins}</td>
-                        <td className={`px-0.5 py-1.5 sm:py-2 text-center text-siyah/80 ${rowBg}`}>{r.draws}</td>
-                        <td className={`px-0.5 py-1.5 sm:py-2 text-center text-siyah/80 ${rowBg}`}>{r.losses}</td>
-                        <td className={`px-0.5 py-1.5 sm:py-2 text-center text-siyah/80 ${rowBg}`}>{r.goals_for}</td>
-                        <td className={`px-0.5 py-1.5 sm:py-2 text-center text-siyah/80 ${rowBg}`}>{r.goals_against}</td>
-                        <td className={`px-0.5 py-1.5 sm:py-2 text-center text-siyah/80 ${rowBg}`}>{r.goal_diff >= 0 ? `+${r.goal_diff}` : r.goal_diff}</td>
-                        <td className={`px-0.5 py-1.5 sm:py-2 text-center font-bold text-bordo ${rowBg} ${isGungoren ? "rounded-r-lg" : ""}`}>{r.points}</td>
+            {standings.rows.length > 0 ? (
+              <div className="overflow-hidden rounded-xl border border-siyah/10 bg-beyaz">
+                <div className="overflow-x-auto overflow-y-visible">
+                  <table className="w-full text-left text-[11px] sm:text-sm table-fixed">
+                    <thead>
+                      <tr className="border-b border-siyah/10 bg-siyah/5">
+                        <th className="w-6 sm:w-8 px-1 py-1.5 sm:px-2 sm:py-2 font-semibold text-siyah/70">#</th>
+                        <th className="min-w-0 px-1 py-1.5 sm:px-2 sm:py-2 font-semibold text-siyah/70 truncate">Takım</th>
+                        <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">O</th>
+                        <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">G</th>
+                        <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">B</th>
+                        <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">M</th>
+                        <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">A</th>
+                        <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">Y</th>
+                        <th className="w-7 sm:w-9 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">Av</th>
+                        <th className="w-6 sm:w-8 px-0.5 py-1.5 sm:py-2 font-semibold text-siyah/70 text-center">P</th>
                       </tr>
-                    );
-                    })}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {standings.rows.map((r) => {
+                        const isGungoren = r.team_name.toLowerCase().includes("güngören") || r.team_name.toLowerCase().includes("gungoren");
+                        const rowBg = isGungoren ? "bg-bordo/20" : "";
+                        return (
+                          <tr
+                            key={r.position}
+                            className={`border-b border-siyah/5 ${isGungoren ? "font-semibold" : "hover:bg-siyah/[0.02]"}`}
+                          >
+                            <td className={`px-1 py-1.5 sm:px-2 sm:py-2 text-siyah/80 ${rowBg} ${isGungoren ? "rounded-l-lg" : ""}`}>{r.position}</td>
+                            <td className={`min-w-0 px-1 py-1.5 sm:px-2 sm:py-2 font-medium text-siyah truncate ${rowBg}`} title={r.team_name}>
+                              {r.team_name}
+                            </td>
+                            <td className={`px-0.5 py-1.5 sm:py-2 text-center text-siyah/80 ${rowBg}`}>{r.played}</td>
+                            <td className={`px-0.5 py-1.5 sm:py-2 text-center text-siyah/80 ${rowBg}`}>{r.wins}</td>
+                            <td className={`px-0.5 py-1.5 sm:py-2 text-center text-siyah/80 ${rowBg}`}>{r.draws}</td>
+                            <td className={`px-0.5 py-1.5 sm:py-2 text-center text-siyah/80 ${rowBg}`}>{r.losses}</td>
+                            <td className={`px-0.5 py-1.5 sm:py-2 text-center text-siyah/80 ${rowBg}`}>{r.goals_for}</td>
+                            <td className={`px-0.5 py-1.5 sm:py-2 text-center text-siyah/80 ${rowBg}`}>{r.goals_against}</td>
+                            <td className={`px-0.5 py-1.5 sm:py-2 text-center text-siyah/80 ${rowBg}`}>
+                              {r.goal_diff >= 0 ? `+${r.goal_diff}` : r.goal_diff}
+                            </td>
+                            <td className={`px-0.5 py-1.5 sm:py-2 text-center font-bold text-bordo ${rowBg} ${isGungoren ? "rounded-r-lg" : ""}`}>{r.points}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="rounded-xl border border-siyah/10 bg-siyah/[0.02] px-4 py-6 text-center text-sm text-siyah/55">
+                Veritabanında bu sezon için puan satırı yok. Farklı sezon seçin veya cron senkronunu kontrol edin.
+              </div>
+            )}
             <p className="mt-2 text-[10px] sm:text-xs text-siyah/50">Kaynak: Mackolik.com — günde bir kez güncellenir.</p>
           </section>
         )}
@@ -148,7 +216,7 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
                   return (
                     <Link
                       key={s}
-                      href={`/maclar?sezon=${encodeURIComponent(s)}`}
+                      href={maclarHref({ ...qBase, sezon: s })}
                       className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
                         on ? "bg-siyah text-beyaz" : "bg-siyah/10 text-siyah hover:bg-siyah/15"
                       }`}
@@ -158,7 +226,7 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
                   );
                 })}
                 <Link
-                  href="/maclar?sezon=tumu"
+                  href={maclarHref({ ...qBase, sezon: "tumu" })}
                   className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
                     showAllSeasons ? "bg-bordo text-beyaz" : "bg-siyah/10 text-siyah hover:bg-siyah/15"
                   }`}
