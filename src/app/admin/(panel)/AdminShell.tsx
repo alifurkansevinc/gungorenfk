@@ -32,6 +32,7 @@ import {
   LayoutGrid,
   ShieldCheck,
   Gift,
+  Shuffle,
 } from "lucide-react";
 
 const allMenuItems = [
@@ -47,6 +48,7 @@ const allMenuItems = [
   { href: "/admin/taraftarlar", label: "Taraftarlar", icon: Users },
   { href: "/admin/hediye-verme", label: "Hediye Verme", icon: Gift },
   { href: "/admin/maclar", label: "Maçlar", icon: Calendar },
+  { href: "/admin/maclar/motm-cekilis", label: "MOTM çekiliş", icon: Shuffle },
   { href: "/admin/kadro", label: "Kadro", icon: Shirt },
   { href: "/admin/transferler", label: "Transferler", icon: ArrowLeftRight },
   { href: "/admin/haberler", label: "Etkinlikler", icon: Newspaper },
