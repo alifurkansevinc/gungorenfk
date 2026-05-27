@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createMatch, updateMatch } from "@/app/actions/admin";
 import { isoToDatetimeLocalValue } from "@/lib/match-motm";
+import { AdminImageUpload } from "@/components/admin/AdminImageUpload";
 
 const LIG_OPTIONS = [
   "Süper Lig",
@@ -188,8 +189,13 @@ export function MacForm({
           <input name="venue" defaultValue={match?.venue ?? ""} placeholder="Güngören Stadyumu" className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
         </div>
         <div>
-          <label className="block text-sm font-medium text-siyah">Rakip takım logosu (URL)</label>
-          <input name="opponent_logo_url" type="url" defaultValue={match?.opponent_logo_url ?? ""} placeholder="https://..." className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
+          <AdminImageUpload
+            name="opponent_logo_url"
+            folder="matches"
+            label="Rakip takım logosu"
+            defaultValue={match?.opponent_logo_url}
+            helperText="Fikstür ve maç kartlarında görünür."
+          />
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div>

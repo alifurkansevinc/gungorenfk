@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createNews, updateNews } from "@/app/actions/admin";
+import { AdminImageUpload } from "@/components/admin/AdminImageUpload";
 
 type NewsRow = {
   id: string;
@@ -137,10 +138,13 @@ export function HaberFormu({ news }: { news?: NewsRow | null }) {
         <label className="block text-sm font-medium text-siyah">Yayın tarihi (sitede görünürlük)</label>
         <input name="published_at" type="datetime-local" defaultValue={pubDate} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
       </div>
-      <div>
-        <label className="block text-sm font-medium text-siyah">Kapak görseli URL</label>
-        <input name="image_url" type="url" defaultValue={news?.image_url ?? ""} placeholder="https://..." className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
-      </div>
+      <AdminImageUpload
+        name="image_url"
+        folder="news"
+        label="Kapak görseli"
+        defaultValue={news?.image_url}
+        helperText="Etkinlik / haber listesi ve detay kapak görseli."
+      />
       <div className="flex gap-3 pt-4">
         <button
           type="submit"

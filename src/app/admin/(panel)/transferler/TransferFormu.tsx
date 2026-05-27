@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createTransfer, updateTransfer } from "@/app/actions/admin";
+import { AdminImageUpload } from "@/components/admin/AdminImageUpload";
 
 const CLUB_NAME = "Güngören FK";
 
@@ -83,10 +84,12 @@ export function TransferFormu({ transfer }: { transfer?: TransferRow | null }) {
         <label className="block text-sm font-medium text-siyah">Oyuncu adı *</label>
         <input name="player_name" defaultValue={transfer?.player_name} required className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="Ad Soyad" />
       </div>
-      <div>
-        <label className="block text-sm font-medium text-siyah">Oyuncu fotoğraf URL</label>
-        <input name="player_image_url" type="url" defaultValue={transfer?.player_image_url ?? ""} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="https://..." />
-      </div>
+      <AdminImageUpload
+        name="player_image_url"
+        folder="transfer"
+        label="Oyuncu fotoğrafı"
+        defaultValue={transfer?.player_image_url}
+      />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label className="block text-sm font-medium text-siyah">Mevki</label>

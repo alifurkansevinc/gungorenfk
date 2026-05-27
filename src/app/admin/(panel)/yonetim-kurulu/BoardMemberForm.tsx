@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createBoardMember, updateBoardMember } from "@/app/actions/admin";
+import { AdminImageUpload } from "@/components/admin/AdminImageUpload";
 import { BOARD_ROLE_LABELS } from "@/lib/board-labels";
 
 const ROLE_SLUGS = Object.keys(BOARD_ROLE_LABELS);
@@ -85,10 +86,13 @@ export function BoardMemberForm({ member }: { member?: Row | null }) {
         <p className="mt-0.5 text-xs text-siyah/60">Girilirse sitede üye kartında gösterilir.</p>
         <textarea name="biography" defaultValue={member?.biography ?? ""} rows={4} placeholder="Kısa öz geçmiş..." className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
       </div>
-      <div>
-        <label className="block text-sm font-medium text-siyah">Görsel URL</label>
-        <input name="photo_url" type="url" defaultValue={member?.photo_url ?? ""} placeholder="https://..." className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
-      </div>
+      <AdminImageUpload
+        name="photo_url"
+        folder="board"
+        label="Fotoğraf"
+        defaultValue={member?.photo_url}
+        helperText="Yönetim kurulu üyesi portre görseli."
+      />
       <div>
         <label className="block text-sm font-medium text-siyah">Sıra</label>
         <input name="sort_order" type="number" defaultValue={member?.sort_order ?? 0} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />

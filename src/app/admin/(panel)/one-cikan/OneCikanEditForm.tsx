@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { updateHomepageFeatured } from "@/app/actions/admin";
+import { AdminImageUpload } from "@/components/admin/AdminImageUpload";
 
 export function OneCikanEditForm({
   id,
@@ -43,10 +44,7 @@ export function OneCikanEditForm({
   return (
     <form onSubmit={handleSubmit} className="mt-6 max-w-xl space-y-4">
       {error && <p className="rounded bg-red-100 p-2 text-sm text-red-800">{error}</p>}
-      <div>
-        <label className="block text-sm font-medium text-siyah">Görsel URL *</label>
-        <input name="image_url" type="url" defaultValue={image_url} required className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="https://..." />
-      </div>
+      <AdminImageUpload name="image_url" folder="featured" label="Görsel *" defaultValue={image_url} />
       <div>
         <label className="block text-sm font-medium text-siyah">Başlık</label>
         <input name="title" type="text" defaultValue={title} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="Boş bırakılırsa varsayılan kullanılır" />

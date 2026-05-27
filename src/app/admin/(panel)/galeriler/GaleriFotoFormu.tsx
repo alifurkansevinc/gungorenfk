@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { addGalleryPhoto } from "@/app/actions/admin";
+import { AdminImageUpload } from "@/components/admin/AdminImageUpload";
 
 export function GaleriFotoFormu({ galleryId }: { galleryId: string }) {
   const router = useRouter();
@@ -25,9 +26,8 @@ export function GaleriFotoFormu({ galleryId }: { galleryId: string }) {
   return (
     <form onSubmit={handleSubmit} className="mt-4 flex flex-wrap items-end gap-4 rounded-lg border border-siyah/10 bg-beyaz p-4">
       {error && <p className="w-full rounded bg-red-100 p-2 text-sm text-red-800">{error}</p>}
-      <div className="min-w-[200px] flex-1">
-        <label className="block text-sm font-medium text-siyah">Fotoğraf URL *</label>
-        <input name="image_url" type="url" required placeholder="https://..." className="mt-1 w-full rounded border border-siyah/20 px-3 py-2 text-sm" />
+      <div className="min-w-[min(100%,320px)] flex-1">
+        <AdminImageUpload name="image_url" folder="gallery" label="Fotoğraf *" helperText="Yükleme zorunlu; kayıt öncesi görsel seçin." />
       </div>
       <div className="min-w-[160px] flex-1">
         <label className="block text-sm font-medium text-siyah">Açıklama</label>

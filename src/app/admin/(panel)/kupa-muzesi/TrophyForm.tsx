@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createTrophy, updateTrophy } from "@/app/actions/admin";
 import type { ClubTrophy } from "@/types/db";
+import { AdminImageUpload } from "@/components/admin/AdminImageUpload";
 
 export function TrophyForm({ trophy }: { trophy?: ClubTrophy | null }) {
   const router = useRouter();
@@ -38,10 +39,7 @@ export function TrophyForm({ trophy }: { trophy?: ClubTrophy | null }) {
         <label className="block text-sm font-medium text-siyah">Yılı *</label>
         <input name="year" type="number" min={1900} max={2100} defaultValue={trophy?.year ?? new Date().getFullYear()} required className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
       </div>
-      <div>
-        <label className="block text-sm font-medium text-siyah">Resim (URL)</label>
-        <input name="image_url" type="url" defaultValue={trophy?.image_url ?? ""} placeholder="https://..." className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
-      </div>
+      <AdminImageUpload name="image_url" folder="trophy" label="Kupa görseli" defaultValue={trophy?.image_url} />
       <div>
         <label className="block text-sm font-medium text-siyah">Açıklama</label>
         <textarea name="description" defaultValue={trophy?.description ?? ""} rows={3} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" placeholder="Kupa hakkında kısa açıklama" />

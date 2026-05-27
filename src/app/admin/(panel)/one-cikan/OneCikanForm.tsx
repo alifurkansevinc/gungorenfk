@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createHomepageFeatured } from "@/app/actions/admin";
 import type { FeaturedModuleKey } from "@/lib/featured-modules";
+import { AdminImageUpload } from "@/components/admin/AdminImageUpload";
 
 type ModuleOpt = { key: FeaturedModuleKey; label: string; link: string; defaultTitle: string; defaultSubtitle: string };
 
@@ -40,9 +41,8 @@ export function OneCikanForm({ availableModules }: { availableModules: ModuleOpt
             ))}
           </select>
         </div>
-        <div>
-          <label className="block text-sm font-medium text-siyah">Görsel URL *</label>
-          <input name="image_url" type="url" required placeholder="https://..." className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
+        <div className="sm:col-span-2">
+          <AdminImageUpload name="image_url" folder="featured" label="Görsel *" helperText="Ana sayfa öne çıkan kart görseli." />
         </div>
         <div>
           <label className="block text-sm font-medium text-siyah">Başlık (isteğe bağlı)</label>

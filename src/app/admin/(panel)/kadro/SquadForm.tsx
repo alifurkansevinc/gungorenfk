@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createSquadMember, updateSquadMember } from "@/app/actions/admin";
+import { AdminImageUpload } from "@/components/admin/AdminImageUpload";
 
 const POSITION_CATEGORIES = [
   { value: "kl", label: "Kaleci" },
@@ -77,10 +78,13 @@ export function SquadForm({ member }: { member?: SquadRow | null }) {
           ))}
         </select>
       </div>
-      <div>
-        <label className="block text-sm font-medium text-siyah">Görsel URL</label>
-        <input name="photo_url" type="url" defaultValue={member?.photo_url ?? ""} placeholder="https://..." className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
-      </div>
+      <AdminImageUpload
+        name="photo_url"
+        folder="squad"
+        label="Fotoğraf"
+        defaultValue={member?.photo_url}
+        helperText="Oyuncu profil görseli; dosya yükleyebilir veya mevcut bir URL girebilirsiniz."
+      />
       <div>
         <label className="block text-sm font-medium text-siyah">Kısa biyografi</label>
         <textarea name="bio" defaultValue={member?.bio ?? ""} rows={2} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />

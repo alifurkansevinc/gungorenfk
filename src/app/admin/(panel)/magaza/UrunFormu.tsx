@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { createProduct, updateProduct } from "@/app/actions/store";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2 } from "lucide-react";
+import { AdminImageUploadList } from "@/components/admin/AdminImageUploadList";
 import { STORE_SIZE_OPTIONS } from "@/lib/store-sizes";
 
 type Product = {
@@ -28,13 +28,6 @@ export function UrunFormu({ product }: { product?: Product }) {
   const [imageUrls, setImageUrls] = useState<string[]>(
     product?.images?.length ? product.images : product?.image_url ? [product.image_url] : [""]
   );
-
-  function addImage() {
-    setImageUrls((prev) => [...prev, ""]);
-  }
-  function removeImage(i: number) {
-    setImageUrls((prev) => prev.filter((_, idx) => idx !== i));
-  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -142,36 +135,13 @@ export function UrunFormu({ product }: { product?: Product }) {
           })}
         </div>
       </div>
-      <div>
-        <div className="flex items-center justify-between">
-          <label className={labelClass}>Görseller (URL)</label>
-          <button type="button" onClick={addImage} className="flex items-center gap-1 text-sm font-medium text-bordo hover:underline">
-            <Plus className="h-4 w-4" /> Ekle
-          </button>
-        </div>
-        <div className="mt-2 space-y-2">
-          {imageUrls.map((url, i) => (
-            <div key={i} className="flex gap-2">
-              <input
-                type="url"
-                value={url}
-                onChange={(e) => setImageUrls((prev) => prev.map((u, j) => (j === i ? e.target.value : u)))}
-                placeholder="https://..."
-                className={inputClass}
-              />
-              <button
-                type="button"
-                onClick={() => removeImage(i)}
-                className="shrink-0 rounded-lg p-2 text-gray-500 hover:bg-red-50 hover:text-red-600"
-                aria-label="Kaldır"
-              >
-                <Trash2 className="h-5 w-5" />
-              </button>
-            </div>
-          ))}
-        </div>
-        <p className="mt-1 text-xs text-gray-500">Birden fazla görsel ekleyebilirsiniz. Sıra önemli.</p>
-      </div>
+      <AdminImageUploadList
+        folder="store"
+        label="Ürün görselleri"
+        urls={imageUrls}
+        onChange={setImageUrls}
+        inputClassName={inputClass}
+      />
       <div>
         <label className={labelClass}>Sıra</label>
         <input
