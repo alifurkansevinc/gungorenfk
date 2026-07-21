@@ -1,11 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { createProduct, updateProduct } from "@/app/actions/store";
 import { useRouter } from "next/navigation";
 import { AdminImageUploadList } from "@/components/admin/AdminImageUploadList";
-import { STORE_SIZE_OPTIONS } from "@/lib/store-sizes";
+import {
+  STORE_SIZE_GROUPS,
+  type StoreSizeGroupId,
+  getSizeGroup,
+  getSizeLabel,
+  getSizesForGroup,
+  inferSizeGroupFromSizes,
+} from "@/lib/store-sizes";
 
 type Product = {
   id: string;
@@ -20,7 +27,35 @@ type Product = {
   images?: string[];
   sizes?: string[];
   stock_by_size?: Record<string, number> | null;
+  size_group?: string | null;
 } | null;
+
+function initialGroup(product?: Product): StoreSizeGroupId {
+  if (product?.size_group && getSizeGroup(product.size_group)) {
+    return product.size_group as StoreSizeGroupId;
+  }
+  if (product?.sizes?.length) {
+    return inferSizeGroupFromSizes(product.sizes);
+  }
+  return "harf";
+}
+
+function initialSelectedSizes(product: Product | undefined, groupId: StoreSizeGroupId): Set<string> {
+  const groupValues = new Set(getSizesForGroup(groupId).map((s) => s.value));
+  if (product?.sizes?.length) {
+    const fromProduct = product.sizes.filter((s) => groupValues.has(s));
+    if (fromProduct.length > 0) return new Set(fromProduct);
+  }
+  return new Set(getSizesForGroup(groupId).map((s) => s.value));
+}
+
+function initialStock(product: Product | undefined, groupId: StoreSizeGroupId): Record<string, number> {
+  const stock: Record<string, number> = {};
+  for (const { value } of getSizesForGroup(groupId)) {
+    stock[value] = product?.stock_by_size?.[value] ?? 0;
+  }
+  return stock;
+}
 
 export function UrunFormu({ product }: { product?: Product }) {
   const router = useRouter();
@@ -28,12 +63,53 @@ export function UrunFormu({ product }: { product?: Product }) {
   const [imageUrls, setImageUrls] = useState<string[]>(
     product?.images?.length ? product.images : product?.image_url ? [product.image_url] : [""]
   );
+  const [sizeGroup, setSizeGroup] = useState<StoreSizeGroupId>(() => initialGroup(product));
+  const [selectedSizes, setSelectedSizes] = useState<Set<string>>(() =>
+    initialSelectedSizes(product, initialGroup(product))
+  );
+  const [stockBySize, setStockBySize] = useState<Record<string, number>>(() =>
+    initialStock(product, initialGroup(product))
+  );
+
+  const groupSizes = useMemo(() => getSizesForGroup(sizeGroup), [sizeGroup]);
+  const activeGroup = getSizeGroup(sizeGroup);
+
+  function changeSizeGroup(nextGroup: StoreSizeGroupId) {
+    setSizeGroup(nextGroup);
+    const nextSizes = getSizesForGroup(nextGroup);
+    setSelectedSizes(new Set(nextSizes.map((s) => s.value)));
+    setStockBySize((prev) => {
+      const next: Record<string, number> = {};
+      for (const { value } of nextSizes) {
+        next[value] = prev[value] ?? 0;
+      }
+      return next;
+    });
+  }
+
+  function toggleSize(value: string, checked: boolean) {
+    setSelectedSizes((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(value);
+      else next.delete(value);
+      return next;
+    });
+  }
+
+  function selectAllInGroup() {
+    setSelectedSizes(new Set(groupSizes.map((s) => s.value)));
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError(null);
+    if (selectedSizes.size === 0) {
+      setError("En az bir beden seçmelisiniz.");
+      return;
+    }
     const form = e.currentTarget;
     const formData = new FormData(form);
+    formData.set("size_group", sizeGroup);
     imageUrls.filter(Boolean).forEach((url, i) => formData.set(`image_url_${i}`, url));
 
     const res = product
@@ -107,34 +183,127 @@ export function UrunFormu({ product }: { product?: Product }) {
           className={inputClass}
         />
       </div>
-      <div>
-        <label className={labelClass}>Bedenler ve stok</label>
-        <p className="mt-1 text-xs text-gray-500">Ürünün satışa sunulduğu bedenleri işaretleyin; her beden için stok adedi girin. Satışta stok otomatik düşer.</p>
-        <div className="mt-3 space-y-3">
-          {STORE_SIZE_OPTIONS.map(({ value, label }) => {
-            const defaultChecked = product?.sizes?.includes(value) ?? (value === "tek_beden");
-            const defaultStock = product?.stock_by_size?.[value] ?? 0;
-            return (
-              <div key={value} className="flex flex-wrap items-center gap-3 rounded-lg border border-gray-100 bg-gray-50/50 px-3 py-2">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" name="sizes" value={value} defaultChecked={defaultChecked} className="h-4 w-4 rounded border-gray-300 text-bordo focus:ring-bordo" />
-                  <span className="text-sm font-medium text-gray-700">{label}</span>
+
+      <div className="rounded-2xl border border-bordo/15 bg-bordo/[0.03] p-4 sm:p-5 space-y-4">
+        <div>
+          <label className={labelClass}>Beden takımı *</label>
+          <p className="mt-1 text-xs text-gray-500">
+            Önce ürünün hangi beden sistemini kullandığını seçin. Sonra yalnızca o gruptaki bedenler açılır.
+          </p>
+          <div className="mt-3 grid gap-2 sm:grid-cols-2">
+            {STORE_SIZE_GROUPS.map((group) => {
+              const isActive = sizeGroup === group.id;
+              return (
+                <label
+                  key={group.id}
+                  className={`flex cursor-pointer flex-col rounded-xl border px-3 py-3 transition-colors ${
+                    isActive
+                      ? "border-bordo bg-white shadow-sm ring-1 ring-bordo/20"
+                      : "border-gray-200 bg-white/70 hover:border-bordo/30"
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="size_group"
+                      value={group.id}
+                      checked={isActive}
+                      onChange={() => changeSizeGroup(group.id)}
+                      className="h-4 w-4 border-gray-300 text-bordo focus:ring-bordo"
+                    />
+                    <span className="text-sm font-semibold text-gray-900">{group.label}</span>
+                  </span>
+                  <span className="mt-1 pl-6 text-xs text-gray-500">{group.description}</span>
                 </label>
-                <label className="flex items-center gap-2 text-sm text-gray-600">
-                  <span>Stok:</span>
-                  <input
-                    type="number"
-                    name={`stock_${value}`}
-                    min={0}
-                    defaultValue={defaultStock}
-                    className="w-20 rounded-lg border border-gray-200 px-2 py-1.5 text-gray-900 focus:border-bordo focus:outline-none focus:ring-1 focus:ring-bordo"
-                  />
-                </label>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="border-t border-bordo/10 pt-4">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label className={labelClass}>
+              {activeGroup?.label ?? "Bedenler"} — stok
+            </label>
+            {sizeGroup !== "tek" && (
+              <button
+                type="button"
+                onClick={selectAllInGroup}
+                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:border-bordo/40 hover:text-bordo"
+              >
+                Tümünü seç
+              </button>
+            )}
+          </div>
+          <p className="mt-1 text-xs text-gray-500">
+            Satışa sunulacak bedenleri işaretleyin; her beden için stok girin.
+          </p>
+
+          {selectedSizes.size === 0 && (
+            <p className="mt-3 text-sm font-medium text-red-600">En az bir beden seçmelisiniz.</p>
+          )}
+
+          <div className="mt-3 space-y-2">
+            {groupSizes.map(({ value, label }) => {
+              const isChecked = selectedSizes.has(value);
+              const isTekGroup = sizeGroup === "tek";
+              return (
+                <div
+                  key={value}
+                  className={`flex flex-wrap items-center gap-3 rounded-lg border px-3 py-2 transition-colors ${
+                    isChecked ? "border-bordo/25 bg-white" : "border-gray-100 bg-gray-50/50"
+                  }`}
+                >
+                  {!isTekGroup ? (
+                    <label className="flex cursor-pointer items-center gap-2">
+                      <input
+                        type="checkbox"
+                        name="sizes"
+                        value={value}
+                        checked={isChecked}
+                        onChange={(e) => toggleSize(value, e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-bordo focus:ring-bordo"
+                      />
+                      <span className="text-sm font-medium text-gray-700">{label}</span>
+                    </label>
+                  ) : (
+                    <>
+                      <input type="hidden" name="sizes" value="tek_beden" />
+                      <span className="text-sm font-medium text-gray-700">{label}</span>
+                    </>
+                  )}
+                  {(isChecked || isTekGroup) && (
+                    <label className="flex items-center gap-2 text-sm text-gray-600">
+                      <span>Stok:</span>
+                      <input
+                        type="number"
+                        name={`stock_${value}`}
+                        min={0}
+                        value={stockBySize[value] ?? 0}
+                        onChange={(e) => {
+                          const n = parseInt(e.target.value, 10);
+                          setStockBySize((prev) => ({
+                            ...prev,
+                            [value]: Number.isNaN(n) || n < 0 ? 0 : n,
+                          }));
+                        }}
+                        className="w-20 rounded-lg border border-gray-200 px-2 py-1.5 text-gray-900 focus:border-bordo focus:outline-none focus:ring-1 focus:ring-bordo"
+                      />
+                    </label>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          {selectedSizes.size > 0 && (
+            <p className="mt-3 text-xs text-gray-500">
+              Seçili bedenler: {[...selectedSizes].map(getSizeLabel).join(", ")}
+            </p>
+          )}
         </div>
       </div>
+
       <AdminImageUploadList
         folder="store"
         label="Ürün görselleri"

@@ -2,7 +2,38 @@
 
 import { revalidatePath } from "next/cache";
 import { getAdminSupabase } from "@/app/admin/actions";
-import { STORE_SIZE_VALUES } from "@/lib/store-sizes";
+import {
+  filterSizesForGroup,
+  getSizeValuesForGroup,
+  isValidSizeGroup,
+} from "@/lib/store-sizes";
+
+function parseProductSizes(formData: FormData): { sizeGroup: string; sizesFinal: string[]; error?: string } {
+  const sizeGroupRaw = (formData.get("size_group") as string)?.trim() || "harf";
+  if (!isValidSizeGroup(sizeGroupRaw)) {
+    return { sizeGroup: "harf", sizesFinal: [], error: "Geçersiz beden takımı seçildi." };
+  }
+
+  const sizesRaw = formData.getAll("sizes") as string[];
+  const allowed = getSizeValuesForGroup(sizeGroupRaw);
+  const sizes = filterSizesForGroup(sizeGroupRaw, sizesRaw);
+  const sizesFinal =
+    sizes.length > 0
+      ? sizes
+      : sizeGroupRaw === "tek"
+        ? ["tek_beden"]
+        : [];
+
+  if (sizesFinal.length === 0) {
+    return { sizeGroup: sizeGroupRaw, sizesFinal: [], error: "En az bir beden seçmelisiniz." };
+  }
+
+  if (!sizesFinal.every((s) => allowed.includes(s))) {
+    return { sizeGroup: sizeGroupRaw, sizesFinal: [], error: "Seçilen bedenler bu takıma ait değil." };
+  }
+
+  return { sizeGroup: sizeGroupRaw, sizesFinal };
+}
 
 function collectStockBySize(formData: FormData, sizes: string[]): Record<string, number> {
   const out: Record<string, number> = {};
@@ -37,9 +68,8 @@ export async function createProduct(formData: FormData) {
   const sort_order = parseInt((formData.get("sort_order") as string) || "0", 10);
   const imageUrls = collectImageUrls(formData);
   const image_url = imageUrls[0] || null;
-  const sizesRaw = formData.getAll("sizes") as string[];
-  const sizes = sizesRaw.length > 0 ? sizesRaw.filter((s) => STORE_SIZE_VALUES.includes(s as typeof STORE_SIZE_VALUES[number])) : ["tek_beden"];
-  const sizesFinal = sizes.length > 0 ? sizes : ["tek_beden"];
+  const { sizeGroup, sizesFinal, error: sizeError } = parseProductSizes(formData);
+  if (sizeError) return { error: sizeError };
 
   const stock_by_size = collectStockBySize(formData, sizesFinal);
 
@@ -54,6 +84,7 @@ export async function createProduct(formData: FormData) {
       image_url,
       sort_order,
       is_active: true,
+      size_group: sizeGroup,
       sizes: sizesFinal,
       stock_by_size,
     })
@@ -83,9 +114,8 @@ export async function updateProduct(id: string, formData: FormData) {
   const is_active = formData.get("is_active") === "on";
   const imageUrls = collectImageUrls(formData);
   const image_url = imageUrls[0] || null;
-  const sizesRaw = formData.getAll("sizes") as string[];
-  const sizes = sizesRaw.length > 0 ? sizesRaw.filter((s) => STORE_SIZE_VALUES.includes(s as typeof STORE_SIZE_VALUES[number])) : ["tek_beden"];
-  const sizesFinal = sizes.length > 0 ? sizes : ["tek_beden"];
+  const { sizeGroup, sizesFinal, error: sizeError } = parseProductSizes(formData);
+  if (sizeError) return { error: sizeError };
   const stock_by_size = collectStockBySize(formData, sizesFinal);
 
   const { error } = await supabase
@@ -99,6 +129,7 @@ export async function updateProduct(id: string, formData: FormData) {
       image_url,
       sort_order,
       is_active,
+      size_group: sizeGroup,
       sizes: sizesFinal,
       stock_by_size,
       updated_at: new Date().toISOString(),

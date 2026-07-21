@@ -2,12 +2,23 @@ import Link from "next/link";
 import { getAdminSupabase } from "../../actions";
 import { UrunSilButton } from "./UrunSilButton";
 import { Plus, Package } from "lucide-react";
+import { getSizeGroupLabel, getSizeLabel } from "@/lib/store-sizes";
+
+function formatProductSizes(sizes: string[] | null | undefined): string {
+  if (!sizes?.length) return "Tek Beden";
+  return sizes.map(getSizeLabel).join(", ");
+}
+
+function totalStock(stockBySize: Record<string, number> | null | undefined): number {
+  if (!stockBySize) return 0;
+  return Object.values(stockBySize).reduce((sum, n) => sum + (Number(n) || 0), 0);
+}
 
 export default async function AdminMagazaPage() {
   const supabase = await getAdminSupabase();
   const { data: products } = await supabase
     .from("store_products")
-    .select("id, name, slug, sku, price, image_url, is_active, sort_order")
+    .select("id, name, slug, sku, price, image_url, is_active, sort_order, sizes, stock_by_size, size_group")
     .order("sort_order");
 
   return (
@@ -28,13 +39,15 @@ export default async function AdminMagazaPage() {
 
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full min-w-[640px] text-left">
+          <table className="w-full min-w-[900px] text-left">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50 text-left text-sm text-gray-500">
                 <th className="p-4 font-medium">Sıra</th>
                 <th className="p-4 font-medium">Ürün</th>
                 <th className="p-4 font-medium">Stok kodu</th>
-                <th className="p-4 font-medium">Slug</th>
+                <th className="p-4 font-medium">Beden takımı</th>
+                <th className="p-4 font-medium">Bedenler</th>
+                <th className="p-4 font-medium">Toplam stok</th>
                 <th className="p-4 font-medium">Fiyat</th>
                 <th className="p-4 font-medium">Durum</th>
                 <th className="p-4 font-medium">İşlem</th>
@@ -43,7 +56,7 @@ export default async function AdminMagazaPage() {
             <tbody>
               {(!products || products.length === 0) ? (
                 <tr>
-                  <td colSpan={7} className="p-12 text-center text-gray-500">
+                  <td colSpan={9} className="p-12 text-center text-gray-500">
                     <Package className="mx-auto mb-4 h-12 w-12 text-gray-300" />
                     <p className="font-medium">Henüz ürün yok</p>
                     <p className="mt-1 text-sm text-gray-400">Yeni ürün ile ekleyin.</p>
@@ -53,12 +66,21 @@ export default async function AdminMagazaPage() {
                   </td>
                 </tr>
               ) : (
-                products.map((p) => (
+                products.map((p) => {
+                  const sizes = (p as { sizes?: string[] }).sizes;
+                  const sizeGroup = (p as { size_group?: string }).size_group;
+                  const stockBySize = (p as { stock_by_size?: Record<string, number> }).stock_by_size;
+                  const stockTotal = totalStock(stockBySize);
+                  return (
                   <tr key={p.id} className="border-b border-gray-50 hover:bg-gray-50">
                     <td className="p-4 text-sm text-gray-600">{p.sort_order}</td>
                     <td className="p-4 font-medium text-gray-900">{p.name}</td>
                     <td className="p-4 text-sm font-mono text-bordo">{p.sku ?? "—"}</td>
-                    <td className="p-4 text-sm text-gray-500 font-mono">{p.slug}</td>
+                    <td className="p-4 text-sm text-gray-600">{getSizeGroupLabel(sizeGroup)}</td>
+                    <td className="p-4 text-sm text-gray-600">{formatProductSizes(sizes)}</td>
+                    <td className="p-4 text-sm text-gray-700">
+                      <span className={stockTotal === 0 ? "font-medium text-red-600" : ""}>{stockTotal}</span>
+                    </td>
                     <td className="p-4 font-semibold text-bordo">
                       {Number(p.price).toFixed(2)} ₺
                     </td>
@@ -81,7 +103,8 @@ export default async function AdminMagazaPage() {
                       </div>
                     </td>
                   </tr>
-                ))
+                  );
+                })
               )}
             </tbody>
           </table>

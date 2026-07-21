@@ -14,7 +14,7 @@ export default function AdminMagazaYeniPage() {
       </Link>
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Yeni ürün</h1>
-        <p className="mt-1 text-gray-500">Ürün bilgilerini girin.</p>
+        <p className="mt-1 text-gray-500">Ürün bilgilerini, bedenleri ve stok adetlerini girin.</p>
       </div>
       <div className="rounded-2xl border border-gray-100 bg-white p-6 shadow-sm">
         <UrunFormu />
