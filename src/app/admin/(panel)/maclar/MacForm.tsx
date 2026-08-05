@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createMatch, updateMatch } from "@/app/actions/admin";
 import { isoToDatetimeLocalValue } from "@/lib/match-motm";
 import { AdminImageUpload } from "@/components/admin/AdminImageUpload";
+import { toCanonicalSeasonKey } from "@/lib/football-season";
 
 const LIG_OPTIONS = [
   "Süper Lig",
@@ -18,7 +19,14 @@ const LIG_OPTIONS = [
   "2.Amatör Lig",
 ] as const;
 
-const SEZON_OPTIONS = ["2023-24", "2024-25", "2025-26", "2026-27", "2027-28", "2028-29"] as const;
+const SEZON_OPTIONS = [
+  "2023-2024",
+  "2024-2025",
+  "2025-2026",
+  "2026-2027",
+  "2027-2028",
+  "2028-2029",
+] as const;
 const MAX_MOTM_CANDIDATES = 5;
 
 const STATUS_OPTIONS = [
@@ -209,10 +217,28 @@ export function MacForm({
           </div>
           <div>
             <label className="block text-sm font-medium text-siyah">Sezon *</label>
-            <select name="season" defaultValue={match?.season ?? ""} required className="mt-1 w-full rounded border border-siyah/20 px-3 py-2">
+            <select
+              name="season"
+              defaultValue={
+                match?.season
+                  ? (() => {
+                      const c = toCanonicalSeasonKey(match.season);
+                      return (SEZON_OPTIONS as readonly string[]).includes(c) ? c : match.season;
+                    })()
+                  : ""
+              }
+              required
+              className="mt-1 w-full rounded border border-siyah/20 px-3 py-2"
+            >
               <option value="">— Seçin —</option>
+              {match?.season &&
+                !(SEZON_OPTIONS as readonly string[]).includes(toCanonicalSeasonKey(match.season)) && (
+                  <option value={match.season}>{match.season}</option>
+                )}
               {SEZON_OPTIONS.map((s) => (
-                <option key={s} value={s}>{s}</option>
+                <option key={s} value={s}>
+                  {s}
+                </option>
               ))}
             </select>
           </div>

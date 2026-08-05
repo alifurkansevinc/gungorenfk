@@ -12,7 +12,7 @@ export function getFootballSeasonLabelForDate(d: Date): string {
   return `${startYear}-${startYear + 1}`;
 }
 
-/** "2025-2026" / "25-26" / "25-26 Sezon Kadrosu" → başlangıç yılı veya null. */
+/** "2025-2026" / "2025-26" / "25-26" / "25-26 Sezon Kadrosu" → başlangıç yılı veya null. */
 export function parseSeasonStartYear(raw: string | null | undefined): number | null {
   if (!raw) return null;
   const t = raw.trim().replace(/\s+/g, " ");
@@ -22,7 +22,13 @@ export function parseSeasonStartYear(raw: string | null | undefined): number | n
     const y2 = parseInt(m4[2], 10);
     if (y2 === y1 + 1) return y1;
   }
-  const m2 = /(\d{2})\s*[-/]\s*(\d{2})/.exec(t);
+  const m42 = /(\d{4})\s*[-/]\s*(\d{2})\b/.exec(t);
+  if (m42) {
+    const y1 = parseInt(m42[1], 10);
+    const y2 = 2000 + parseInt(m42[2], 10);
+    if (y2 === y1 + 1) return y1;
+  }
+  const m2 = /(\d{2})\s*[-/]\s*(\d{2})\b/.exec(t);
   if (m2) {
     const y1 = 2000 + parseInt(m2[1], 10);
     const y2 = 2000 + parseInt(m2[2], 10);

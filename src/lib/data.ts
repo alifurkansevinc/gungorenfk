@@ -7,7 +7,7 @@ import {
   getMatchKickoffMs,
   isWithinLivePlayWindow,
 } from "@/lib/match-schedule";
-import { sortSeasonLabelsDesc } from "@/lib/seasons";
+import { seasonFilterVariants, sortSeasonLabelsDesc } from "@/lib/seasons";
 import type { MemleketCount, Match, SquadMember, BoardMember, TechnicalStaffMember, LeagueStandingRow, ClubTrophy } from "@/types/db";
 import type { FanLevel } from "@/types/db";
 
@@ -150,7 +150,8 @@ export async function getMatches(limit = 20, opts?: GetMatchesOptions) {
     )
     .or("is_hidden.eq.false,is_hidden.is.null");
   if (opts?.season && opts.season !== "all") {
-    q = q.eq("season", opts.season);
+    const variants = seasonFilterVariants(opts.season);
+    q = q.in("season", variants);
   }
   const { data } = await q.order("match_date", { ascending: false }).limit(limit);
   if (!data || data.length === 0) {

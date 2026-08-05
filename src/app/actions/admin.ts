@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { getAdminSupabase } from "@/app/admin/actions";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { matchEndAtIso } from "@/lib/match-schedule";
-import { seasonLabelFromMatchDate } from "@/lib/seasons";
+import { seasonLabelFromMatchDate, toCanonicalSeasonKey } from "@/lib/seasons";
 
 async function supabase() {
   return getAdminSupabase();
@@ -114,8 +114,9 @@ export async function createMatch(formData: FormData) {
   const matchDateStr = formData.get("match_date") as string;
   const matchTimeStr = (formData.get("match_time") as string)?.trim() || null;
   const match_end_at = matchEndAtIso(matchDateStr, matchTimeStr);
-  const seasonValue = (formData.get("season") as string)?.trim();
-  if (!seasonValue) return { error: "Sezon seçimi zorunludur." };
+  const seasonValueRaw = (formData.get("season") as string)?.trim();
+  if (!seasonValueRaw) return { error: "Sezon seçimi zorunludur." };
+  const seasonValue = toCanonicalSeasonKey(seasonValueRaw);
 
   const { data: match, error: matchErr } = await s
     .from("matches")
@@ -195,8 +196,9 @@ export async function updateMatch(id: string, formData: FormData) {
   const updMatchDate = formData.get("match_date") as string;
   const updMatchTime = (formData.get("match_time") as string)?.trim() || null;
   const updMatchEndAt = matchEndAtIso(updMatchDate, updMatchTime);
-  const updSeason = (formData.get("season") as string)?.trim();
-  if (!updSeason) return { error: "Sezon seçimi zorunludur." };
+  const updSeasonRaw = (formData.get("season") as string)?.trim();
+  if (!updSeasonRaw) return { error: "Sezon seçimi zorunludur." };
+  const updSeason = toCanonicalSeasonKey(updSeasonRaw);
 
   const { error } = await s
     .from("matches")

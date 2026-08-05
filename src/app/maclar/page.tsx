@@ -11,7 +11,7 @@ import {
   getMackolikFixtureUrl,
 } from "@/lib/data";
 import { getMackolikMatches } from "@/lib/mackolik";
-import { matchSeasonTabToStandingsSeason, resolveSeasonQueryParam } from "@/lib/seasons";
+import { matchSeasonTabToStandingsSeason, resolveSeasonQueryParam, formatSeasonTabLabel, getFootballSeasonLabelForDate } from "@/lib/seasons";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { NextMatchCard } from "@/components/NextMatchCard";
 import { WeekPlayerShowcase } from "@/components/WeekPlayerShowcase";
@@ -85,6 +85,7 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
   const useMackolik = mackolikMatches.length > 0 && !hasAnyRealDbMatch;
   const leagueName = standings.rows.length > 0 ? standings.league_name : "İstanbul 1. Amatör Lig";
   const activeSeasonTab = showAllSeasons ? null : typeof filter === "string" ? filter : null;
+  const currentSeasonKey = getFootballSeasonLabelForDate(new Date());
   const qBase = { sezon: sp?.sezon?.trim(), puan: sp?.puan?.trim() };
   // En üstte en yeni, en altta en eski (tarihe göre azalan)
   const sortedDbMatches = [...matches].sort((a, b) => b.match_date.localeCompare(a.match_date));
@@ -214,7 +215,7 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
                   : showAllSeasons
                     ? "Tüm sezonlardaki kayıtlı maçlar."
                     : activeSeasonTab
-                      ? `${activeSeasonTab} sezonu maçları.`
+                      ? `${formatSeasonTabLabel(activeSeasonTab)} sezonu maçları.`
                       : "Veritabanındaki maçlar."}
               </p>
             </div>
@@ -223,15 +224,21 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
                 <span className="text-[10px] font-medium uppercase tracking-wider text-siyah/45">Sezon</span>
                 {seasonList.map((s) => {
                   const on = !showAllSeasons && filter === s;
+                  const isCurrent = s === currentSeasonKey;
                   return (
                     <Link
                       key={s}
                       href={maclarHref({ ...qBase, sezon: s })}
-                      className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
+                      className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold transition ${
                         on ? "bg-siyah text-beyaz" : "bg-siyah/10 text-siyah hover:bg-siyah/15"
                       }`}
                     >
-                      {s}
+                      {formatSeasonTabLabel(s)}
+                      {isCurrent && (
+                        <span className={`rounded px-1 py-0.5 text-[8px] font-bold uppercase tracking-wide ${on ? "bg-beyaz/20" : "bg-bordo/15 text-bordo"}`}>
+                          Güncel
+                        </span>
+                      )}
                     </Link>
                   );
                 })}
