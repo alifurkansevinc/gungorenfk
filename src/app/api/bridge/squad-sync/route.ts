@@ -122,7 +122,6 @@ export async function POST(request: Request) {
   const updated: { squad_id: string; name: string; optaport_player_id: string | null }[] = [];
   const skipped: { full_name: string; reason: string }[] = [];
   const syncedSquadIds = new Set<string>();
-  const syncedOptaportIds = new Set<string>();
 
   let sortFallback = 0;
   for (const p of rawPlayers) {
@@ -132,7 +131,6 @@ export async function POST(request: Request) {
       skipped.push({ full_name: "(boş)", reason: "full_name gerekli." });
       continue;
     }
-    if (opId) syncedOptaportIds.add(opId);
 
     let shirt: number | null = null;
     if (p.shirt_number != null) {
