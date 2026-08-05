@@ -1,3 +1,5 @@
+export { parseSeasonStartYear, seasonLabelsMatch } from "@/lib/football-season";
+
 /** Türkçe karakterleri normalize ederek karşılaştırma anahtarı üretir. */
 export function normalizePersonName(raw: string): string {
   return raw
@@ -9,33 +11,6 @@ export function normalizePersonName(raw: string): string {
     .replace(/[^a-z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-}
-
-/** "2025-2026" / "25-26" / "25-26 Sezon Kadrosu" → başlangıç yılı veya null. */
-export function parseSeasonStartYear(raw: string | null | undefined): number | null {
-  if (!raw) return null;
-  const t = raw.trim().replace(/\s+/g, " ");
-  const m4 = /(\d{4})\s*[-/]\s*(\d{4})/.exec(t);
-  if (m4) {
-    const y1 = parseInt(m4[1], 10);
-    const y2 = parseInt(m4[2], 10);
-    if (y2 === y1 + 1) return y1;
-  }
-  const m2 = /(\d{2})\s*[-/]\s*(\d{2})/.exec(t);
-  if (m2) {
-    const y1 = 2000 + parseInt(m2[1], 10);
-    const y2 = 2000 + parseInt(m2[2], 10);
-    if (y2 === y1 + 1) return y1;
-  }
-  return null;
-}
-
-export function seasonLabelsMatch(a: string | null | undefined, b: string | null | undefined): boolean {
-  const ya = parseSeasonStartYear(a);
-  const yb = parseSeasonStartYear(b);
-  if (ya !== null && yb !== null) return ya === yb;
-  if (!a || !b) return false;
-  return normalizePersonName(a) === normalizePersonName(b);
 }
 
 export type SquadMatchCandidate = {

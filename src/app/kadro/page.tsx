@@ -1,16 +1,19 @@
 import Link from "next/link";
 import Image from "next/image";
-import { getSquadWithStats } from "@/lib/data";
+import { getSquadWithStatsForSeasonsPage } from "@/lib/data";
 import { KadroSezonModulu } from "./KadroSezonModulu";
 import { DEMO_IMAGES } from "@/lib/demo-images";
+import { getFootballSeasonLabelForDate } from "@/lib/football-season";
+
+const currentSeason = getFootballSeasonLabelForDate(new Date());
 
 export const metadata = {
   title: "Kadro | Güngören FK",
-  description: "Güngören FK kadrosu: sezonlara göre 24-25 Şampiyon Kadromuz, 26-27 Sezon Kadrosu.",
+  description: `Güngören FK kadrosu — sezon sezon (${currentSeason} ve önceki sezonlar).`,
 };
 
 export default async function KadroPage() {
-  const squad = await getSquadWithStats();
+  const squad = await getSquadWithStatsForSeasonsPage();
 
   return (
     <div className="min-h-screen bg-siyah">
@@ -26,6 +29,9 @@ export default async function KadroPage() {
           <h1 className="font-display mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
             Kadro
           </h1>
+          <p className="mt-1.5 max-w-xl text-sm text-beyaz/60">
+            Sezon sezon A Takım kadrosu. Güncel sezon: {currentSeason.replace("-", "–")}.
+          </p>
         </div>
       </section>
 

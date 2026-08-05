@@ -91,8 +91,8 @@ export function SquadForm({ member }: { member?: SquadRow | null }) {
       </div>
       <div>
         <label className="block text-sm font-medium text-siyah">Sezon</label>
-        <input name="season" type="text" defaultValue={member?.season ?? ""} placeholder="Örn: 24-25 Şampiyon Kadromuz, 26-27 Sezon Kadrosu" className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
-        <p className="mt-1 text-xs text-siyah/60">Aynı sezon metnini giren oyuncular sitede aynı blokta gösterilir. En son sezon en üstte, varsayılan açık.</p>
+        <input name="season" type="text" defaultValue={member?.season ?? ""} placeholder="Örn: 2025-2026 (Optaport ile aynı)" className="mt-1 w-full rounded border border-siyah/20 px-3 py-2" />
+        <p className="mt-1 text-xs text-siyah/50">Kanonik format: YYYY-YYYY (1 Haziran – 31 Mayıs sezonu).</p>        <p className="mt-1 text-xs text-siyah/60">Aynı sezon metnini giren oyuncular sitede aynı blokta gösterilir. En son sezon en üstte, varsayılan açık.</p>
       </div>
       <div>
         <label className="block text-sm font-medium text-siyah">Sıra</label>

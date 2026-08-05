@@ -356,7 +356,7 @@ export async function getSquad() {
   const supabase = await createClient();
   const { data } = await supabase
     .from("squad")
-    .select("id, name, shirt_number, position, position_category, photo_url, bio, sort_order, is_captain, season")
+    .select("id, name, shirt_number, position, position_category, photo_url, bio, sort_order, is_captain, season, is_active")
     .eq("is_active", true)
     .order("season", { ascending: false, nullsFirst: false })
     .order("sort_order");
@@ -370,11 +370,45 @@ export async function getSquad() {
   })) as SquadMember[];
 }
 
+/**
+ * Kadro sayfası: tüm sezonlar (aktif + arşiv).
+ * Güncel sezonda yalnızca is_active; geçmiş sezonlarda o sezonun kayıtları.
+ */
+export async function getSquadForSeasonsPage(): Promise<SquadMember[]> {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("squad")
+    .select(
+      "id, name, shirt_number, position, position_category, photo_url, bio, sort_order, is_captain, season, is_active, optaport_player_id",
+    )
+    .order("season", { ascending: false, nullsFirst: false })
+    .order("sort_order");
+  if (!data || data.length === 0) return DEMO_SQUAD;
+  return data.map((r) => ({
+    ...r,
+    position_category: r.position_category ?? null,
+    is_captain: r.is_captain ?? false,
+    is_active: (r as { is_active?: boolean }).is_active ?? true,
+    season: (r as { season?: string | null }).season ?? null,
+    optaport_player_id: (r as { optaport_player_id?: string | null }).optaport_player_id ?? null,
+  })) as SquadMember[];
+}
+
 export type SquadMemberWithStats = SquadMember & { goals: number; assists: number; appearances: number };
 
 /** Kadro + oynanan maçlardan gol, asist, maça çıkma istatistikleri (sadece biten maçlar). */
 export async function getSquadWithStats(): Promise<SquadMemberWithStats[]> {
   const squad = await getSquad();
+  return attachSquadStats(squad);
+}
+
+/** Sezon sekmeli kadro sayfası (aktif + arşiv sezonlar). */
+export async function getSquadWithStatsForSeasonsPage(): Promise<SquadMemberWithStats[]> {
+  const squad = await getSquadForSeasonsPage();
+  return attachSquadStats(squad);
+}
+
+async function attachSquadStats(squad: SquadMember[]): Promise<SquadMemberWithStats[]> {
   const supabase = await createClient();
   const { data: finishedMatches } = await supabase.from("matches").select("id").eq("status", "finished");
   const matchIds = (finishedMatches ?? []).map((m) => m.id);
