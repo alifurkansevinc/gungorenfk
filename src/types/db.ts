@@ -81,6 +81,8 @@ export type SquadMember = {
   is_active: boolean;
   is_captain: boolean;
   season: string | null;
+  /** Optaport players.id — köprü sync eşleştirmesi */
+  optaport_player_id?: string | null;
 };
 
 export type BoardMember = {
