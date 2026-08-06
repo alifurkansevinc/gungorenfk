@@ -30,6 +30,36 @@ function PlayerLine({ num, name, captain }: { num: number | null; name: string; 
   );
 }
 
+function ScoreBoard({
+  leftName,
+  rightName,
+  leftScore,
+  rightScore,
+  live,
+}: {
+  leftName: string;
+  rightName: string;
+  leftScore: number;
+  rightScore: number;
+  live?: boolean;
+}) {
+  return (
+    <div className="mt-4 grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-x-3 sm:gap-x-5">
+      <span className="min-w-0 text-right text-lg font-bold leading-tight text-siyah sm:text-2xl" title={leftName}>
+        <span className="line-clamp-2">{leftName}</span>
+      </span>
+      <span
+        className={`shrink-0 px-1 text-center text-3xl font-bold tabular-nums sm:text-4xl ${live ? "text-bordo" : "text-bordo"}`}
+      >
+        {leftScore} - {rightScore}
+      </span>
+      <span className="min-w-0 text-left text-lg font-bold leading-tight text-siyah sm:text-2xl" title={rightName}>
+        <span className="line-clamp-2">{rightName}</span>
+      </span>
+    </div>
+  );
+}
+
 export default async function MacDetayPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const match = await getMatchById(id);
@@ -94,28 +124,27 @@ export default async function MacDetayPage({ params }: { params: Promise<{ id: s
 
       <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
         {/* Skor kutusu */}
-        <div className="rounded-2xl border border-siyah/10 bg-beyaz p-8 shadow-sm text-center">
+        <div className="rounded-2xl border border-siyah/10 bg-beyaz p-6 shadow-sm text-center sm:p-8">
           {match.status === "finished" && hasScore ? (
             <>
               <p className="text-sm font-semibold uppercase tracking-wider text-siyah/60">Maç sonucu</p>
-              <div className="mt-4 flex items-center justify-center gap-6 flex-wrap">
-                <span className="text-2xl font-bold text-siyah">Güngören FK</span>
-                <span className="text-4xl font-bold text-bordo">
-                  {match.goals_for} - {match.goals_against}
-                </span>
-                <span className="text-2xl font-bold text-siyah">{match.opponent_name}</span>
-              </div>
+              <ScoreBoard
+                leftName="Güngören FK"
+                rightName={match.opponent_name}
+                leftScore={match.goals_for!}
+                rightScore={match.goals_against!}
+              />
             </>
           ) : effectiveStatus === "live" && hasScore ? (
             <>
               <p className="text-sm font-semibold uppercase tracking-wider text-red-600">Canlı · anlık skor</p>
-              <div className="mt-4 flex items-center justify-center gap-6 flex-wrap">
-                <span className="text-2xl font-bold text-siyah">Güngören FK</span>
-                <span className="text-4xl font-bold text-bordo tabular-nums">
-                  {match.goals_for} - {match.goals_against}
-                </span>
-                <span className="text-2xl font-bold text-siyah">{match.opponent_name}</span>
-              </div>
+              <ScoreBoard
+                leftName="Güngören FK"
+                rightName={match.opponent_name}
+                leftScore={match.goals_for!}
+                rightScore={match.goals_against!}
+                live
+              />
               <p className="mt-3 text-xs text-siyah/55">Skor birkaç saniye içinde güncellenir.</p>
             </>
           ) : effectiveStatus === "live" ? (
