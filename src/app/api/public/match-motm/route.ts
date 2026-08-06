@@ -62,13 +62,7 @@ export async function GET(req: NextRequest) {
       MAX_MOTM_CANDIDATES,
     );
 
-    const tally = new Map<string, number>();
-    const { data: voteRows } = await svc.from("match_motm_votes").select("squad_member_id").eq("match_id", match.id);
-    for (const v of voteRows ?? []) {
-      const sid = (v as { squad_member_id: string }).squad_member_id;
-      tally.set(sid, (tally.get(sid) ?? 0) + 1);
-    }
-
+    // Oy sayıları / kim oy verdi kamuya açılmaz — yalnızca admin panelinde görünür.
     let squadRows: {
       id: string;
       name: string;
@@ -93,7 +87,6 @@ export async function GET(req: NextRequest) {
         shirtNumber: p.shirt_number,
         photoUrl: p.photo_url,
         position: p.position,
-        votes: tally.get(p.id) ?? 0,
       }));
 
     const auth = await createClient();

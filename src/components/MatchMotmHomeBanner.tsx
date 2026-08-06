@@ -145,7 +145,6 @@ export function MatchMotmHomeBanner() {
                       {c.position}
                     </p>
                   )}
-                  <p className="mt-0.5 text-center text-[11px] font-semibold text-bordo/90">{c.votes} oy</p>
                   <button
                     type="button"
                     disabled={!!votedSquadId || loadingVote !== null}

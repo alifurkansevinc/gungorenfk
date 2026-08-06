@@ -8,7 +8,7 @@ function formatTr(iso: string | null | undefined): string {
   return d.toLocaleString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }
 
-/** Bu maç için taraftar MOTM oylaması: adaylar + oy sayıları (admin). */
+/** Bu maç için taraftar MOTM oylaması: adaylar + oy sayıları + kim kime oy verdi (yalnızca admin). */
 export async function MatchMotmAdminResults({ matchId }: { matchId: string }) {
   const supabase = await getAdminSupabase();
   const [{ data: matchRow }, { data: cands }, { data: votes }] = await Promise.all([
@@ -18,7 +18,11 @@ export async function MatchMotmAdminResults({ matchId }: { matchId: string }) {
       .eq("id", matchId)
       .maybeSingle(),
     supabase.from("match_motm_candidates").select("squad_member_id").eq("match_id", matchId),
-    supabase.from("match_motm_votes").select("squad_member_id").eq("match_id", matchId),
+    supabase
+      .from("match_motm_votes")
+      .select("user_id, squad_member_id, created_at")
+      .eq("match_id", matchId)
+      .order("created_at", { ascending: false }),
   ]);
 
   const candidateIds = [...new Set((cands ?? []).map((r) => (r as { squad_member_id: string }).squad_member_id))];
@@ -31,18 +35,40 @@ export async function MatchMotmAdminResults({ matchId }: { matchId: string }) {
     );
   }
 
+  type VoteRow = { user_id: string; squad_member_id: string; created_at: string };
+  const voteList = (votes ?? []) as VoteRow[];
+
   const tally = new Map<string, number>();
-  for (const v of votes ?? []) {
-    const sid = (v as { squad_member_id: string }).squad_member_id;
-    tally.set(sid, (tally.get(sid) ?? 0) + 1);
+  for (const v of voteList) {
+    tally.set(v.squad_member_id, (tally.get(v.squad_member_id) ?? 0) + 1);
   }
 
   const idsForNames = [...new Set([...candidateIds, ...tally.keys()])];
-  const { data: squadRows } = await supabase
-    .from("squad")
-    .select("id, name, shirt_number")
-    .in("id", idsForNames);
-  const nameById = new Map((squadRows ?? []).map((r) => [r.id, r as { id: string; name: string; shirt_number: number | null }]));
+  const voterIds = [...new Set(voteList.map((v) => v.user_id))];
+
+  const [{ data: squadRows }, { data: profiles }] = await Promise.all([
+    supabase.from("squad").select("id, name, shirt_number").in("id", idsForNames),
+    voterIds.length > 0
+      ? supabase.from("fan_profiles").select("user_id, first_name, last_name, email").in("user_id", voterIds)
+      : Promise.resolve({ data: [] as { user_id: string; first_name: string; last_name: string; email: string | null }[] }),
+  ]);
+
+  const nameById = new Map(
+    (squadRows ?? []).map((r) => [r.id, r as { id: string; name: string; shirt_number: number | null }]),
+  );
+  const voterLabel = new Map(
+    (profiles ?? []).map((p) => {
+      const row = p as { user_id: string; first_name: string; last_name: string; email: string | null };
+      const name = `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim();
+      return [row.user_id, name || row.email || row.user_id.slice(0, 8)];
+    }),
+  );
+
+  const playerLabel = (id: string) => {
+    const p = nameById.get(id);
+    if (!p) return "Bilinmeyen";
+    return p.shirt_number != null ? `${p.shirt_number}. ${p.name}` : p.name;
+  };
 
   const rows = candidateIds
     .map((id) => ({
@@ -53,7 +79,7 @@ export async function MatchMotmAdminResults({ matchId }: { matchId: string }) {
     }))
     .sort((a, b) => b.votes - a.votes || a.name.localeCompare(b.name, "tr"));
 
-  const totalVotes = (votes ?? []).length;
+  const totalVotes = voteList.length;
   const m = matchRow as { motm_vote_starts_at?: string | null; motm_vote_ends_at?: string | null } | null;
 
   return (
@@ -70,6 +96,9 @@ export async function MatchMotmAdminResults({ matchId }: { matchId: string }) {
         ) : (
           <> · Henüz oy yok</>
         )}
+      </p>
+      <p className="mt-1 text-[11px] text-siyah/50">
+        Oy sayıları ve kim kime oy verdi yalnızca admin panelinde görünür; sitede taraftarlara gösterilmez.
       </p>
       <div className="mt-3 overflow-x-auto rounded-lg border border-siyah/10 bg-beyaz">
         <table className="w-full min-w-[320px] text-left text-sm">
@@ -92,6 +121,30 @@ export async function MatchMotmAdminResults({ matchId }: { matchId: string }) {
           </tbody>
         </table>
       </div>
+
+      {totalVotes > 0 && (
+        <div className="mt-4 overflow-x-auto rounded-lg border border-siyah/10 bg-beyaz">
+          <table className="w-full min-w-[420px] text-left text-sm">
+            <thead className="bg-siyah/5">
+              <tr>
+                <th className="px-3 py-2 font-medium text-siyah/70">Taraftar</th>
+                <th className="px-3 py-2 font-medium text-siyah/70">Oy verdiği oyuncu</th>
+                <th className="px-3 py-2 font-medium text-siyah/70 text-right">Tarih</th>
+              </tr>
+            </thead>
+            <tbody>
+              {voteList.map((v) => (
+                <tr key={`${v.user_id}-${v.squad_member_id}-${v.created_at}`} className="border-t border-siyah/5">
+                  <td className="px-3 py-2">{voterLabel.get(v.user_id) ?? v.user_id.slice(0, 8)}</td>
+                  <td className="px-3 py-2 font-medium">{playerLabel(v.squad_member_id)}</td>
+                  <td className="px-3 py-2 text-right text-xs text-siyah/60 tabular-nums">{formatTr(v.created_at)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       <p className="mt-2 text-[11px] text-siyah/55">
         Haftanın oyuncusu duyurusunu{" "}
         <Link href="/admin/maclar/haftanin-oyuncusu" className="font-medium text-bordo underline">

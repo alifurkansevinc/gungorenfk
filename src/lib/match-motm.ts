@@ -9,7 +9,6 @@ export type MatchMotmPublicCandidate = {
   shirtNumber: number | null;
   photoUrl: string | null;
   position: string | null;
-  votes: number;
 };
 
 export type MatchMotmWindow = {
