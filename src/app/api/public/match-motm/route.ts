@@ -15,27 +15,43 @@ type MotmMatchRow = {
   motm_vote_ends_at: string | null;
 };
 
+export type MotmPublicPhase = "open" | "upcoming" | "ended";
+
+const MATCH_SELECT =
+  "id, opponent_name, match_date, match_time, home_away, season, motm_vote_starts_at, motm_vote_ends_at";
+
+function resolvePhase(match: MotmMatchRow, nowMs: number): MotmPublicPhase {
+  if (isMotmVotingOpen({ motm_vote_starts_at: match.motm_vote_starts_at, motm_vote_ends_at: match.motm_vote_ends_at }, nowMs)) {
+    return "open";
+  }
+  const start = match.motm_vote_starts_at ? new Date(match.motm_vote_starts_at).getTime() : NaN;
+  if (!Number.isNaN(start) && nowMs < start) return "upcoming";
+  return "ended";
+}
+
 export async function GET(req: NextRequest) {
   try {
     await syncMatchStatusesFromSchedule();
     const matchIdParam = req.nextUrl.searchParams.get("matchId")?.trim();
     const svc = createServiceRoleClient();
-    const nowIso = new Date().toISOString();
+    const nowMs = Date.now();
+    const nowIso = new Date(nowMs).toISOString();
 
     let match: MotmMatchRow | null = null;
 
     if (matchIdParam) {
       const { data } = await svc
         .from("matches")
-        .select("id, opponent_name, match_date, match_time, home_away, season, motm_vote_starts_at, motm_vote_ends_at")
+        .select(MATCH_SELECT)
         .eq("id", matchIdParam)
         .or("is_hidden.eq.false,is_hidden.is.null")
         .maybeSingle();
       match = data as MotmMatchRow | null;
     } else {
-      const { data } = await svc
+      // 1) Açık oylama
+      const { data: open } = await svc
         .from("matches")
-        .select("id, opponent_name, match_date, match_time, home_away, season, motm_vote_starts_at, motm_vote_ends_at")
+        .select(MATCH_SELECT)
         .lte("motm_vote_starts_at", nowIso)
         .gte("motm_vote_ends_at", nowIso)
         .not("motm_vote_starts_at", "is", null)
@@ -44,17 +60,30 @@ export async function GET(req: NextRequest) {
         .order("motm_vote_starts_at", { ascending: true })
         .limit(1)
         .maybeSingle();
-      match = data as MotmMatchRow | null;
+      match = open as MotmMatchRow | null;
+
+      // 2) Yoksa yaklaşan oylama (bilgi için)
+      if (!match) {
+        const { data: upcoming } = await svc
+          .from("matches")
+          .select(MATCH_SELECT)
+          .gt("motm_vote_starts_at", nowIso)
+          .not("motm_vote_starts_at", "is", null)
+          .not("motm_vote_ends_at", "is", null)
+          .or("is_hidden.eq.false,is_hidden.is.null")
+          .order("motm_vote_starts_at", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+        match = upcoming as MotmMatchRow | null;
+      }
     }
 
-    if (!match) {
+    if (!match || !match.motm_vote_starts_at || !match.motm_vote_ends_at) {
       return NextResponse.json({ success: true, data: null });
     }
 
-    const votingOpen = isMotmVotingOpen({
-      motm_vote_starts_at: match.motm_vote_starts_at,
-      motm_vote_ends_at: match.motm_vote_ends_at,
-    });
+    const phase = resolvePhase(match, nowMs);
+    const votingOpen = phase === "open";
 
     const { data: candRows } = await svc.from("match_motm_candidates").select("squad_member_id").eq("match_id", match.id);
     const ids = [...new Set((candRows ?? []).map((r) => (r as { squad_member_id: string }).squad_member_id))].slice(
@@ -122,6 +151,7 @@ export async function GET(req: NextRequest) {
           voteStartsAt: match.motm_vote_starts_at,
           voteEndsAt: match.motm_vote_ends_at,
         },
+        phase,
         votingOpen,
         candidates,
         memberEligible,

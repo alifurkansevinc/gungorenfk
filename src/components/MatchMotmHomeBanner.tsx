@@ -6,6 +6,8 @@ import Link from "next/link";
 import type { MatchMotmPublicCandidate } from "@/lib/match-motm";
 import { MAX_MOTM_CANDIDATES } from "@/lib/match-motm";
 
+type MotmPhase = "open" | "upcoming" | "ended";
+
 type ApiData = {
   match: {
     id: string;
@@ -17,6 +19,7 @@ type ApiData = {
     voteStartsAt: string;
     voteEndsAt: string;
   };
+  phase?: MotmPhase;
   votingOpen: boolean;
   candidates: MatchMotmPublicCandidate[];
   memberEligible: boolean;
@@ -26,16 +29,59 @@ type ApiData = {
 const GUEST_ALERT =
   "Oylamaya katılmak için lütfen önce taraftar olarak üye olun (kayıt veya giriş).";
 
-function formatVoteWindow(startsIso: string, endsIso: string): string {
-  const opts: Intl.DateTimeFormatOptions = {
+const dateTimeOpts: Intl.DateTimeFormatOptions = {
+  day: "numeric",
+  month: "long",
+  weekday: "short",
+  hour: "2-digit",
+  minute: "2-digit",
+};
+
+function formatDateTime(iso: string): string {
+  return new Date(iso).toLocaleString("tr-TR", dateTimeOpts);
+}
+
+function formatMatchDate(dateStr: string, timeStr: string | null): string {
+  const d = new Date(`${dateStr}T${timeStr || "00:00"}:00`);
+  if (Number.isNaN(d.getTime())) return dateStr;
+  return d.toLocaleString("tr-TR", {
     day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  };
-  const a = new Date(startsIso).toLocaleString("tr-TR", opts);
-  const b = new Date(endsIso).toLocaleString("tr-TR", opts);
-  return `Başlangıç: ${a} · Son oy: ${b}`;
+    month: "long",
+    weekday: "short",
+    ...(timeStr ? { hour: "2-digit", minute: "2-digit" } : {}),
+  });
+}
+
+function matchLabel(match: ApiData["match"]): string {
+  return match.homeAway === "home"
+    ? `Güngören FK — ${match.opponentName}`
+    : `${match.opponentName} — Güngören FK`;
+}
+
+function IdleState() {
+  return (
+    <section className="border-b border-white/10 bg-zinc-950">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:py-7">
+        <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-zinc-500">Maçın oyuncusu</p>
+        <h2 className="mt-1.5 font-display text-lg font-bold text-white sm:text-xl">Taraftar oylaması</h2>
+        <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-300">
+          Maç bittikten sonra adaylar arasından <span className="font-semibold text-white">Maçın Oyuncusu</span>nu sen
+          seçersin. Oy kullanmak için taraftar üyeliği gerekir; her üyeye tek oy.
+        </p>
+        <p className="mt-3 text-sm font-medium text-bordo/90">Şu an açık veya planlanmış oylama yok.</p>
+        <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+          Bir sonraki oylama açıldığında adaylar burada görünür. Kazananlar ayrıca{" "}
+          <span className="text-zinc-400">Haftanın oyuncuları</span> duvarında duyurulur.
+        </p>
+        <p className="mt-4 text-[11px] text-zinc-500">
+          Üye değil misin?{" "}
+          <Link href="/taraftar/kayit" className="font-semibold text-bordo underline-offset-2 hover:underline">
+            Taraftar ol
+          </Link>
+        </p>
+      </div>
+    </section>
+  );
 }
 
 export function MatchMotmHomeBanner() {
@@ -68,24 +114,16 @@ export function MatchMotmHomeBanner() {
   }
 
   if (!data || !data.match) {
-    return (
-      <section className="border-b border-white/10 bg-zinc-950 py-4">
-        <div className="mx-auto max-w-5xl px-4 flex flex-col gap-1 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-zinc-500">Maçın oyuncusu</p>
-          <p className="text-xs text-zinc-400">Şu an açık taraftar oylaması yok.</p>
-        </div>
-      </section>
-    );
+    return <IdleState />;
   }
 
   const { match, votingOpen, candidates, memberEligible, votedSquadId } = data;
-  const label =
-    match.homeAway === "home"
-      ? `Güngören FK — ${match.opponentName}`
-      : `${match.opponentName} — Güngören FK`;
-  const voteLine = formatVoteWindow(match.voteStartsAt, match.voteEndsAt);
+  const phase: MotmPhase =
+    data.phase ?? (votingOpen ? "open" : new Date() < new Date(match.voteStartsAt) ? "upcoming" : "ended");
+  const label = matchLabel(match);
   const row = candidates.slice(0, MAX_MOTM_CANDIDATES);
-  const active = votingOpen && row.length > 0;
+  const active = phase === "open" && row.length > 0;
+  const canShowCandidates = (phase === "open" || phase === "upcoming") && row.length > 0;
 
   return (
     <section
@@ -101,22 +139,56 @@ export function MatchMotmHomeBanner() {
               ) : null}
             </p>
             <h2 className="mt-1.5 truncate font-display text-lg font-bold leading-tight text-white sm:text-xl">{label}</h2>
+            <p className="mt-1 text-xs text-zinc-400">{formatMatchDate(match.matchDate, match.matchTime)}</p>
           </div>
-          {active && (
+
+          {phase === "open" && (
+            <div className="shrink-0 rounded-lg border border-bordo/30 bg-bordo/10 px-3 py-2 text-left">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-bordo">Oylama açık</p>
+              <p className="mt-1 max-w-[min(100vw-2rem,20rem)] text-xs leading-snug text-zinc-200">
+                Son oy: {formatDateTime(match.voteEndsAt)}
+              </p>
+            </div>
+          )}
+          {phase === "upcoming" && (
             <div className="shrink-0 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-left">
-              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Oylama süresi</p>
-              <p className="mt-1 max-w-[min(100vw-2rem,20rem)] text-xs leading-snug text-zinc-200">{voteLine}</p>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-400">Yakında</p>
+              <p className="mt-1 max-w-[min(100vw-2rem,20rem)] text-xs leading-snug text-zinc-200">
+                Başlangıç: {formatDateTime(match.voteStartsAt)}
+              </p>
+            </div>
+          )}
+          {phase === "ended" && (
+            <div className="shrink-0 rounded-lg border border-white/10 bg-black/40 px-3 py-2 text-left">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-zinc-500">Oylama kapandı</p>
+              <p className="mt-1 max-w-[min(100vw-2rem,20rem)] text-xs leading-snug text-zinc-400">
+                {formatDateTime(match.voteEndsAt)} itibarıyla bitti
+              </p>
             </div>
           )}
         </div>
 
-        {!active && (
-          <p className="mt-4 text-xs leading-relaxed text-zinc-500">
-            Bu maç için taraftar oylaması henüz başlamadı veya sona erdi. Adaylar admin tarafından tanımlandığında burada görünür.
+        {phase === "upcoming" && (
+          <p className="mt-4 max-w-xl text-sm leading-relaxed text-zinc-300">
+            Bu maç için taraftar oylaması henüz başlamadı.{" "}
+            <span className="font-semibold text-white">{formatDateTime(match.voteStartsAt)}</span> itibarıyla adaylar
+            arasından Maçın Oyuncusu’nu seçebilirsin.
+            {row.length === 0 ? " Aday listesi oylama açılınca burada yer alır." : null}
           </p>
         )}
 
-        {active && (
+        {phase === "ended" && (
+          <p className="mt-4 max-w-xl text-sm leading-relaxed text-zinc-300">
+            Bu maçın taraftar oylaması sona erdi. Sonuçlar yalnızca kulüp tarafından değerlendirilir; kazanan{" "}
+            <span className="text-zinc-200">Haftanın oyuncuları</span> duvarında duyurulabilir.
+          </p>
+        )}
+
+        {phase === "open" && row.length === 0 && (
+          <p className="mt-4 text-sm text-zinc-400">Oylama açık ancak aday listesi henüz yayınlanmadı. Kısa süre sonra tekrar bak.</p>
+        )}
+
+        {canShowCandidates && (
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 sm:gap-3">
             {row.map((c) => {
               const votedHere = votedSquadId === c.squadMemberId;
@@ -124,12 +196,21 @@ export function MatchMotmHomeBanner() {
                 <div
                   key={c.squadMemberId}
                   className={`flex min-w-0 flex-col rounded-lg border p-2 sm:p-2 ${
-                    votedHere ? "border-bordo bg-bordo/15 ring-1 ring-bordo/50" : "border-white/10 bg-black/30"
+                    votedHere && active
+                      ? "border-bordo bg-bordo/15 ring-1 ring-bordo/50"
+                      : "border-white/10 bg-black/30"
                   }`}
                 >
                   <div className="relative mx-auto aspect-square w-full max-w-[7.5rem] overflow-hidden rounded-md bg-zinc-900 sm:max-w-none">
                     {c.photoUrl ? (
-                      <Image src={c.photoUrl} alt="" fill className="object-cover object-top" unoptimized sizes="(max-width:768px) 40vw, 120px" />
+                      <Image
+                        src={c.photoUrl}
+                        alt=""
+                        fill
+                        className="object-cover object-top"
+                        unoptimized
+                        sizes="(max-width:768px) 40vw, 120px"
+                      />
                     ) : (
                       <div className="flex h-full items-center justify-center text-lg font-bold text-zinc-600">
                         {c.shirtNumber ?? "?"}
@@ -145,37 +226,41 @@ export function MatchMotmHomeBanner() {
                       {c.position}
                     </p>
                   )}
-                  <button
-                    type="button"
-                    disabled={!!votedSquadId || loadingVote !== null}
-                    onClick={async () => {
-                      if (!memberEligible) {
-                        window.alert(GUEST_ALERT);
-                        return;
-                      }
-                      if (votedSquadId) return;
-                      if (!window.confirm(`${c.name} için oy kullanılsın mı? Oy bir kez verilir ve değiştirilemez.`)) return;
-                      setLoadingVote(c.squadMemberId);
-                      try {
-                        const r = await fetch("/api/public/match-motm/vote", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ matchId: match.id, squadMemberId: c.squadMemberId }),
-                        });
-                        const j = await r.json();
-                        if (!j.success) {
-                          window.alert(j.error || "Oy kullanılamadı.");
+                  {active ? (
+                    <button
+                      type="button"
+                      disabled={!!votedSquadId || loadingVote !== null}
+                      onClick={async () => {
+                        if (!memberEligible) {
+                          window.alert(GUEST_ALERT);
                           return;
                         }
-                        await load();
-                      } finally {
-                        setLoadingVote(null);
-                      }
-                    }}
-                    className="mt-2 min-h-[44px] w-full rounded-md bg-bordo px-2 py-2.5 text-xs font-bold text-white transition hover:bg-bordo-dark disabled:cursor-not-allowed disabled:opacity-45 sm:text-sm"
-                  >
-                    {votedSquadId ? (votedHere ? "Kayıtlı" : "Oy verildi") : loadingVote === c.squadMemberId ? "…" : "Oy ver"}
-                  </button>
+                        if (votedSquadId) return;
+                        if (!window.confirm(`${c.name} için oy kullanılsın mı? Oy bir kez verilir ve değiştirilemez.`)) return;
+                        setLoadingVote(c.squadMemberId);
+                        try {
+                          const r = await fetch("/api/public/match-motm/vote", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ matchId: match.id, squadMemberId: c.squadMemberId }),
+                          });
+                          const j = await r.json();
+                          if (!j.success) {
+                            window.alert(j.error || "Oy kullanılamadı.");
+                            return;
+                          }
+                          await load();
+                        } finally {
+                          setLoadingVote(null);
+                        }
+                      }}
+                      className="mt-2 min-h-[44px] w-full rounded-md bg-bordo px-2 py-2.5 text-xs font-bold text-white transition hover:bg-bordo-dark disabled:cursor-not-allowed disabled:opacity-45 sm:text-sm"
+                    >
+                      {votedSquadId ? (votedHere ? "Kayıtlı" : "Oy verildi") : loadingVote === c.squadMemberId ? "…" : "Oy ver"}
+                    </button>
+                  ) : (
+                    <p className="mt-2 text-center text-[10px] font-medium text-zinc-500">Aday</p>
+                  )}
                 </div>
               );
             })}
