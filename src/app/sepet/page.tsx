@@ -43,7 +43,7 @@ export default function SepetPage() {
                   <button
                     type="button"
                     onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                    className="h-8 w-8 rounded border border-siyah/20 text-siyah hover:bg-siyah/5"
+                    className="min-h-[44px] min-w-[44px] rounded border border-siyah/20 text-siyah hover:bg-siyah/5"
                     aria-label="Azalt"
                   >
                     −
@@ -52,7 +52,7 @@ export default function SepetPage() {
                   <button
                     type="button"
                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                    className="h-8 w-8 rounded border border-siyah/20 text-siyah hover:bg-siyah/5"
+                    className="min-h-[44px] min-w-[44px] rounded border border-siyah/20 text-siyah hover:bg-siyah/5"
                     aria-label="Artır"
                   >
                     +

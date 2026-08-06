@@ -261,7 +261,7 @@ export function KoltukSecimi({
                     return (
                       <span
                         key={`gap-${section}-${rowNum}-${pos}`}
-                        className="h-7 w-7 min-w-[1.75rem] max-w-[1.75rem] shrink-0 rounded bg-siyah/10"
+                        className="h-9 w-9 min-w-[2.25rem] max-w-[2.25rem] shrink-0 rounded bg-siyah/10 sm:h-7 sm:w-7 sm:min-w-[1.75rem] sm:max-w-[1.75rem]"
                         title="Koridor / Merdiven"
                         aria-hidden
                       />
@@ -280,7 +280,7 @@ export function KoltukSecimi({
                         disabled ? undefined : onSelect(seat.id, seat.seat_code)
                       }
                       title={taken ? "Dolu" : protocol ? "Protokol (satışa kapalı)" : (seat?.seat_code ?? seat?.id ?? "")}
-                      className={`h-7 w-7 min-w-[1.75rem] max-w-[1.75rem] shrink-0 rounded text-[10px] font-medium transition-all ${
+                      className={`h-9 w-9 min-w-[2.25rem] max-w-[2.25rem] shrink-0 rounded text-[11px] font-medium transition-all sm:h-7 sm:w-7 sm:min-w-[1.75rem] sm:max-w-[1.75rem] sm:text-[10px] ${
                         taken
                           ? "cursor-not-allowed bg-bordo text-beyaz/90"
                           : protocol

@@ -36,21 +36,21 @@ export function Header() {
   const navLinks = [...NAV_BASE, benimKosemLink];
 
   return (
-    <header className="sticky top-0 z-50 bg-siyah">
+    <header className="sticky top-0 z-50 bg-siyah pt-[env(safe-area-inset-top)]">
       <div className="border-b border-beyaz/10">
-        <div className="mx-auto flex h-9 max-w-7xl items-center justify-end gap-4 px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-10 max-w-7xl items-center justify-end gap-3 px-4 sm:h-9 sm:gap-4 sm:px-6 lg:px-8">
           {signedIn ? (
             <>
               <Link
                 href="/benim-kosem"
-                className="text-xs font-semibold uppercase tracking-wider text-bordo hover:text-beyaz transition-colors"
+                className="min-h-[44px] inline-flex items-center text-xs font-semibold uppercase tracking-wider text-bordo hover:text-beyaz transition-colors sm:min-h-0"
                 onClick={() => setMobileOpen(false)}
               >
                 Benim Köşem
               </Link>
               <Link
                 href="/sepet"
-                className="text-xs font-semibold uppercase tracking-wider text-beyaz/90 hover:text-beyaz transition-colors"
+                className="min-h-[44px] inline-flex items-center text-xs font-semibold uppercase tracking-wider text-beyaz/90 hover:text-beyaz transition-colors sm:min-h-0"
                 onClick={() => setMobileOpen(false)}
               >
                 Sepetim
@@ -60,21 +60,21 @@ export function Header() {
             <>
               <Link
                 href="/taraftar/giris"
-                className="text-xs font-semibold uppercase tracking-wider text-beyaz/90 hover:text-beyaz transition-colors"
+                className="min-h-[44px] inline-flex items-center text-xs font-semibold uppercase tracking-wider text-beyaz/90 hover:text-beyaz transition-colors sm:min-h-0"
                 onClick={() => setMobileOpen(false)}
               >
                 Giriş Yap
               </Link>
               <Link
                 href="/taraftar/kayit"
-                className="text-xs font-semibold uppercase tracking-wider text-bordo hover:text-beyaz transition-colors"
+                className="min-h-[44px] inline-flex items-center text-xs font-semibold uppercase tracking-wider text-bordo hover:text-beyaz transition-colors sm:min-h-0"
                 onClick={() => setMobileOpen(false)}
               >
                 Taraftar Ol
               </Link>
             </>
           )}
-          <span className="text-xs font-medium uppercase tracking-wider text-beyaz/50">
+          <span className="hidden text-xs font-medium uppercase tracking-wider text-beyaz/50 sm:inline">
             Resmi İnternet Sitesi
           </span>
         </div>

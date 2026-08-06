@@ -117,35 +117,35 @@ export function MatchMotmHomeBanner() {
         )}
 
         {active && (
-          <div className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 sm:gap-3">
             {row.map((c) => {
               const votedHere = votedSquadId === c.squadMemberId;
               return (
                 <div
                   key={c.squadMemberId}
-                  className={`flex min-w-0 flex-col rounded-lg border p-1.5 sm:p-2 ${
+                  className={`flex min-w-0 flex-col rounded-lg border p-2 sm:p-2 ${
                     votedHere ? "border-bordo bg-bordo/15 ring-1 ring-bordo/50" : "border-white/10 bg-black/30"
                   }`}
                 >
-                  <div className="relative aspect-square w-full overflow-hidden rounded-md bg-zinc-900">
+                  <div className="relative mx-auto aspect-square w-full max-w-[7.5rem] overflow-hidden rounded-md bg-zinc-900 sm:max-w-none">
                     {c.photoUrl ? (
-                      <Image src={c.photoUrl} alt="" fill className="object-cover object-top" unoptimized sizes="(max-width:768px) 18vw, 120px" />
+                      <Image src={c.photoUrl} alt="" fill className="object-cover object-top" unoptimized sizes="(max-width:768px) 40vw, 120px" />
                     ) : (
                       <div className="flex h-full items-center justify-center text-lg font-bold text-zinc-600">
                         {c.shirtNumber ?? "?"}
                       </div>
                     )}
                   </div>
-                  <p className="mt-1.5 truncate text-center text-[10px] font-bold leading-tight text-white sm:text-xs" title={c.name}>
+                  <p className="mt-2 truncate text-center text-xs font-bold leading-tight text-white sm:text-xs" title={c.name}>
                     {c.shirtNumber != null ? `${c.shirtNumber}. ` : ""}
                     {c.name}
                   </p>
                   {c.position && (
-                    <p className="truncate text-center text-[9px] text-zinc-500 sm:text-[10px]" title={c.position}>
+                    <p className="truncate text-center text-[10px] text-zinc-500" title={c.position}>
                       {c.position}
                     </p>
                   )}
-                  <p className="mt-0.5 text-center text-[10px] font-semibold text-bordo/90">{c.votes} oy</p>
+                  <p className="mt-0.5 text-center text-[11px] font-semibold text-bordo/90">{c.votes} oy</p>
                   <button
                     type="button"
                     disabled={!!votedSquadId || loadingVote !== null}
@@ -173,7 +173,7 @@ export function MatchMotmHomeBanner() {
                         setLoadingVote(null);
                       }
                     }}
-                    className="mt-1.5 w-full rounded-md bg-bordo py-1.5 text-[10px] font-bold text-white transition hover:bg-bordo-dark disabled:cursor-not-allowed disabled:opacity-45 sm:text-xs"
+                    className="mt-2 min-h-[44px] w-full rounded-md bg-bordo px-2 py-2.5 text-xs font-bold text-white transition hover:bg-bordo-dark disabled:cursor-not-allowed disabled:opacity-45 sm:text-sm"
                   >
                     {votedSquadId ? (votedHere ? "Kayıtlı" : "Oy verildi") : loadingVote === c.squadMemberId ? "…" : "Oy ver"}
                   </button>
