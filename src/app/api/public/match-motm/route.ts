@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
-import { isMotmVotingOpen, type MatchMotmPublicCandidate } from "@/lib/match-motm";
+import { isMotmVotingOpen, MAX_MOTM_CANDIDATES, type MatchMotmPublicCandidate } from "@/lib/match-motm";
 import { syncMatchStatusesFromSchedule } from "@/lib/match-schedule";
 
 type MotmMatchRow = {
