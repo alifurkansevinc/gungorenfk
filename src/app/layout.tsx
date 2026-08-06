@@ -49,13 +49,17 @@ export const metadata: Metadata = {
     follow: true,
   },
   icons: {
+    // v= query: tarayıcı / CDN eski Next varsayılan favicon cache'ini kırsın
     icon: [
-      { url: "/favicon.ico", sizes: "48x48" },
-      { url: "/icon-192.png", type: "image/png", sizes: "192x192" },
-      { url: "/icon-512.png", type: "image/png", sizes: "512x512" },
+      { url: "/icon-32.png?v=20260806", type: "image/png", sizes: "32x32" },
+      { url: "/icon-48.png?v=20260806", type: "image/png", sizes: "48x48" },
+      { url: "/icon-192.png?v=20260806", type: "image/png", sizes: "192x192" },
+      { url: "/favicon.ico?v=20260806", sizes: "any" },
     ],
-    apple: [{ url: "/apple-icon.png", type: "image/png", sizes: "180x180" }],
+    shortcut: "/favicon.ico?v=20260806",
+    apple: [{ url: "/apple-icon.png?v=20260806", type: "image/png", sizes: "180x180" }],
   },
+  manifest: "/site.webmanifest",
 };
 
 /** Mobil öncelikli: viewport ve tema rengi (status bar vb.) */
