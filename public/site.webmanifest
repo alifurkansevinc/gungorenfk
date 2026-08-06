@@ -1,23 +1,42 @@
 {
+  "id": "/",
   "name": "Güngören FK",
   "short_name": "Güngören FK",
-  "description": "Güngören Belediye Spor Kulübü resmi internet sitesi",
-  "start_url": "/",
+  "description": "Güngören Belediye Spor Kulübü resmi sitesi — maçlar, kadro, mağaza ve taraftar.",
+  "lang": "tr",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
   "display": "standalone",
+  "display_override": ["standalone", "browser"],
+  "orientation": "portrait-primary",
   "background_color": "#0A0A0A",
   "theme_color": "#0A0A0A",
+  "categories": ["sports", "news"],
   "icons": [
     {
-      "src": "/icon-192.png?v=20260806",
+      "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
-      "src": "/icon-512.png?v=20260806",
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

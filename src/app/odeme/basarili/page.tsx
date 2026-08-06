@@ -2,12 +2,12 @@ import { createClient } from "@/lib/supabase/server";
 import { getReceiptByOrderNumber } from "@/lib/orders";
 import OdemeBasariliContent from "./OdemeBasariliContent";
 
-type Props = { searchParams: Promise<{ orderNumber?: string; levelUp?: string; token?: string }> | { orderNumber?: string; levelUp?: string; token?: string } };
+type Props = {
+  searchParams: Promise<{ orderNumber?: string; levelUp?: string; token?: string }>;
+};
 
-export default async function OdemeBasariliPage(props: Props) {
-  const params = typeof props.searchParams === "object" && "then" in props.searchParams
-    ? await props.searchParams
-    : props.searchParams;
+export default async function OdemeBasariliPage({ searchParams }: Props) {
+  const params = await searchParams;
   const orderNumber = params?.orderNumber ?? "";
   const levelUp = params?.levelUp === "1";
   const token = params?.token ?? null;

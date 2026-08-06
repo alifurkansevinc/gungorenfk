@@ -5,6 +5,7 @@ import { Header } from "@/components/Header";
 import { Footer } from "@/components/Footer";
 import { CartProvider } from "@/context/CartContext";
 import { RecoveryRedirect } from "@/components/RecoveryRedirect";
+import { PwaInstallBanner } from "@/components/PwaInstallBanner";
 import { getSiteUrl } from "@/lib/site-url";
 
 const oswald = Oswald({
@@ -30,6 +31,15 @@ export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: defaultTitle,
   description: defaultDescription,
+  applicationName: "Güngören FK",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Güngören FK",
+  },
+  formatDetection: {
+    telephone: false,
+  },
   openGraph: {
     type: "website",
     locale: "tr_TR",
@@ -60,6 +70,9 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-icon.png?v=20260806", type: "image/png", sizes: "180x180" }],
   },
   manifest: "/site.webmanifest",
+  other: {
+    "mobile-web-app-capable": "yes",
+  },
 };
 
 /** Mobil öncelikli: viewport ve tema rengi (status bar vb.) */
@@ -84,6 +97,7 @@ export default function RootLayout({
           <Header />
           <main className="flex-1">{children}</main>
           <Footer />
+          <PwaInstallBanner />
         </CartProvider>
       </body>
     </html>
