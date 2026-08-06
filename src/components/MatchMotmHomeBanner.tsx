@@ -61,24 +61,17 @@ function matchLabel(match: ApiData["match"]): string {
 function IdleState() {
   return (
     <section className="border-b border-white/10 bg-zinc-950">
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:py-7">
+      <div className="mx-auto max-w-5xl px-4 py-6 text-center sm:py-7">
         <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-zinc-500">Maçın oyuncusu</p>
         <h2 className="mt-1.5 font-display text-lg font-bold text-white sm:text-xl">Taraftar oylaması</h2>
-        <p className="mt-2 max-w-xl text-sm leading-relaxed text-zinc-300">
-          Maç bittikten sonra adaylar arasından <span className="font-semibold text-white">Maçın Oyuncusu</span>nu sen
-          seçersin. Oy kullanmak için taraftar üyeliği gerekir; her üyeye tek oy.
+        <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-zinc-300">
+          Maç devam ederken adaylar arasından <span className="font-semibold text-white">Maçın Oyuncusu</span>nu sen
+          seçersin. Doğru bilirsen rütben ilerler ve çekilişe girmeye hak kazanırsın.
         </p>
-        <p className="mt-3 text-sm font-medium text-bordo/90">Şu an açık veya planlanmış oylama yok.</p>
-        <p className="mt-1 text-xs leading-relaxed text-zinc-500">
-          Bir sonraki oylama açıldığında adaylar burada görünür. Kazananlar ayrıca{" "}
-          <span className="text-zinc-400">Haftanın oyuncuları</span> duvarında duyurulur.
+        <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-zinc-400">
+          Şu an açık veya planlanmış oylama yok. Oylama açıldığında adaylar burada görünür.
         </p>
-        <p className="mt-4 text-[11px] text-zinc-500">
-          Üye değil misin?{" "}
-          <Link href="/taraftar/kayit" className="font-semibold text-bordo underline-offset-2 hover:underline">
-            Taraftar ol
-          </Link>
-        </p>
+        <p className="mt-3 text-sm font-medium text-bordo/90">Taraftarsan oy kullanabilirsin unutma!</p>
       </div>
     </section>
   );
