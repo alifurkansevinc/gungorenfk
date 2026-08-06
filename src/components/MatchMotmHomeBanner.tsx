@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { MatchMotmPublicCandidate } from "@/lib/match-motm";
+import { MAX_MOTM_CANDIDATES } from "@/lib/match-motm";
 
 type ApiData = {
   match: {
@@ -24,8 +25,6 @@ type ApiData = {
 
 const GUEST_ALERT =
   "Oylamaya katılmak için lütfen önce taraftar olarak üye olun (kayıt veya giriş).";
-
-const MAX_CANDIDATES = 5;
 
 function formatVoteWindow(startsIso: string, endsIso: string): string {
   const opts: Intl.DateTimeFormatOptions = {
@@ -85,7 +84,7 @@ export function MatchMotmHomeBanner() {
       ? `Güngören FK — ${match.opponentName}`
       : `${match.opponentName} — Güngören FK`;
   const voteLine = formatVoteWindow(match.voteStartsAt, match.voteEndsAt);
-  const row = candidates.slice(0, MAX_CANDIDATES);
+  const row = candidates.slice(0, MAX_MOTM_CANDIDATES);
   const active = votingOpen && row.length > 0;
 
   return (
@@ -118,7 +117,7 @@ export function MatchMotmHomeBanner() {
         )}
 
         {active && (
-          <div className="mt-5 grid grid-cols-5 gap-2 sm:gap-3">
+          <div className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
             {row.map((c) => {
               const votedHere = votedSquadId === c.squadMemberId;
               return (

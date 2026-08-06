@@ -6,6 +6,7 @@ import { getAdminSupabase } from "@/app/admin/actions";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { matchEndAtIso } from "@/lib/match-schedule";
 import { seasonLabelFromMatchDate, toCanonicalSeasonKey } from "@/lib/seasons";
+import { MAX_MOTM_CANDIDATES } from "@/lib/match-motm";
 
 async function supabase() {
   return getAdminSupabase();
@@ -93,8 +94,8 @@ export async function createMatch(formData: FormData) {
   const { starters, substitutes } = parseMatchLineup(formData);
   const lineupSet = new Set([...starters, ...substitutes]);
 
-  if (candidateIds.length > 5) {
-    return { error: "Taraftar oylamasında en fazla 5 aday seçilebilir." };
+  if (candidateIds.length > MAX_MOTM_CANDIDATES) {
+    return { error: `Taraftar oylamasında en fazla ${MAX_MOTM_CANDIDATES} aday seçilebilir (tüm ilk 11).` };
   }
   if ((motm_vote_starts_at && !motm_vote_ends_at) || (!motm_vote_starts_at && motm_vote_ends_at)) {
     return { error: "Taraftar oylaması için hem başlangıç hem bitiş saati girin veya ikisini de boş bırakın." };
@@ -175,8 +176,8 @@ export async function updateMatch(id: string, formData: FormData) {
   const { starters, substitutes } = parseMatchLineup(formData);
   const lineupSet = new Set([...starters, ...substitutes]);
 
-  if (candidateIds.length > 5) {
-    return { error: "Taraftar oylamasında en fazla 5 aday seçilebilir." };
+  if (candidateIds.length > MAX_MOTM_CANDIDATES) {
+    return { error: `Taraftar oylamasında en fazla ${MAX_MOTM_CANDIDATES} aday seçilebilir (tüm ilk 11).` };
   }
   if ((motm_vote_starts_at && !motm_vote_ends_at) || (!motm_vote_starts_at && motm_vote_ends_at)) {
     return { error: "Taraftar oylaması için hem başlangıç hem bitiş saati girin veya ikisini de boş bırakın." };

@@ -4,9 +4,9 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createMatch, updateMatch } from "@/app/actions/admin";
-import { isoToDatetimeLocalValue } from "@/lib/match-motm";
-import { AdminImageUpload } from "@/components/admin/AdminImageUpload";
+import { isoToDatetimeLocalValue, MAX_MOTM_CANDIDATES } from "@/lib/match-motm";
 import { toCanonicalSeasonKey } from "@/lib/football-season";
+import { AdminImageUpload } from "@/components/admin/AdminImageUpload";
 
 const LIG_OPTIONS = [
   "Süper Lig",
@@ -27,7 +27,6 @@ const SEZON_OPTIONS = [
   "2027-2028",
   "2028-2029",
 ] as const;
-const MAX_MOTM_CANDIDATES = 5;
 
 const STATUS_OPTIONS = [
   { value: "scheduled", label: "Planlandı" },
@@ -126,6 +125,11 @@ export function MacForm({
       if (prev.length >= MAX_MOTM_CANDIDATES) return prev;
       return [...prev, id];
     });
+  };
+
+  const selectAllStartersAsMotmCandidates = () => {
+    if (selectedStarters.length === 0) return;
+    setMotmCandidates(selectedStarters.slice(0, MAX_MOTM_CANDIDATES));
   };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -353,8 +357,9 @@ export function MacForm({
       <div className="rounded-xl border-2 border-amber-200 bg-amber-50/40 p-4">
         <h3 className="text-sm font-semibold text-siyah">Taraftar oylaması (Maçın oyuncusu)</h3>
         <p className="mt-0.5 text-xs text-siyah/70">
-          Web sitesinde oylama penceresi ve aday listesi. Oyuncular yalnızca bu maçın <strong>ilk 11 + yedek</strong> kadrosundan seçilir; en fazla{" "}
-          <strong>{MAX_MOTM_CANDIDATES} aday</strong>. Her üye tek oy kullanır (geri alınamaz).
+          Web sitesinde oylama penceresi ve aday listesi. Adaylar bu maçın <strong>ilk 11 + yedek</strong> kadrosundan
+          seçilir; en fazla <strong>{MAX_MOTM_CANDIDATES} aday</strong> (tüm ilk 11). Her üye tek oy kullanır (geri
+          alınamaz).
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
@@ -379,7 +384,17 @@ export function MacForm({
         <p className="mt-2 text-xs text-siyah/60">İkisini de boş bırakırsanız sitede bu maç için oylama açılmaz.</p>
 
         <div className="mt-4">
-          <p className="text-xs font-medium text-siyah">Oylamaya sunulacak adaylar (kadrodan işaretle)</p>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <p className="text-xs font-medium text-siyah">Oylamaya sunulacak adaylar</p>
+            <button
+              type="button"
+              onClick={selectAllStartersAsMotmCandidates}
+              disabled={selectedStarters.length === 0}
+              className="rounded-lg border border-amber-300 bg-beyaz px-2.5 py-1 text-[11px] font-semibold text-amber-950 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              İlk 11’in hepsini aday yap
+            </button>
+          </div>
           {lineupPool.length === 0 ? (
             <p className="mt-2 text-xs text-amber-800">Önce ilk 11 veya yedek seçin.</p>
           ) : (
@@ -387,12 +402,17 @@ export function MacForm({
               {lineupPool.map((id) => {
                 const p = squadById.get(id);
                 if (!p) return null;
+                const isStarter = selectedStarters.includes(id);
                 const atCap = motmCandidates.length >= MAX_MOTM_CANDIDATES && !motmCandidates.includes(id);
                 return (
                   <label
                     key={id}
                     className={`flex cursor-pointer items-center gap-2 rounded border px-3 py-1.5 text-sm ${
-                      atCap ? "cursor-not-allowed border-siyah/10 bg-siyah/5 text-siyah/40" : "border-amber-300/80 bg-beyaz shadow-sm"
+                      atCap
+                        ? "cursor-not-allowed border-siyah/10 bg-siyah/5 text-siyah/40"
+                        : isStarter
+                          ? "border-bordo/30 bg-bordo/[0.06] shadow-sm"
+                          : "border-amber-300/80 bg-beyaz shadow-sm"
                     }`}
                   >
                     <input
@@ -402,7 +422,13 @@ export function MacForm({
                       onChange={() => toggleMotmCandidate(id)}
                       className="rounded border-amber-400 text-amber-600 disabled:opacity-40"
                     />
-                    <span>{p.shirt_number != null ? `${p.shirt_number}. ` : ""}{p.name}</span>
+                    <span>
+                      {p.shirt_number != null ? `${p.shirt_number}. ` : ""}
+                      {p.name}
+                      {isStarter ? (
+                        <span className="ml-1 text-[10px] font-semibold uppercase tracking-wide text-bordo/70">11</span>
+                      ) : null}
+                    </span>
                   </label>
                 );
               })}
@@ -410,6 +436,9 @@ export function MacForm({
           )}
           <p className="mt-2 text-xs text-siyah/60">
             Seçili aday: {motmCandidates.length} / {MAX_MOTM_CANDIDATES}
+            {selectedStarters.length > 0
+              ? ` · İlk 11’den seçili: ${motmCandidates.filter((id) => selectedStarters.includes(id)).length}/${selectedStarters.length}`
+              : ""}
           </p>
         </div>
       </div>
