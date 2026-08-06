@@ -319,6 +319,56 @@ export async function getMatchLineupForMatch(matchId: string): Promise<{
   return { starters, substitutes };
 }
 
+/** Tek maç olayları (dakika sırası). */
+export async function getMatchEventsForMatch(matchId: string): Promise<
+  import("@/lib/match-events").MatchEventRow[]
+> {
+  if (matchId.startsWith("demo-")) return [];
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("match_events")
+      .select(
+        "id, match_id, minute, event_type, player_name, related_player_name, optaport_player_id, related_optaport_player_id, meta, sort_order",
+      )
+      .eq("match_id", matchId)
+      .order("minute", { ascending: true, nullsFirst: false })
+      .order("sort_order", { ascending: true });
+    if (error) return [];
+    return (data ?? []) as import("@/lib/match-events").MatchEventRow[];
+  } catch {
+    return [];
+  }
+}
+
+/** Birden fazla maç için olaylar (fikstür satırı). */
+export async function getMatchEventsByMatchIds(
+  matchIds: string[],
+): Promise<Record<string, import("@/lib/match-events").MatchEventRow[]>> {
+  const out: Record<string, import("@/lib/match-events").MatchEventRow[]> = {};
+  const ids = matchIds.filter((id) => id && !id.startsWith("demo-"));
+  if (ids.length === 0) return out;
+  try {
+    const supabase = await createClient();
+    const { data, error } = await supabase
+      .from("match_events")
+      .select(
+        "id, match_id, minute, event_type, player_name, related_player_name, optaport_player_id, related_optaport_player_id, meta, sort_order",
+      )
+      .in("match_id", ids)
+      .order("minute", { ascending: true, nullsFirst: false })
+      .order("sort_order", { ascending: true });
+    if (error) return out;
+    for (const row of (data ?? []) as import("@/lib/match-events").MatchEventRow[]) {
+      if (!out[row.match_id]) out[row.match_id] = [];
+      out[row.match_id]!.push(row);
+    }
+  } catch {
+    return out;
+  }
+  return out;
+}
+
 /** Tüm rozet kademeleri (açıklama ve hedefler dahil). */
 export async function getFanLevels(): Promise<FanLevel[]> {
   const supabase = await createClient();

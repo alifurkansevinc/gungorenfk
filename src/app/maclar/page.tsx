@@ -9,6 +9,7 @@ import {
   getLeagueStandingsSeasons,
   getNextMatch,
   getMackolikFixtureUrl,
+  getMatchEventsByMatchIds,
 } from "@/lib/data";
 import { getMackolikMatches } from "@/lib/mackolik";
 import { matchSeasonTabToStandingsSeason, resolveSeasonQueryParam, formatSeasonTabLabel, getFootballSeasonLabelForDate } from "@/lib/seasons";
@@ -16,6 +17,7 @@ import { DEMO_IMAGES } from "@/lib/demo-images";
 import { NextMatchCard } from "@/components/NextMatchCard";
 import { WeekPlayerShowcase } from "@/components/WeekPlayerShowcase";
 import { MatchPageRefresh } from "@/components/MatchPageRefresh";
+import { MatchEventsChips } from "@/components/MatchEventsChips";
 
 type ResultType = "W" | "D" | "L";
 
@@ -81,6 +83,7 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
     getMatches(80, { season: filter }),
     getLeagueStandings(standingsSeason ? { season: standingsSeason } : {}),
   ]);
+  const eventsByMatch = await getMatchEventsByMatchIds(matches.map((m) => m.id));
   const hasAnyRealDbMatch = peek.length > 0 && !peek[0].id.startsWith("demo-");
   const useMackolik = mackolikMatches.length > 0 && !hasAnyRealDbMatch;
   const leagueName = standings.rows.length > 0 ? standings.league_name : "İstanbul 1. Amatör Lig";
@@ -326,6 +329,9 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
                       </div>
                       <span className={`min-w-0 max-w-[140px] truncate text-right text-sm sm:max-w-[180px] ${teamAway === "Güngören FK" ? "font-extrabold text-siyah" : "font-medium text-siyah"}`}>{teamAway}</span>
                     </Link>
+                    {(isFinishedDb || isLiveDb) && (eventsByMatch[m.id]?.length ?? 0) > 0 && (
+                      <MatchEventsChips events={eventsByMatch[m.id]!} max={5} />
+                    )}
                     <span
                       className={`mt-2 inline-flex items-center justify-center gap-1 text-[11px] font-medium ${
                         isLiveDb ? "text-red-600" : isFinishedDb ? "text-emerald-600" : "text-bordo/90"

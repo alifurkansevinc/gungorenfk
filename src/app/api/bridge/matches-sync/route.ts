@@ -19,6 +19,17 @@ type IncomingGoal = {
   assist_optaport_player_id?: string | null;
 };
 
+type IncomingEvent = {
+  optaport_event_id?: string;
+  minute?: number | null;
+  type?: string;
+  player_name?: string | null;
+  optaport_player_id?: string | null;
+  related_player_name?: string | null;
+  related_optaport_player_id?: string | null;
+  meta?: Record<string, unknown> | null;
+};
+
 type IncomingMatch = {
   optaport_match_id?: string;
   opponent_name?: string;
@@ -32,6 +43,7 @@ type IncomingMatch = {
   status?: string;
   lineup?: IncomingLineup[];
   goals?: IncomingGoal[];
+  events?: IncomingEvent[];
 };
 
 type Body = {
@@ -58,8 +70,8 @@ function normalizeTime(raw: string | null | undefined): string | null {
 
 /**
  * POST /api/bridge/matches-sync
- * Optaport fikstür + kafile (ilk 11 / yedek) + gol sync.
- * optaport_match_id ile upsert; silmez. Lineup/goller maç bazında yenilenir.
+ * Optaport fikstür + kafile + gol + maç olayları sync.
+ * optaport_match_id ile upsert; silmez. Lineup/goller/olaylar maç bazında yenilenir.
  */
 export async function POST(request: Request) {
   const gate = assertBridgeApiKey(request);
@@ -142,8 +154,20 @@ export async function POST(request: Request) {
   let updated = 0;
   let lineupRows = 0;
   let goalRows = 0;
+  let eventRows = 0;
   let skipped = 0;
   const warnings: { optaport_match_id?: string; opponent?: string; reason: string }[] = [];
+
+  const EVENT_TYPES = new Set([
+    "goal",
+    "assist",
+    "yellow_card",
+    "red_card",
+    "sub_in",
+    "sub_out",
+    "injury",
+    "opponent_goal",
+  ]);
 
   for (const m of rawMatches) {
     const optaportMatchId = (m.optaport_match_id || "").trim();
@@ -301,6 +325,66 @@ export async function POST(request: Request) {
         goalRows += goalInsert.length;
       }
     }
+
+    // Events: tamamen yenile
+    await svc.from("match_events").delete().eq("match_id", matchId);
+    const eventsIn = Array.isArray(m.events) ? m.events : [];
+    const eventInsert: {
+      match_id: string;
+      optaport_event_id: string | null;
+      minute: number | null;
+      event_type: string;
+      player_name: string | null;
+      player_squad_id: string | null;
+      optaport_player_id: string | null;
+      related_player_name: string | null;
+      related_squad_id: string | null;
+      related_optaport_player_id: string | null;
+      meta: Record<string, unknown>;
+      sort_order: number;
+    }[] = [];
+
+    for (const [idx, ev] of eventsIn.entries()) {
+      let typ = (ev.type || "").trim().toLowerCase();
+      if (typ === "goal" && ev.meta?.opponent === true) typ = "opponent_goal";
+      if (!EVENT_TYPES.has(typ)) continue;
+
+      const pid = (ev.optaport_player_id || "").trim() || null;
+      const relatedPid = (ev.related_optaport_player_id || "").trim() || null;
+      const minuteRaw = ev.minute;
+      const minute =
+        minuteRaw == null || !Number.isFinite(Number(minuteRaw))
+          ? null
+          : Math.min(Math.max(Math.floor(Number(minuteRaw)), 0), 200);
+
+      eventInsert.push({
+        match_id: matchId,
+        optaport_event_id: (ev.optaport_event_id || "").trim() || null,
+        minute,
+        event_type: typ,
+        player_name: (ev.player_name || "").trim() || null,
+        player_squad_id: pid ? squadByOptaport.get(pid) ?? null : null,
+        optaport_player_id: pid,
+        related_player_name: (ev.related_player_name || "").trim() || null,
+        related_squad_id: relatedPid ? squadByOptaport.get(relatedPid) ?? null : null,
+        related_optaport_player_id: relatedPid,
+        meta: ev.meta && typeof ev.meta === "object" ? ev.meta : {},
+        sort_order: idx,
+      });
+    }
+
+    if (eventInsert.length > 0) {
+      const { error: evErr } = await svc.from("match_events").insert(eventInsert);
+      if (evErr) {
+        warnings.push({
+          optaport_match_id: optaportMatchId,
+          opponent,
+          reason: `Olaylar: ${evErr.message}`,
+        });
+      } else {
+        eventRows += eventInsert.length;
+      }
+    }
   }
 
   return NextResponse.json({
@@ -313,6 +397,7 @@ export async function POST(request: Request) {
       skipped,
       lineup_rows: lineupRows,
       goal_rows: goalRows,
+      event_rows: eventRows,
       squad_mapped: squadByOptaport.size,
     },
     warnings: warnings.slice(0, 40),

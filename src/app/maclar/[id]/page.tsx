@@ -1,10 +1,11 @@
 import Link from "next/link";
 import Image from "next/image";
 import { Radio } from "lucide-react";
-import { getMatchById, getMatchLineupForMatch } from "@/lib/data";
+import { getMatchById, getMatchLineupForMatch, getMatchEventsForMatch } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { MatchPageRefresh } from "@/components/MatchPageRefresh";
+import { MatchEventsTimeline } from "@/components/MatchEventsTimeline";
 import { getEffectiveMatchStatus } from "@/lib/match-schedule";
 
 export const dynamic = "force-dynamic";
@@ -41,7 +42,10 @@ export default async function MacDetayPage({ params }: { params: Promise<{ id: s
   });
 
   const showLineup = effectiveStatus === "live" || match.status === "finished";
-  const lineup = showLineup ? await getMatchLineupForMatch(id) : { starters: [], substitutes: [] };
+  const [lineup, events] = await Promise.all([
+    showLineup ? getMatchLineupForMatch(id) : Promise.resolve({ starters: [], substitutes: [] }),
+    getMatchEventsForMatch(id),
+  ]);
   const refreshEnabled =
     !id.startsWith("demo-") && (effectiveStatus === "live" || match.status === "scheduled");
 
@@ -139,6 +143,11 @@ export default async function MacDetayPage({ params }: { params: Promise<{ id: s
             <span className="font-medium text-siyah">Durum:</span> {statusLabel}
           </p>
         </div>
+
+        {/* Maç olayları */}
+        {(match.status === "finished" || effectiveStatus === "live") && events.length > 0 && (
+          <MatchEventsTimeline events={events} />
+        )}
 
         {/* Kadro — yalnız canlı veya bitmiş; sol ilk 11, sağ yedek; forma numarasına göre */}
         {showLineup && (lineup.starters.length > 0 || lineup.substitutes.length > 0) && (
