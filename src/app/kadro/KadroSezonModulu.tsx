@@ -107,7 +107,7 @@ export function KadroSezonModulu({
                 role="tab"
                 aria-selected={selected}
                 onClick={() => setActiveKey(g.key)}
-                className={`rounded-lg border px-3 py-1.5 text-sm font-medium transition-colors ${
+                className={`min-h-[44px] rounded-lg border px-3 py-2 text-sm font-medium transition-colors ${
                   selected
                     ? "border-bordo/60 bg-bordo/25 text-beyaz"
                     : "border-beyaz/10 bg-beyaz/[0.03] text-beyaz/55 hover:border-beyaz/20 hover:text-beyaz/85"

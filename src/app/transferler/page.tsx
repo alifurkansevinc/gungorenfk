@@ -49,7 +49,7 @@ export default async function TransferlerPage({ searchParams }: { searchParams: 
       <div className="border-b border-siyah/10 bg-siyah text-beyaz">
         <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 lg:px-8">
           <nav className="text-sm text-beyaz/70">
-            <Link href="/" className="hover:text-beyaz transition-colors">Anasayfa</Link>
+            <Link href="/" className="inline-flex min-h-[44px] items-center hover:text-beyaz transition-colors">Anasayfa</Link>
             <span className="mx-2">/</span>
             <span className="text-beyaz font-medium">Transferler</span>
           </nav>

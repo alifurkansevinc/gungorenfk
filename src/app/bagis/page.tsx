@@ -12,7 +12,7 @@ export default async function BagisPage() {
       <div className="border-b border-siyah/10 bg-beyaz">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <nav className="text-sm text-siyah/70">
-            <Link href="/" className="hover:text-bordo transition-colors">Anasayfa</Link>
+            <Link href="/" className="inline-flex min-h-[44px] items-center hover:text-bordo transition-colors">Anasayfa</Link>
             <span className="mx-2">/</span>
             <span className="text-siyah font-medium">Bağış Yap</span>
           </nav>

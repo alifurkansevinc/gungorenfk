@@ -44,7 +44,7 @@ export default async function BiletlerPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(139,21,56,0.4),transparent)]" />
         <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <nav className="text-sm text-beyaz/70">
-            <Link href="/" className="hover:text-beyaz transition-colors">Anasayfa</Link>
+            <Link href="/" className="inline-flex min-h-[44px] items-center hover:text-beyaz transition-colors">Anasayfa</Link>
             <span className="mx-2">/</span>
             <span className="text-beyaz font-medium">Biletler</span>
           </nav>

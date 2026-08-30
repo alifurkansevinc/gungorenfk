@@ -49,11 +49,11 @@ export default async function UrunDetayPage({ params }: { params: Promise<{ slug
       {/* Üst band */}
       <div className="border-b border-siyah/10 bg-beyaz">
         <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
-          <nav className="text-sm text-siyah/70">
-            <Link href="/" className="hover:text-bordo transition-colors">Anasayfa</Link>
-            <span className="mx-2">/</span>
-            <Link href="/magaza" className="hover:text-bordo transition-colors">Mağaza</Link>
-            <span className="mx-2">/</span>
+          <nav className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-siyah/70">
+            <Link href="/" className="inline-flex min-h-[44px] items-center hover:text-bordo transition-colors">Anasayfa</Link>
+            <span>/</span>
+            <Link href="/magaza" className="inline-flex min-h-[44px] items-center hover:text-bordo transition-colors">Mağaza</Link>
+            <span>/</span>
             <span className="text-siyah font-medium truncate max-w-[200px] inline-block" title={product.name}>{product.name}</span>
           </nav>
         </div>

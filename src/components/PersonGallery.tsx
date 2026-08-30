@@ -41,7 +41,7 @@ export function PersonGallery({
         <button
           type="button"
           onClick={() => scroll("left")}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-beyaz/20 bg-siyah text-beyaz/80 shadow-sm transition-colors hover:bg-beyaz/10 hover:text-beyaz"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-beyaz/20 bg-siyah text-beyaz/80 shadow-sm transition-colors hover:bg-beyaz/10 hover:text-beyaz"
           aria-label="Önceki"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -51,7 +51,7 @@ export function PersonGallery({
         <button
           type="button"
           onClick={() => scroll("right")}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-bordo/50 bg-bordo text-beyaz shadow-sm transition-all hover:shadow-[0_0_20px_rgba(139,21,56,0.4)] hover:border-bordo"
+          className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-bordo/50 bg-bordo text-beyaz shadow-sm transition-all hover:shadow-[0_0_20px_rgba(139,21,56,0.4)] hover:border-bordo"
           aria-label="Sonraki"
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

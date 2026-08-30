@@ -82,7 +82,7 @@ export function BagisForm() {
               key={p}
               type="button"
               onClick={() => { setAmount(p); setCustomAmount(""); }}
-              className={`rounded-xl border px-4 py-2 text-sm font-medium transition-colors ${
+              className={`min-h-[44px] rounded-xl border px-4 py-2.5 text-sm font-medium transition-colors ${
                 !customAmount && amount === p
                   ? "border-bordo bg-bordo text-beyaz"
                   : "border-siyah/20 text-siyah hover:border-bordo hover:bg-bordo/10"
@@ -101,7 +101,7 @@ export function BagisForm() {
             placeholder="Özel tutar"
             value={customAmount}
             onChange={(e) => setCustomAmount(e.target.value)}
-            className="w-full rounded-xl border border-siyah/20 px-4 py-2.5 focus:border-bordo focus:outline-none focus:ring-1 focus:ring-bordo"
+            className="mt-3 min-h-[44px] w-full rounded-xl border border-siyah/20 px-4 py-2.5 focus:border-bordo focus:outline-none focus:ring-1 focus:ring-bordo"
           />
         </div>
       </div>

@@ -96,7 +96,7 @@ export function PwaInstallBanner() {
               <button
                 type="button"
                 onClick={() => void install()}
-                className="inline-flex min-h-[40px] items-center rounded-full bg-bordo px-4 text-xs font-bold text-beyaz hover:bg-bordo-dark"
+                className="inline-flex min-h-[44px] items-center rounded-full bg-bordo px-4 text-sm font-bold text-beyaz hover:bg-bordo-dark"
               >
                 Yükle
               </button>
@@ -104,7 +104,7 @@ export function PwaInstallBanner() {
             <button
               type="button"
               onClick={dismiss}
-              className="inline-flex min-h-[40px] items-center rounded-full border border-beyaz/20 px-4 text-xs font-semibold text-beyaz/80 hover:bg-beyaz/10"
+              className="inline-flex min-h-[44px] items-center rounded-full border border-beyaz/20 px-4 text-sm font-semibold text-beyaz/80 hover:bg-beyaz/10"
             >
               Şimdi değil
             </button>
@@ -113,7 +113,7 @@ export function PwaInstallBanner() {
         <button
           type="button"
           onClick={dismiss}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-beyaz/50 hover:bg-beyaz/10 hover:text-beyaz"
+          className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-beyaz/50 hover:bg-beyaz/10 hover:text-beyaz"
           aria-label="Kapat"
         >
           <X className="h-4 w-4" />
