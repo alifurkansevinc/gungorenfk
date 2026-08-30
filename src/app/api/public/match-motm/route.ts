@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { isMotmVotingOpen, type MatchMotmPublicCandidate } from "@/lib/match-motm";
 import { syncMatchStatusesFromSchedule } from "@/lib/match-schedule";
+import { filterSquadForMatchSeason } from "@/lib/football-season";
 
 type MotmMatchRow = {
   id: string;
@@ -89,19 +90,22 @@ export async function GET(req: NextRequest) {
     const ids = [...new Set((candRows ?? []).map((r) => (r as { squad_member_id: string }).squad_member_id))];
 
     // Oy sayıları / kim oy verdi kamuya açılmaz — yalnızca admin panelinde görünür.
+    // Eski sezon adayları (yanlış sync) listelenmez.
     let squadRows: {
       id: string;
       name: string;
       shirt_number: number | null;
       photo_url: string | null;
       position: string | null;
+      season: string | null;
+      is_active: boolean | null;
     }[] = [];
     if (ids.length > 0) {
       const { data: s } = await svc
         .from("squad")
-        .select("id, name, shirt_number, photo_url, position")
+        .select("id, name, shirt_number, photo_url, position, season, is_active")
         .in("id", ids);
-      squadRows = (s ?? []) as typeof squadRows;
+      squadRows = filterSquadForMatchSeason((s ?? []) as typeof squadRows, match.season);
     }
 
     const order = new Map(ids.map((id, i) => [id, i]));

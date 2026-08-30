@@ -17,7 +17,7 @@ export default async function AdminMaclarDuzenlePage({ params }: { params: Promi
     supabase.from("matches").select("*").eq("id", id).single(),
     supabase.from("match_goals").select("minute, scorer_squad_id, assist_squad_id").eq("match_id", id).order("minute"),
     supabase.from("match_lineups").select("squad_member_id, role").eq("match_id", id).order("sort_order"),
-    supabase.from("squad").select("id, name, shirt_number").eq("is_active", true).order("sort_order"),
+    supabase.from("squad").select("id, name, shirt_number, season, is_active").order("sort_order"),
     supabase.from("match_motm_candidates").select("squad_member_id").eq("match_id", id),
   ]);
   if (!match) notFound();

@@ -8,6 +8,7 @@ import {
   isWithinLivePlayWindow,
 } from "@/lib/match-schedule";
 import { seasonFilterVariants, sortSeasonLabelsDesc } from "@/lib/seasons";
+import { filterSquadForMatchSeason } from "@/lib/football-season";
 import type { MemleketCount, Match, SquadMember, BoardMember, TechnicalStaffMember, LeagueStandingRow, ClubTrophy } from "@/types/db";
 import type { FanLevel } from "@/types/db";
 
@@ -278,27 +279,39 @@ export async function getMatchLineupForMatch(matchId: string): Promise<{
 }> {
   if (matchId.startsWith("demo-")) return { starters: [], substitutes: [] };
   const supabase = await createClient();
-  const { data: rows } = await supabase
-    .from("match_lineups")
-    .select("squad_member_id, role, sort_order")
-    .eq("match_id", matchId)
-    .order("sort_order");
+  const [{ data: matchRow }, { data: rows }] = await Promise.all([
+    supabase.from("matches").select("season").eq("id", matchId).maybeSingle(),
+    supabase
+      .from("match_lineups")
+      .select("squad_member_id, role, sort_order")
+      .eq("match_id", matchId)
+      .order("sort_order"),
+  ]);
   if (!rows?.length) return { starters: [], substitutes: [] };
   const ids = [...new Set(rows.map((r: { squad_member_id: string }) => r.squad_member_id))];
   const { data: members } = await supabase
     .from("squad")
-    .select("id, name, shirt_number, position, position_category, photo_url, bio, sort_order, is_captain, season")
+    .select("id, name, shirt_number, position, position_category, photo_url, bio, sort_order, is_captain, season, is_active")
     .in("id", ids);
+  const matchSeason = (matchRow as { season?: string | null } | null)?.season ?? null;
+  const allowedIds = new Set(
+    filterSquadForMatchSeason(
+      (members ?? []) as { id: string; season?: string | null; is_active?: boolean | null }[],
+      matchSeason,
+    ).map((m) => m.id),
+  );
   const byId = new Map(
-    (members ?? []).map((m) => {
-      const row = {
-        ...m,
-        position_category: m.position_category ?? null,
-        is_captain: m.is_captain ?? false,
-        is_active: true,
-      } as SquadMember & { id: string };
-      return [m.id, row] as const;
-    }),
+    (members ?? [])
+      .filter((m) => allowedIds.has(m.id))
+      .map((m) => {
+        const row = {
+          ...m,
+          position_category: m.position_category ?? null,
+          is_captain: m.is_captain ?? false,
+          is_active: true,
+        } as SquadMember & { id: string };
+        return [m.id, row] as const;
+      }),
   );
   const starters: (SquadMember & { id: string })[] = [];
   const substitutes: (SquadMember & { id: string })[] = [];

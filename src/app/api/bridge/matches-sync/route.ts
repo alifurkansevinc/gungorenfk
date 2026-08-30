@@ -122,16 +122,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: false, error: squadErr.message }, { status: 500 });
   }
 
-  /** Aynı optaport oyuncusu birden fazla sezonda olabilir — bu sezonu tercih et */
+  /** Aynı optaport oyuncusu birden fazla sezonda olabilir — yalnızca bu sezonun kadrosu */
   const squadByOptaport = new Map<string, string>();
   for (const r of squadRows ?? []) {
     const row = r as { id: string; season: string | null; optaport_player_id: string | null };
     if (!row.optaport_player_id) continue;
-    if (seasonLabelsMatch(row.season, season)) {
-      squadByOptaport.set(row.optaport_player_id, row.id);
-    } else if (!squadByOptaport.has(row.optaport_player_id)) {
-      squadByOptaport.set(row.optaport_player_id, row.id);
-    }
+    if (!seasonLabelsMatch(row.season, season)) continue;
+    squadByOptaport.set(row.optaport_player_id, row.id);
   }
 
   const optaportIds = rawMatches

@@ -6,6 +6,7 @@ import { getAdminSupabase } from "@/app/admin/actions";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { matchEndAtIso } from "@/lib/match-schedule";
 import { seasonLabelFromMatchDate, toCanonicalSeasonKey } from "@/lib/seasons";
+import { filterSquadForMatchSeason } from "@/lib/football-season";
 
 async function supabase() {
   return getAdminSupabase();
@@ -63,7 +64,9 @@ async function replaceMatchMotmCandidates(
   allowedSquadIds: Set<string>
 ): Promise<{ ok: true } | { error: string }> {
   for (const c of candidateIds) {
-    if (!allowedSquadIds.has(c)) return { error: "Oylama adayları yalnızca kulüp kadrosundan seçilebilir." };
+    if (!allowedSquadIds.has(c)) {
+      return { error: "Oylama adayları yalnızca bu maçın sezon kadrosundan seçilebilir." };
+    }
   }
   const { data: votes } = await s.from("match_motm_votes").select("squad_member_id").eq("match_id", matchId);
   for (const v of votes ?? []) {
@@ -148,8 +151,13 @@ export async function createMatch(formData: FormData) {
     await s.from("match_lineups").insert(lineupRows);
   }
 
-  const { data: squadIdRows } = await s.from("squad").select("id");
-  const squadSet = new Set((squadIdRows ?? []).map((r) => (r as { id: string }).id));
+  const { data: squadIdRows } = await s.from("squad").select("id, season, is_active");
+  const squadSet = new Set(
+    filterSquadForMatchSeason(
+      (squadIdRows ?? []) as { id: string; season: string | null; is_active: boolean | null }[],
+      seasonValue,
+    ).map((r) => r.id),
+  );
   const candRes = await replaceMatchMotmCandidates(s, match.id, candidateIds, squadSet);
   if ("error" in candRes) {
     await s.from("match_goals").delete().eq("match_id", match.id);
@@ -231,8 +239,13 @@ export async function updateMatch(id: string, formData: FormData) {
     await s.from("match_lineups").insert(lineupRows);
   }
 
-  const { data: squadIdRows } = await s.from("squad").select("id");
-  const squadSet = new Set((squadIdRows ?? []).map((r) => (r as { id: string }).id));
+  const { data: squadIdRows } = await s.from("squad").select("id, season, is_active");
+  const squadSet = new Set(
+    filterSquadForMatchSeason(
+      (squadIdRows ?? []) as { id: string; season: string | null; is_active: boolean | null }[],
+      updSeason,
+    ).map((r) => r.id),
+  );
   const candRes = await replaceMatchMotmCandidates(s, id, candidateIds, squadSet);
   if ("error" in candRes) return { error: candRes.error };
 

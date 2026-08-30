@@ -61,6 +61,24 @@ export function seasonLabelsMatch(a: string | null | undefined, b: string | null
   return a.trim().toLocaleLowerCase("tr-TR") === b.trim().toLocaleLowerCase("tr-TR");
 }
 
+/**
+ * Maç formu / kafile / oylama: yalnızca ilgili sezonun kadrosu.
+ * Güncel sezonda pasif oyuncular hariç; geçmiş sezonda o sezonun tüm kayıtları.
+ */
+export function filterSquadForMatchSeason<T extends { season?: string | null; is_active?: boolean | null }>(
+  squad: T[],
+  matchSeason: string | null | undefined,
+  now: Date = new Date(),
+): T[] {
+  if (!matchSeason?.trim()) return [];
+  const matched = squad.filter((p) => seasonLabelsMatch(p.season, matchSeason));
+  const currentKey = getFootballSeasonLabelForDate(now);
+  if (seasonLabelsMatch(matchSeason, currentKey)) {
+    return matched.filter((p) => p.is_active !== false);
+  }
+  return matched;
+}
+
 export type SeasonGroup<T extends { season?: string | null; sort_order?: number }> = {
   key: string;
   label: string;

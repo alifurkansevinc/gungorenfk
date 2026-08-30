@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createMatch, updateMatch } from "@/app/actions/admin";
 import { isoToDatetimeLocalValue } from "@/lib/match-motm";
-import { toCanonicalSeasonKey } from "@/lib/football-season";
+import { filterSquadForMatchSeason, toCanonicalSeasonKey } from "@/lib/football-season";
 import { AdminImageUpload } from "@/components/admin/AdminImageUpload";
 
 const LIG_OPTIONS = [
@@ -53,7 +53,13 @@ type MatchRow = {
   motm_vote_ends_at?: string | null;
 };
 
-type SquadOption = { id: string; name: string; shirt_number: number | null };
+type SquadOption = {
+  id: string;
+  name: string;
+  shirt_number: number | null;
+  season?: string | null;
+  is_active?: boolean | null;
+};
 
 type GoalRow = { minute: number; scorer_squad_id: string; assist_squad_id: string };
 
@@ -89,21 +95,41 @@ export function MacForm({
   const [voteStart, setVoteStart] = useState(() => isoToDatetimeLocalValue(match?.motm_vote_starts_at ?? null));
   const [voteEnd, setVoteEnd] = useState(() => isoToDatetimeLocalValue(match?.motm_vote_ends_at ?? null));
   const [motmCandidates, setMotmCandidates] = useState<string[]>(motmCandidateIds);
+  const [selectedSeason, setSelectedSeason] = useState(() => {
+    if (!match?.season) return "";
+    const c = toCanonicalSeasonKey(match.season);
+    return (SEZON_OPTIONS as readonly string[]).includes(c) ? c : match.season;
+  });
 
-  const squadIds = useMemo(() => squad.map((p) => p.id), [squad]);
+  const seasonSquad = useMemo(
+    () => filterSquadForMatchSeason(squad, selectedSeason || null),
+    [squad, selectedSeason],
+  );
+  const squadIds = useMemo(() => seasonSquad.map((p) => p.id), [seasonSquad]);
   const sortedSquad = useMemo(
     () =>
-      [...squad].sort((a, b) => {
+      [...seasonSquad].sort((a, b) => {
         const an = a.shirt_number ?? 9999;
         const bn = b.shirt_number ?? 9999;
         if (an !== bn) return an - bn;
         return a.name.localeCompare(b.name, "tr");
       }),
-    [squad]
+    [seasonSquad],
   );
 
   useEffect(() => {
-    setMotmCandidates((prev) => prev.filter((id) => squadIds.includes(id)));
+    const allowed = new Set(squadIds);
+    setMotmCandidates((prev) => prev.filter((id) => allowed.has(id)));
+    setSelectedStarters((prev) => prev.filter((id) => allowed.has(id)));
+    setSelectedSubs((prev) => prev.filter((id) => allowed.has(id)));
+    setMotm((prev) => (prev && allowed.has(prev) ? prev : ""));
+    setGoalRows((prev) =>
+      prev.map((row) => ({
+        ...row,
+        scorer_squad_id: row.scorer_squad_id && allowed.has(row.scorer_squad_id) ? row.scorer_squad_id : "",
+        assist_squad_id: row.assist_squad_id && allowed.has(row.assist_squad_id) ? row.assist_squad_id : "",
+      })),
+    );
   }, [squadIds]);
 
   const addGoalRow = () => setGoalRows((r) => [...r, { minute: 0, scorer_squad_id: "", assist_squad_id: "" }]);
@@ -229,14 +255,8 @@ export function MacForm({
             <label className="block text-sm font-medium text-siyah">Sezon *</label>
             <select
               name="season"
-              defaultValue={
-                match?.season
-                  ? (() => {
-                      const c = toCanonicalSeasonKey(match.season);
-                      return (SEZON_OPTIONS as readonly string[]).includes(c) ? c : match.season;
-                    })()
-                  : ""
-              }
+              value={selectedSeason}
+              onChange={(e) => setSelectedSeason(e.target.value)}
               required
               className="mt-1 w-full rounded border border-siyah/20 px-3 py-2"
             >
@@ -276,7 +296,10 @@ export function MacForm({
       {/* Attığımız goller: dakika, atan, asist */}
       <div className="rounded-xl border border-siyah/10 bg-siyah/[0.02] p-4">
         <h3 className="text-sm font-semibold text-siyah">Attığımız goller (dakika, atan, asist)</h3>
-        <p className="mt-0.5 text-xs text-siyah/60">Kadrodan seçin. Her gol için bir satır.</p>
+        <p className="mt-0.5 text-xs text-siyah/60">
+          Seçili sezona ait kadrodan seçin. Her gol için bir satır.
+          {!selectedSeason ? " Önce sezon seçin." : ""}
+        </p>
         <div className="mt-3 space-y-2">
           {goalRows.map((row, i) => (
             <div key={i} className="flex flex-wrap items-center gap-2">
@@ -295,7 +318,7 @@ export function MacForm({
                 className={selectClass + " min-w-[140px]"}
               >
                 <option value="">— Atan —</option>
-                {squad.map((p) => (
+                {sortedSquad.map((p) => (
                   <option key={p.id} value={p.id}>{p.shirt_number ? `${p.shirt_number}. ` : ""}{p.name}</option>
                 ))}
               </select>
@@ -305,7 +328,7 @@ export function MacForm({
                 className={selectClass + " min-w-[140px]"}
               >
                 <option value="">— Asist (opsiyonel) —</option>
-                {squad.map((p) => (
+                {sortedSquad.map((p) => (
                   <option key={p.id} value={p.id}>{p.shirt_number ? `${p.shirt_number}. ` : ""}{p.name}</option>
                 ))}
               </select>
@@ -323,9 +346,11 @@ export function MacForm({
       {/* İlk 11 */}
       <div className="rounded-xl border border-siyah/10 bg-siyah/[0.02] p-4">
         <h3 className="text-sm font-semibold text-siyah">İlk 11</h3>
-        <p className="mt-0.5 text-xs text-siyah/60">En fazla 11 oyuncu. Kadrodan işaretleyin.</p>
+        <p className="mt-0.5 text-xs text-siyah/60">
+          En fazla 11 oyuncu. Yalnızca seçili sezon kadrosu listelenir.
+        </p>
         <div className="mt-3 flex flex-wrap gap-3">
-          {squad.map((p) => (
+          {sortedSquad.map((p) => (
             <label key={p.id} className="flex cursor-pointer items-center gap-2 rounded border border-siyah/15 px-3 py-1.5 hover:bg-siyah/5">
               <input
                 type="checkbox"
@@ -343,9 +368,9 @@ export function MacForm({
       {/* Yedekler */}
       <div className="rounded-xl border border-siyah/10 bg-siyah/[0.02] p-4">
         <h3 className="text-sm font-semibold text-siyah">Yedek oyuncular</h3>
-        <p className="mt-0.5 text-xs text-siyah/60">Kadrodan işaretleyin.</p>
+        <p className="mt-0.5 text-xs text-siyah/60">Yalnızca seçili sezon kadrosu listelenir.</p>
         <div className="mt-3 flex flex-wrap gap-3">
-          {squad.map((p) => (
+          {sortedSquad.map((p) => (
             <label key={p.id} className="flex cursor-pointer items-center gap-2 rounded border border-siyah/15 px-3 py-1.5 hover:bg-siyah/5">
               <input
                 type="checkbox"
@@ -363,8 +388,9 @@ export function MacForm({
       <div className="rounded-xl border-2 border-amber-200 bg-amber-50/40 p-4">
         <h3 className="text-sm font-semibold text-siyah">Taraftar oylaması (Maçın oyuncusu)</h3>
         <p className="mt-0.5 text-xs text-siyah/70">
-          Web sitesinde oylama penceresi ve aday listesi. Adaylar <strong>tüm kadrodan</strong> seçilebilir; isterseniz
-          yalnızca ilk 11’i de kısayoldan ekleyebilirsiniz. Her üye tek oy kullanır (geri alınamaz).
+          Web sitesinde oylama penceresi ve aday listesi. Adaylar <strong>seçili sezonun tüm kadrosundan</strong>{" "}
+          seçilebilir; isterseniz yalnızca ilk 11’i de kısayoldan ekleyebilirsiniz. Her üye tek oy kullanır (geri
+          alınamaz).
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
@@ -411,7 +437,11 @@ export function MacForm({
             </div>
           </div>
           {sortedSquad.length === 0 ? (
-            <p className="mt-2 text-xs text-amber-800">Kadroda oyuncu yok. Önce kadroya oyuncu ekleyin.</p>
+            <p className="mt-2 text-xs text-amber-800">
+              {selectedSeason
+                ? "Bu sezon için kadroda oyuncu yok (veya hepsi pasif). Önce ilgili sezon kadrosunu senkronlayın."
+                : "Aday seçmek için önce sezon seçin."}
+            </p>
           ) : (
             <div className="mt-2 flex flex-wrap gap-2">
               {sortedSquad.map((p) => {
@@ -467,7 +497,7 @@ export function MacForm({
           className={selectClass + " mt-2"}
         >
           <option value="">— Seçin —</option>
-          {squad.map((p) => (
+          {sortedSquad.map((p) => (
             <option key={p.id} value={p.id}>{p.shirt_number ? `${p.shirt_number}. ` : ""}{p.name}</option>
           ))}
         </select>

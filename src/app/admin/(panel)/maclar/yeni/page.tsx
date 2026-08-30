@@ -4,7 +4,10 @@ import { MacForm } from "../MacForm";
 
 export default async function AdminMaclarYeniPage() {
   const supabase = await getAdminSupabase();
-  const { data: squad } = await supabase.from("squad").select("id, name, shirt_number").eq("is_active", true).order("sort_order");
+  const { data: squad } = await supabase
+    .from("squad")
+    .select("id, name, shirt_number, season, is_active")
+    .order("sort_order");
 
   return (
     <div>
