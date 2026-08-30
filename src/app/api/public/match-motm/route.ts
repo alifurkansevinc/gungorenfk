@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
-import { isMotmVotingOpen, MAX_MOTM_CANDIDATES, type MatchMotmPublicCandidate } from "@/lib/match-motm";
+import { isMotmVotingOpen, type MatchMotmPublicCandidate } from "@/lib/match-motm";
 import { syncMatchStatusesFromSchedule } from "@/lib/match-schedule";
 
 type MotmMatchRow = {
@@ -86,10 +86,7 @@ export async function GET(req: NextRequest) {
     const votingOpen = phase === "open";
 
     const { data: candRows } = await svc.from("match_motm_candidates").select("squad_member_id").eq("match_id", match.id);
-    const ids = [...new Set((candRows ?? []).map((r) => (r as { squad_member_id: string }).squad_member_id))].slice(
-      0,
-      MAX_MOTM_CANDIDATES,
-    );
+    const ids = [...new Set((candRows ?? []).map((r) => (r as { squad_member_id: string }).squad_member_id))];
 
     // Oy sayıları / kim oy verdi kamuya açılmaz — yalnızca admin panelinde görünür.
     let squadRows: {

@@ -4,7 +4,6 @@ import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { MatchMotmPublicCandidate } from "@/lib/match-motm";
-import { MAX_MOTM_CANDIDATES } from "@/lib/match-motm";
 
 type MotmPhase = "open" | "upcoming" | "ended";
 
@@ -114,7 +113,7 @@ export function MatchMotmHomeBanner() {
   const phase: MotmPhase =
     data.phase ?? (votingOpen ? "open" : new Date() < new Date(match.voteStartsAt) ? "upcoming" : "ended");
   const label = matchLabel(match);
-  const row = candidates.slice(0, MAX_MOTM_CANDIDATES);
+  const row = candidates;
   const active = phase === "open" && row.length > 0;
   const canShowCandidates = (phase === "open" || phase === "upcoming") && row.length > 0;
 

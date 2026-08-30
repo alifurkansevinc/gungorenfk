@@ -1,8 +1,5 @@
 /** Taraftar maçın oyuncusu oylama penceresi (admin: motm_vote_*). */
 
-/** Oylamada en fazla bu kadar aday (tüm ilk 11). */
-export const MAX_MOTM_CANDIDATES = 11;
-
 export type MatchMotmPublicCandidate = {
   squadMemberId: string;
   name: string;

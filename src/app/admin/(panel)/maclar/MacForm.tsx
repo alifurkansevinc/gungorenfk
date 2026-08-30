@@ -4,7 +4,7 @@ import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createMatch, updateMatch } from "@/app/actions/admin";
-import { isoToDatetimeLocalValue, MAX_MOTM_CANDIDATES } from "@/lib/match-motm";
+import { isoToDatetimeLocalValue } from "@/lib/match-motm";
 import { toCanonicalSeasonKey } from "@/lib/football-season";
 import { AdminImageUpload } from "@/components/admin/AdminImageUpload";
 
@@ -90,14 +90,21 @@ export function MacForm({
   const [voteEnd, setVoteEnd] = useState(() => isoToDatetimeLocalValue(match?.motm_vote_ends_at ?? null));
   const [motmCandidates, setMotmCandidates] = useState<string[]>(motmCandidateIds);
 
-  const lineupPool = useMemo(
-    () => [...new Set([...selectedStarters, ...selectedSubs])],
-    [selectedStarters, selectedSubs]
+  const squadIds = useMemo(() => squad.map((p) => p.id), [squad]);
+  const sortedSquad = useMemo(
+    () =>
+      [...squad].sort((a, b) => {
+        const an = a.shirt_number ?? 9999;
+        const bn = b.shirt_number ?? 9999;
+        if (an !== bn) return an - bn;
+        return a.name.localeCompare(b.name, "tr");
+      }),
+    [squad]
   );
 
   useEffect(() => {
-    setMotmCandidates((prev) => prev.filter((id) => lineupPool.includes(id)));
-  }, [lineupPool]);
+    setMotmCandidates((prev) => prev.filter((id) => squadIds.includes(id)));
+  }, [squadIds]);
 
   const addGoalRow = () => setGoalRows((r) => [...r, { minute: 0, scorer_squad_id: "", assist_squad_id: "" }]);
   const removeGoalRow = (i: number) => setGoalRows((r) => r.filter((_, j) => j !== i));
@@ -119,17 +126,18 @@ export function MacForm({
   };
 
   const toggleMotmCandidate = (id: string) => {
-    if (!lineupPool.includes(id)) return;
-    setMotmCandidates((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
-      if (prev.length >= MAX_MOTM_CANDIDATES) return prev;
-      return [...prev, id];
-    });
+    if (!squadIds.includes(id)) return;
+    setMotmCandidates((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
+  };
+
+  const selectAllSquadAsMotmCandidates = () => {
+    if (squadIds.length === 0) return;
+    setMotmCandidates([...squadIds]);
   };
 
   const selectAllStartersAsMotmCandidates = () => {
     if (selectedStarters.length === 0) return;
-    setMotmCandidates(selectedStarters.slice(0, MAX_MOTM_CANDIDATES));
+    setMotmCandidates((prev) => [...new Set([...prev, ...selectedStarters])]);
   };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -169,8 +177,6 @@ export function MacForm({
 
   const dateValue = match?.match_date ? match.match_date.toString().slice(0, 10) : "";
   const selectClass = "mt-1 w-full rounded border border-siyah/20 px-3 py-2 text-sm";
-
-  const squadById = useMemo(() => new Map(squad.map((p) => [p.id, p])), [squad]);
 
   return (
     <form onSubmit={handleSubmit} className="mt-6 max-w-2xl space-y-6">
@@ -357,9 +363,8 @@ export function MacForm({
       <div className="rounded-xl border-2 border-amber-200 bg-amber-50/40 p-4">
         <h3 className="text-sm font-semibold text-siyah">Taraftar oylaması (Maçın oyuncusu)</h3>
         <p className="mt-0.5 text-xs text-siyah/70">
-          Web sitesinde oylama penceresi ve aday listesi. Adaylar bu maçın <strong>ilk 11 + yedek</strong> kadrosundan
-          seçilir; en fazla <strong>{MAX_MOTM_CANDIDATES} aday</strong> (tüm ilk 11). Her üye tek oy kullanır (geri
-          alınamaz).
+          Web sitesinde oylama penceresi ve aday listesi. Adaylar <strong>tüm kadrodan</strong> seçilebilir; isterseniz
+          yalnızca ilk 11’i de kısayoldan ekleyebilirsiniz. Her üye tek oy kullanır (geri alınamaz).
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
@@ -386,47 +391,56 @@ export function MacForm({
         <div className="mt-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs font-medium text-siyah">Oylamaya sunulacak adaylar</p>
-            <button
-              type="button"
-              onClick={selectAllStartersAsMotmCandidates}
-              disabled={selectedStarters.length === 0}
-              className="rounded-lg border border-amber-300 bg-beyaz px-2.5 py-1 text-[11px] font-semibold text-amber-950 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40"
-            >
-              İlk 11’in hepsini aday yap
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={selectAllStartersAsMotmCandidates}
+                disabled={selectedStarters.length === 0}
+                className="rounded-lg border border-amber-300 bg-beyaz px-2.5 py-1 text-[11px] font-semibold text-amber-950 hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                İlk 11’i ekle
+              </button>
+              <button
+                type="button"
+                onClick={selectAllSquadAsMotmCandidates}
+                disabled={squadIds.length === 0}
+                className="rounded-lg border border-bordo/40 bg-bordo/10 px-2.5 py-1 text-[11px] font-semibold text-bordo hover:bg-bordo/15 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                Tüm kadroyu seç
+              </button>
+            </div>
           </div>
-          {lineupPool.length === 0 ? (
-            <p className="mt-2 text-xs text-amber-800">Önce ilk 11 veya yedek seçin.</p>
+          {sortedSquad.length === 0 ? (
+            <p className="mt-2 text-xs text-amber-800">Kadroda oyuncu yok. Önce kadroya oyuncu ekleyin.</p>
           ) : (
             <div className="mt-2 flex flex-wrap gap-2">
-              {lineupPool.map((id) => {
-                const p = squadById.get(id);
-                if (!p) return null;
-                const isStarter = selectedStarters.includes(id);
-                const atCap = motmCandidates.length >= MAX_MOTM_CANDIDATES && !motmCandidates.includes(id);
+              {sortedSquad.map((p) => {
+                const isStarter = selectedStarters.includes(p.id);
+                const isSub = selectedSubs.includes(p.id);
                 return (
                   <label
-                    key={id}
+                    key={p.id}
                     className={`flex cursor-pointer items-center gap-2 rounded border px-3 py-1.5 text-sm ${
-                      atCap
-                        ? "cursor-not-allowed border-siyah/10 bg-siyah/5 text-siyah/40"
-                        : isStarter
-                          ? "border-bordo/30 bg-bordo/[0.06] shadow-sm"
-                          : "border-amber-300/80 bg-beyaz shadow-sm"
+                      isStarter
+                        ? "border-bordo/30 bg-bordo/[0.06] shadow-sm"
+                        : isSub
+                          ? "border-amber-300/80 bg-beyaz shadow-sm"
+                          : "border-siyah/15 bg-beyaz shadow-sm"
                     }`}
                   >
                     <input
                       type="checkbox"
-                      checked={motmCandidates.includes(id)}
-                      disabled={atCap}
-                      onChange={() => toggleMotmCandidate(id)}
-                      className="rounded border-amber-400 text-amber-600 disabled:opacity-40"
+                      checked={motmCandidates.includes(p.id)}
+                      onChange={() => toggleMotmCandidate(p.id)}
+                      className="rounded border-amber-400 text-amber-600"
                     />
                     <span>
                       {p.shirt_number != null ? `${p.shirt_number}. ` : ""}
                       {p.name}
                       {isStarter ? (
                         <span className="ml-1 text-[10px] font-semibold uppercase tracking-wide text-bordo/70">11</span>
+                      ) : isSub ? (
+                        <span className="ml-1 text-[10px] font-semibold uppercase tracking-wide text-amber-800/70">Y</span>
                       ) : null}
                     </span>
                   </label>
@@ -435,9 +449,9 @@ export function MacForm({
             </div>
           )}
           <p className="mt-2 text-xs text-siyah/60">
-            Seçili aday: {motmCandidates.length} / {MAX_MOTM_CANDIDATES}
+            Seçili aday: {motmCandidates.length} / {squadIds.length}
             {selectedStarters.length > 0
-              ? ` · İlk 11’den seçili: ${motmCandidates.filter((id) => selectedStarters.includes(id)).length}/${selectedStarters.length}`
+              ? ` · İlk 11’den: ${motmCandidates.filter((id) => selectedStarters.includes(id)).length}/${selectedStarters.length}`
               : ""}
           </p>
         </div>

@@ -6,7 +6,6 @@ import { getAdminSupabase } from "@/app/admin/actions";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { matchEndAtIso } from "@/lib/match-schedule";
 import { seasonLabelFromMatchDate, toCanonicalSeasonKey } from "@/lib/seasons";
-import { MAX_MOTM_CANDIDATES } from "@/lib/match-motm";
 
 async function supabase() {
   return getAdminSupabase();
@@ -61,10 +60,10 @@ async function replaceMatchMotmCandidates(
   s: ReturnType<typeof createServiceRoleClient>,
   matchId: string,
   candidateIds: string[],
-  lineupIds: Set<string>
+  allowedSquadIds: Set<string>
 ): Promise<{ ok: true } | { error: string }> {
   for (const c of candidateIds) {
-    if (!lineupIds.has(c)) return { error: "Oylama adayları yalnızca bu maçın kadrosundan (ilk 11 + yedek) seçilebilir." };
+    if (!allowedSquadIds.has(c)) return { error: "Oylama adayları yalnızca kulüp kadrosundan seçilebilir." };
   }
   const { data: votes } = await s.from("match_motm_votes").select("squad_member_id").eq("match_id", matchId);
   for (const v of votes ?? []) {
@@ -92,11 +91,7 @@ export async function createMatch(formData: FormData) {
   const { starts: motm_vote_starts_at, ends: motm_vote_ends_at } = parseMotmVoteTimes(formData);
   const candidateIds = parseMotmCandidates(formData);
   const { starters, substitutes } = parseMatchLineup(formData);
-  const lineupSet = new Set([...starters, ...substitutes]);
 
-  if (candidateIds.length > MAX_MOTM_CANDIDATES) {
-    return { error: `Taraftar oylamasında en fazla ${MAX_MOTM_CANDIDATES} aday seçilebilir (tüm ilk 11).` };
-  }
   if ((motm_vote_starts_at && !motm_vote_ends_at) || (!motm_vote_starts_at && motm_vote_ends_at)) {
     return { error: "Taraftar oylaması için hem başlangıç hem bitiş saati girin veya ikisini de boş bırakın." };
   }
@@ -153,7 +148,9 @@ export async function createMatch(formData: FormData) {
     await s.from("match_lineups").insert(lineupRows);
   }
 
-  const candRes = await replaceMatchMotmCandidates(s, match.id, candidateIds, lineupSet);
+  const { data: squadIdRows } = await s.from("squad").select("id");
+  const squadSet = new Set((squadIdRows ?? []).map((r) => (r as { id: string }).id));
+  const candRes = await replaceMatchMotmCandidates(s, match.id, candidateIds, squadSet);
   if ("error" in candRes) {
     await s.from("match_goals").delete().eq("match_id", match.id);
     await s.from("match_lineups").delete().eq("match_id", match.id);
@@ -174,11 +171,7 @@ export async function updateMatch(id: string, formData: FormData) {
   const { starts: motm_vote_starts_at, ends: motm_vote_ends_at } = parseMotmVoteTimes(formData);
   const candidateIds = parseMotmCandidates(formData);
   const { starters, substitutes } = parseMatchLineup(formData);
-  const lineupSet = new Set([...starters, ...substitutes]);
 
-  if (candidateIds.length > MAX_MOTM_CANDIDATES) {
-    return { error: `Taraftar oylamasında en fazla ${MAX_MOTM_CANDIDATES} aday seçilebilir (tüm ilk 11).` };
-  }
   if ((motm_vote_starts_at && !motm_vote_ends_at) || (!motm_vote_starts_at && motm_vote_ends_at)) {
     return { error: "Taraftar oylaması için hem başlangıç hem bitiş saati girin veya ikisini de boş bırakın." };
   }
@@ -238,7 +231,9 @@ export async function updateMatch(id: string, formData: FormData) {
     await s.from("match_lineups").insert(lineupRows);
   }
 
-  const candRes = await replaceMatchMotmCandidates(s, id, candidateIds, lineupSet);
+  const { data: squadIdRows } = await s.from("squad").select("id");
+  const squadSet = new Set((squadIdRows ?? []).map((r) => (r as { id: string }).id));
+  const candRes = await replaceMatchMotmCandidates(s, id, candidateIds, squadSet);
   if ("error" in candRes) return { error: candRes.error };
 
   revalidatePath("/admin/maclar");
