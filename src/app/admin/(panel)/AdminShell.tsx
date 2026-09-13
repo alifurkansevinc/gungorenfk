@@ -33,6 +33,7 @@ import {
   ShieldCheck,
   Gift,
   Shuffle,
+  Briefcase,
 } from "lucide-react";
 
 const allMenuItems = [
@@ -44,6 +45,7 @@ const allMenuItems = [
   { href: "/admin/teslim-al", label: "Teslim al", icon: Package },
   { href: "/admin/bagislar", label: "Bağışlar", icon: Heart },
   { href: "/admin/biletler", label: "Biletler", icon: Ticket },
+  { href: "/admin/is-basvurulari", label: "İş başvuruları", icon: Briefcase },
   { href: "/admin/ayarlar", label: "Ayarlar", icon: Settings },
   { href: "/admin/taraftarlar", label: "Taraftarlar", icon: Users },
   { href: "/admin/hediye-verme", label: "Hediye Verme", icon: Gift },

@@ -4,6 +4,7 @@ import { AnadoluTemsilcisi } from "@/components/AnadoluTemsilcisi";
 import { TaraftarBarStrip } from "@/components/TaraftarBarStrip";
 import { MatchMotmHomeBanner } from "@/components/MatchMotmHomeBanner";
 import { MotmLotteryHomeBanner } from "@/components/MotmLotteryHomeBanner";
+import { JobApplicationHomeSection } from "@/components/JobApplicationHomeSection";
 import { FadeInSection } from "@/components/FadeInSection";
 import { DEMO_IMAGES, HOMEPAGE_SLOGAN_IMAGE_URL } from "@/lib/demo-images";
 import { createClient } from "@/lib/supabase/server";
@@ -75,6 +76,8 @@ export default async function Home() {
       <MatchMotmHomeBanner />
 
       <MotmLotteryHomeBanner />
+
+      <JobApplicationHomeSection />
 
       {/* Taraftar bar (1000 Taraftar 1 Bayrak) — detaylı bölüm */}
       <AnadoluTemsilcisi />

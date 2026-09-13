@@ -28,6 +28,7 @@ export const MENU_KEYS = {
   teslimAl: "teslim-al",
   bagislar: "bagislar",
   biletler: "biletler",
+  isBasvurulari: "is-basvurulari",
   ayarlar: "ayarlar",
   taraftarlar: "taraftarlar",
   hediyeVerme: "hediye-verme",
@@ -65,6 +66,7 @@ const ROLE_MENUS: Record<Exclude<AdminRole, "admin">, readonly string[]> = {
     MENU_KEYS.maclar,
     MENU_KEYS.bagislar,
     MENU_KEYS.taraftarlar,
+    MENU_KEYS.isBasvurulari,
   ],
   football_director: [MENU_KEYS.maclar, MENU_KEYS.kadro, MENU_KEYS.transferler],
   event_coordinator: [
@@ -73,6 +75,7 @@ const ROLE_MENUS: Record<Exclude<AdminRole, "admin">, readonly string[]> = {
     MENU_KEYS.hediyeVerme,
     MENU_KEYS.haberler,
     MENU_KEYS.taraftarlar,
+    MENU_KEYS.isBasvurulari,
   ],
 };
 
