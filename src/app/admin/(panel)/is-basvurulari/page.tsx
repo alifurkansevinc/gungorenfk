@@ -3,6 +3,7 @@ import { getAdminSupabase } from "@/app/admin/actions";
 import { getJobFormSettings } from "@/app/actions/job-applications";
 import { JOB_APPLICATION_STATUS_LABELS, type JobApplicationStatus } from "@/lib/job-form";
 import { JobFormSettingsForm } from "./JobFormSettingsForm";
+import { JobApplicationsExportButtons } from "./JobApplicationsExportButtons";
 
 export default async function AdminIsBasvurulariPage({
   searchParams,
@@ -56,7 +57,10 @@ export default async function AdminIsBasvurulariPage({
       </div>
 
       <div className="mt-10">
-        <h2 className="text-lg font-semibold text-siyah">Gelen başvurular</h2>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-lg font-semibold text-siyah">Gelen başvurular</h2>
+          <JobApplicationsExportButtons durum={durum} />
+        </div>
         <div className="mt-3 flex flex-wrap gap-2">
           {statusFilters.map((f) => {
             const active = (durum ?? "") === f.key;
