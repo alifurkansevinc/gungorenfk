@@ -10,7 +10,7 @@ import {
   getNextMatch,
   getMatchEventsByMatchIds,
 } from "@/lib/data";
-import { matchSeasonTabToStandingsSeason, resolveSeasonQueryParam, formatSeasonTabLabel, getFootballSeasonLabelForDate } from "@/lib/seasons";
+import { matchSeasonTabToStandingsSeason, resolveSeasonQueryParam, formatSeasonTabLabel, getFootballSeasonLabelForDate, toCanonicalSeasonKey } from "@/lib/seasons";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { NextMatchCard } from "@/components/NextMatchCard";
 import { WeekPlayerShowcase } from "@/components/WeekPlayerShowcase";
@@ -65,15 +65,19 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
   const { filter } = resolveSeasonQueryParam(sp?.sezon, seasonList);
   const rawPuan = sp?.puan?.trim();
   const showAllSeasons = sp?.sezon?.trim() === "tumu";
+  const currentSeasonKey = getFootballSeasonLabelForDate(new Date());
+  const standingsHit = (want: string) =>
+    standingsSeasonList.find((s) => toCanonicalSeasonKey(s) === toCanonicalSeasonKey(want));
   let standingsSeason: string | null = null;
-  if (rawPuan && standingsSeasonList.includes(rawPuan)) {
-    standingsSeason = rawPuan;
-  } else if (!showAllSeasons && typeof filter === "string" && filter !== "all") {
-    const mapped = matchSeasonTabToStandingsSeason(filter);
-    if (standingsSeasonList.includes(mapped)) standingsSeason = mapped;
+  if (rawPuan) {
+    standingsSeason = standingsHit(rawPuan) ?? null;
+  }
+  if (!standingsSeason && !showAllSeasons && typeof filter === "string" && filter !== "all") {
+    standingsSeason = standingsHit(matchSeasonTabToStandingsSeason(filter)) ?? null;
   }
   if (!standingsSeason && standingsSeasonList.length > 0) {
-    standingsSeason = standingsSeasonList[0]!;
+    const currentSlash = matchSeasonTabToStandingsSeason(currentSeasonKey);
+    standingsSeason = standingsHit(currentSlash) ?? standingsSeasonList[0]!;
   }
 
   const [matches, standings] = await Promise.all([
@@ -84,7 +88,6 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
   const hasAnyRealDbMatch = peek.length > 0 && !peek[0].id.startsWith("demo-");
   const leagueName = standings.rows.length > 0 ? standings.league_name : "İstanbul 1. Amatör Lig";
   const activeSeasonTab = showAllSeasons ? null : typeof filter === "string" ? filter : null;
-  const currentSeasonKey = getFootballSeasonLabelForDate(new Date());
   const qBase = { sezon: sp?.sezon?.trim(), puan: sp?.puan?.trim() };
   // En üstte en yeni, en altta en eski (tarihe göre azalan)
   const sortedDbMatches = [...matches]

@@ -7,7 +7,7 @@ import {
   getMatchKickoffMs,
   isWithinLivePlayWindow,
 } from "@/lib/match-schedule";
-import { seasonFilterVariants, sortSeasonLabelsDesc } from "@/lib/seasons";
+import { seasonFilterVariants, seasonSortKey, sortSeasonLabelsDesc } from "@/lib/seasons";
 import { filterSquadForMatchSeason } from "@/lib/football-season";
 import type { MemleketCount, Match, SquadMember, BoardMember, TechnicalStaffMember, LeagueStandingRow, ClubTrophy } from "@/types/db";
 import type { FanLevel } from "@/types/db";
@@ -769,7 +769,7 @@ export async function getLeagueStandingsSeasons(): Promise<string[]> {
   const supabase = await createClient();
   const { data } = await supabase.from("league_standings").select("season");
   const labels = [...new Set((data ?? []).map((r) => (r as { season: string }).season).filter(Boolean))];
-  return sortSeasonLabelsDesc(labels);
+  return labels.sort((a, b) => seasonSortKey(b) - seasonSortKey(a));
 }
 
 export type GetLeagueStandingsOptions = { season?: string | null };
@@ -786,7 +786,7 @@ export async function getLeagueStandings(opts?: GetLeagueStandingsOptions): Prom
     .select("id, league_name, season, position, team_name, played, goal_diff, wins, draws, losses, goals_for, goals_against, points, updated_at")
     .order("position");
   if (opts?.season) {
-    q = q.eq("season", opts.season);
+    q = q.in("season", seasonFilterVariants(opts.season));
   }
   const { data } = await q;
   if (data && data.length > 0) {
