@@ -9,7 +9,7 @@ import {
   FORMA_NAME_PRINT_ADDON_TRY,
   normalizeNamePrintPayload,
 } from "@/lib/forma-name-print";
-import { isValidBuyerTaxId } from "@/lib/tax-id";
+import { resolveBuyerTaxId } from "@/lib/tax-id";
 
 const DEFAULT_SHIPPING_COST = 29.9;
 const DEFAULT_FREE_THRESHOLD = 500;
@@ -89,10 +89,11 @@ export async function POST(req: NextRequest) {
     if (deliveryMethod === "shipping" && (!shippingAddress?.city || (!shippingAddress?.address && !shippingAddress?.addressLine))) {
       return NextResponse.json({ success: false, error: "Teslimat adresi gereklidir." }, { status: 400 });
     }
-    const taxId = String(shippingAddress?.taxId || "").replace(/\D/g, "");
-    if (!isValidBuyerTaxId(taxId)) {
-      return NextResponse.json({ success: false, error: "Fatura için geçerli TCKN (11 hane) veya VKN (10 hane) gerekli." }, { status: 400 });
+    const resolvedTax = resolveBuyerTaxId(shippingAddress?.taxId);
+    if ("error" in resolvedTax) {
+      return NextResponse.json({ success: false, error: resolvedTax.error }, { status: 400 });
     }
+    const taxId = resolvedTax.taxId;
 
     const supabase = createServiceRoleClient();
     const { data: products } = await supabase

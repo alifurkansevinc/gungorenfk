@@ -4,7 +4,7 @@ import { retrieveCheckoutForm, retrievePaymentRefundStatus } from "@/lib/iyzico"
 import { restoreStockForOrder, reverseFanStoreSpendForOrder } from "@/lib/order-refund";
 import { checkAndLevelUp } from "@/lib/fan-level";
 import { interpretCheckoutResult, isCheckoutToken } from "@/lib/iyzico-result";
-import { issueInvoiceForPaidOrder, cancelInvoiceForRefundedOrder } from "@/lib/uyum-invoice";
+import { cancelInvoiceForRefundedOrder } from "@/lib/uyum-invoice";
 
 export type CheckoutSettlement = {
   outcome: "paid" | "already_paid" | "failed" | "pending" | "query_error" | "not_found";
@@ -159,7 +159,7 @@ async function settleOrder(
         status: nextStatus,
         payment_status: "PAID",
         payment_id: iyziPaymentId,
-        notes: `${order.notes || ""}\niyzico paymentId: ${iyziPaymentId}`,
+        notes: `${order.notes || ""}\niyzico paymentId: ${iyziPaymentId}\n[ODEME] ${new Date().toISOString()}`,
         updated_at: new Date().toISOString(),
       })
       .eq("id", order.id)
@@ -169,11 +169,6 @@ async function settleOrder(
       return { outcome: "already_paid", redirectPath: orderSuccessPath(order, false) };
     }
     await decrementStock(supabase, order.id);
-    try {
-      await issueInvoiceForPaidOrder(order.id);
-    } catch (err) {
-      console.error("Uyum fatura:", err);
-    }
     const userId = await addStoreSpend(supabase, order);
     let levelUp = false;
     let newLevelId: number | undefined;

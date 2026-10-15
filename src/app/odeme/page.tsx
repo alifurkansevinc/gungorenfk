@@ -108,21 +108,27 @@ export default function OdemePage() {
   const phone = shippingAddress.phone || customerInfo.phone;
   const email = customerInfo.email;
 
-  const validateStep1 = () =>
-    Boolean(
-      customerInfo.fullName.trim() &&
-      customerInfo.email.trim() &&
-      customerInfo.phone.trim() &&
-      isValidBuyerTaxId(customerInfo.taxId)
-    );
+  const validateStep1 = () => {
+    if (!customerInfo.fullName.trim() || !customerInfo.email.trim() || !customerInfo.phone.trim()) {
+      return "Ad, e-posta ve telefon gerekli.";
+    }
+    const tax = customerInfo.taxId.replace(/\D/g, "");
+    if (tax && !isValidBuyerTaxId(tax)) {
+      return "TCKN 11 hane, VKN 10 hane olmalı. Boş bırakılırsa faturada 11111111111 yazılır.";
+    }
+    return null;
+  };
   const validateStep2 = () =>
     shippingAddress.city.trim() && shippingAddress.address.trim() && fullName && phone;
 
   const handleNextStep = () => {
     setError(null);
-    if (currentStep === 1 && !validateStep1()) {
-      setError("Ad, e-posta, telefon ve geçerli TCKN (11 hane) veya VKN (10 hane) gerekli.");
-      return;
+    if (currentStep === 1) {
+      const stepError = validateStep1();
+      if (stepError) {
+        setError(stepError);
+        return;
+      }
     }
     if (currentStep === 2 && !validateStep2()) {
       setError("İl ve adres gerekli.");
@@ -277,12 +283,11 @@ export default function OdemePage() {
                       id="taxId"
                       inputMode="numeric"
                       autoComplete="off"
-                      required
                       maxLength={11}
                       value={customerInfo.taxId}
                       onChange={(e) => setCustomerInfo((c) => ({ ...c, taxId: e.target.value.replace(/\D/g, "").slice(0, 11) }))}
                       className={inputClass}
-                      placeholder="Fatura için 11 haneli TCKN veya 10 haneli VKN"
+                      placeholder="Boşsa faturada 11111111111 yazılır"
                     />
                   </div>
                   <div>

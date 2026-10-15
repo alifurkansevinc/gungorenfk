@@ -1,5 +1,7 @@
 import { createServiceRoleClient } from "@/lib/supabase/service";
-import { isValidBuyerTaxId } from "@/lib/tax-id";
+import { FALLBACK_TCKN, resolveBuyerTaxId } from "@/lib/tax-id";
+
+const INVOICE_AFTER_MS = 4 * 24 * 60 * 60 * 1000;
 
 const SOAP_NS = "http://tempuri.org/";
 const DEFAULT_ENDPOINT = "https://edonusumapi.uyum.com.tr/Services/BasicIntegration";
@@ -71,6 +73,19 @@ export function invoiceNumberForOrder(prefix: string, orderNumber: string, year 
   for (const ch of orderNumber) hash = (hash * 33 + ch.charCodeAt(0)) >>> 0;
   const seq = String(hash % 1_000_000_000).padStart(9, "0");
   return `${seriesPrefix(prefix)}${year}${seq}`;
+}
+
+export function paidAtFromNotes(notes: string | null | undefined): Date | null {
+  const match = (notes || "").match(/\[ODEME\]\s*(\S+)/);
+  if (!match) return null;
+  const paidAt = new Date(match[1]);
+  return Number.isFinite(paidAt.getTime()) ? paidAt : null;
+}
+
+export function invoiceIsDue(notes: string | null | undefined, now = Date.now()): boolean {
+  const paidAt = paidAtFromNotes(notes);
+  if (!paidAt) return false;
+  return now >= paidAt.getTime() + INVOICE_AFTER_MS;
 }
 
 export function invoiceNoteState(notes: string | null | undefined): InvoiceNoteState {
@@ -346,16 +361,19 @@ export async function issueInvoiceForPaidOrder(orderId: string): Promise<Invoice
   if (!orderRow) return "failed";
   const order = orderRow as OrderForInvoice;
   if (order.payment_status !== "PAID") return invoiceNoteState(order.notes);
+  if (!invoiceIsDue(order.notes)) return "none";
   const state = invoiceNoteState(order.notes);
   if (state === "issued" || state === "skipped" || state === "sending") return state;
 
   const addr = order.shipping_address || {};
-  const taxId = String(addr.taxId || "").replace(/\D/g, "");
-  if (!isValidBuyerTaxId(taxId)) {
-    const notes = upsertInvoiceNote(order.notes, "[FATURA] skipped | TCKN/VKN yok");
+  const resolvedTax = resolveBuyerTaxId(String(addr.taxId || ""));
+  if ("error" in resolvedTax) {
+    const notes = upsertInvoiceNote(order.notes, "[FATURA] skipped | TCKN/VKN geçersiz");
     await saveInvoiceNote(order.id, notes);
     return "skipped";
   }
+  const taxId = resolvedTax.taxId;
+  const paidAt = paidAtFromNotes(order.notes) || new Date();
 
   const config = readConfig();
   if (!config) {
@@ -390,11 +408,11 @@ export async function issueInvoiceForPaidOrder(orderId: string): Promise<Invoice
     if (shipping > 0) lines.push({ name: "Kargo", quantity: 1, gross: shipping });
     if (lines.length === 0) throw new Error("Fatura kalemi yok");
 
-    const eInvoice = await isEInvoiceUser(config, taxId);
+    const eInvoice = taxId === FALLBACK_TCKN ? false : await isEInvoiceUser(config, taxId);
     const issuedAt = new Date();
     const invoiceXml = buildInvoiceXml({ config, order, taxId, eInvoice, lines, issuedAt });
     const scenario = eInvoice ? "eInvoice" : "eArchive";
-    const paymentDate = stamp();
+    const paymentDate = paidAt.toISOString().replace(/\.\d{3}Z$/, "Z");
     const archive = eInvoice
       ? ""
       : `<tem:EArchiveInvoiceInfo DeliveryType="Electronic">` +
@@ -418,7 +436,7 @@ export async function issueInvoiceForPaidOrder(orderId: string): Promise<Invoice
       `<tem:TargetCustomer VknTckn="${xml(taxId)}" Title="${xml(String(addr.fullName || order.guest_name || "Müşteri"))}"/>` +
       archive +
       `<tem:Scenario>${scenario}</tem:Scenario>` +
-      `<tem:CreateDateUtc>${paymentDate}</tem:CreateDateUtc>` +
+      `<tem:CreateDateUtc>${stamp()}</tem:CreateDateUtc>` +
       `</tem:InvoiceInfo></tem:invoices>` +
       `</tem:SendInvoice>`;
 
@@ -451,19 +469,20 @@ export async function issueInvoiceForPaidOrder(orderId: string): Promise<Invoice
 
 export async function retryRecentStoreInvoices(): Promise<number> {
   const supabase = createServiceRoleClient();
-  const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+  const dueBefore = new Date(Date.now() - INVOICE_AFTER_MS).toISOString();
+  const since = new Date(Date.now() - 45 * 24 * 60 * 60 * 1000).toISOString();
   const { data } = await supabase
     .from("orders")
-    .select("id, notes, shipping_address")
+    .select("id, notes")
     .eq("payment_status", "PAID")
+    .lt("created_at", dueBefore)
     .gte("created_at", since)
-    .order("created_at", { ascending: false })
+    .order("created_at", { ascending: true })
     .limit(20);
   let issued = 0;
   for (const row of data ?? []) {
-    const record = row as { id: string; notes: string | null; shipping_address: { taxId?: string } | null };
-    const taxId = String(record.shipping_address?.taxId || "").replace(/\D/g, "");
-    if (!isValidBuyerTaxId(taxId)) continue;
+    const record = row as { id: string; notes: string | null };
+    if (!invoiceIsDue(record.notes)) continue;
     const state = invoiceNoteState(record.notes);
     if (state === "issued" || state === "skipped" || state === "sending") continue;
     const next = await issueInvoiceForPaidOrder((row as { id: string }).id);
