@@ -58,6 +58,13 @@ async function syncStandings(request: Request) {
   }
 
   const supabase = createClient(url, serviceKey);
+  let competitionFixed = 0;
+  const { data: fixedRows, error: competitionErr } = await supabase
+    .from("matches")
+    .update({ competition: "Süper Amatör Lig", updated_at: new Date().toISOString() })
+    .eq("competition", "Süper Lig")
+    .select("id");
+  if (!competitionErr) competitionFixed = fixedRows?.length ?? 0;
   const { data: setting } = await supabase
     .from("site_settings")
     .select("value")
@@ -96,7 +103,7 @@ async function syncStandings(request: Request) {
     if (saved.length === 0) {
       return NextResponse.json({ ok: false, error: "Could not parse standings", failed }, { status: 200 });
     }
-    return NextResponse.json({ ok: true, saved, failed });
+    return NextResponse.json({ ok: true, saved, failed, competitionFixed });
   } catch (e) {
     const message = e instanceof Error ? e.message : "Unknown error";
     return NextResponse.json({ error: message, ok: false }, { status: 500 });

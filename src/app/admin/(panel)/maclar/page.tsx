@@ -11,6 +11,7 @@ import {
   sortSeasonLabelsDesc,
   resolveSeasonQueryParam,
 } from "@/lib/seasons";
+import { normalizeSiteCompetition } from "@/lib/competition-label";
 
 export default async function AdminMaclarPage({ searchParams }: { searchParams: Promise<{ sezon?: string }> }) {
   const sp = await searchParams;
@@ -144,7 +145,7 @@ export default async function AdminMaclarPage({ searchParams }: { searchParams: 
                         {fromOptaport ? "Optaport" : "Manuel"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-siyah/70">{m.competition ?? "—"}</td>
+                    <td className="px-4 py-3 text-siyah/70">{normalizeSiteCompetition(m.competition) ?? "—"}</td>
                     <td className="px-4 py-3 font-semibold text-bordo">
                       {m.status === "finished" && m.goals_for != null && m.goals_against != null
                         ? `${m.goals_for} - ${m.goals_against}`

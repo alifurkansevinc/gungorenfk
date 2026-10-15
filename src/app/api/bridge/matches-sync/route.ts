@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { assertBridgeApiKey } from "@/lib/bridge/auth";
 import { seasonLabelsMatch } from "@/lib/bridge/name-match";
+import { normalizeSiteCompetition } from "@/lib/competition-label";
 import { parseSeasonStartYear, toCanonicalSeasonKey } from "@/lib/football-season";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 
@@ -188,7 +189,7 @@ export async function POST(request: Request) {
       venue: (m.venue || "").trim() || null,
       match_date: matchDate,
       match_time: normalizeTime(m.match_time),
-      competition: (m.competition || "").trim() || null,
+      competition: normalizeSiteCompetition(m.competition),
       season,
       goals_for: typeof m.goals_for === "number" ? m.goals_for : m.goals_for == null ? null : Number(m.goals_for),
       goals_against:

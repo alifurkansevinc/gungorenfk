@@ -11,6 +11,7 @@ import {
   getMatchEventsByMatchIds,
 } from "@/lib/data";
 import { matchSeasonTabToStandingsSeason, resolveSeasonQueryParam, formatSeasonTabLabel, getFootballSeasonLabelForDate, toCanonicalSeasonKey } from "@/lib/seasons";
+import { normalizeSiteCompetition } from "@/lib/competition-label";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { NextMatchCard } from "@/components/NextMatchCard";
 import { WeekPlayerShowcase } from "@/components/WeekPlayerShowcase";
@@ -268,7 +269,7 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
               sortedDbMatches.map((m, i) => {
                 const hasScoreDb = m.goals_for != null && m.goals_against != null;
                 const result: ResultType = !hasScoreDb ? "D" : m.goals_for! > m.goals_against! ? "W" : m.goals_for! < m.goals_against! ? "L" : "D";
-                const müsabakaLabel = (m.competition && m.competition.trim()) ? m.competition : leagueName;
+                const müsabakaLabel = normalizeSiteCompetition(m.competition) || leagueName;
                 const isFinishedDb = m.status === "finished";
                 const isLiveDb = getMatchEffectiveStatus(m) === "live";
                 const teamHome = m.home_away === "home" ? "Güngören FK" : m.opponent_name;

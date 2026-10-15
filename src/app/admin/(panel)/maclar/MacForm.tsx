@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createMatch, updateMatch } from "@/app/actions/admin";
 import { isoToDatetimeLocalValue } from "@/lib/match-motm";
 import { filterSquadForMatchSeason, toCanonicalSeasonKey } from "@/lib/football-season";
+import { normalizeSiteCompetition } from "@/lib/competition-label";
 import { AdminImageUpload } from "@/components/admin/AdminImageUpload";
 
 const LIG_OPTIONS = [
@@ -244,7 +245,7 @@ export function MacForm({
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-siyah">Müsabaka (Lig)</label>
-            <select name="competition" defaultValue={match?.competition ?? ""} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2">
+            <select name="competition" defaultValue={normalizeSiteCompetition(match?.competition) ?? ""} className="mt-1 w-full rounded border border-siyah/20 px-3 py-2">
               <option value="">— Seçin —</option>
               {LIG_OPTIONS.map((lig) => (
                 <option key={lig} value={lig}>{lig}</option>

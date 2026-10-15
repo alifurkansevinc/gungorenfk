@@ -3,6 +3,7 @@ import Image from "next/image";
 import { Radio } from "lucide-react";
 import { SITE_LOGO_URL } from "@/lib/demo-images";
 import { getEffectiveMatchStatus } from "@/lib/match-schedule";
+import { normalizeSiteCompetition } from "@/lib/competition-label";
 
 type NextMatch = {
   id: string;
@@ -70,7 +71,7 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
 
         <div className="relative z-10 px-6 py-10 sm:px-10 sm:py-14">
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-beyaz/70">
-            {match.competition || "Maç"}
+            {normalizeSiteCompetition(match.competition) || "Maç"}
           </p>
 
           {isLive ? (

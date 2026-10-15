@@ -8,6 +8,7 @@ import { BiletIcinGirisCTA } from "./BiletIcinGirisCTA";
 import { KoltukSecimi } from "./KoltukSecimi";
 import { SeatSectionErrorBoundary } from "./SeatSectionErrorBoundary";
 import { Ticket, ChevronDown, ChevronUp, Calendar, MapPin, Clock } from "lucide-react";
+import { normalizeSiteCompetition } from "@/lib/competition-label";
 
 function OpponentLogo({ url, name }: { url: string | null; name: string }) {
   const [fail, setFail] = useState(false);
@@ -98,9 +99,9 @@ export function MacKartlari({ matches, isGuest }: { matches: Match[]; isGuest?: 
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  {m.competition && (
+                  {normalizeSiteCompetition(m.competition) && (
                     <span className="inline-block rounded-full bg-siyah/10 px-2.5 py-0.5 text-xs font-semibold text-siyah/70 uppercase tracking-wide">
-                      {m.competition}
+                      {normalizeSiteCompetition(m.competition)}
                     </span>
                   )}
                   <p className="font-display mt-1.5 text-xl font-bold text-siyah sm:text-2xl">{macLabel}</p>
