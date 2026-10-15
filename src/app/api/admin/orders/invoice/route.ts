@@ -19,7 +19,8 @@ export async function GET(req: NextRequest) {
   if (!orderId) return NextResponse.json({ error: "orderId gerekli" }, { status: 400 });
 
   try {
-    const { number, pdf } = await loadOrderInvoicePdf(orderId);
+    const kind = req.nextUrl.searchParams.get("kind") === "iade" ? "return" : "sale";
+    const { number, pdf } = await loadOrderInvoicePdf(orderId, kind);
     return new NextResponse(new Uint8Array(pdf), {
       headers: {
         "Content-Type": "application/pdf",

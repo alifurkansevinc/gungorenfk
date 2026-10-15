@@ -174,7 +174,7 @@ function attr(chunk: string, name: string): string {
   return match?.[1] ?? "";
 }
 
-export function parseIssuedInvoice(notes: string | null | undefined): { scenario: string; number: string; ettn: string } | null {
+export function parseIssuedInvoice(notes: string | null | undefined): { scenario: string; number: string; ettn: string; issueDate: string } | null {
   const line = (notes || "")
     .split("\n")
     .map((part) => part.trim())
@@ -183,7 +183,35 @@ export function parseIssuedInvoice(notes: string | null | undefined): { scenario
   const parts = line.split("|").map((part) => part.trim());
   const ettn = parts[3] || "";
   if (!ettn) return null;
+  return { scenario: parts[1] || "", number: parts[2] || "", ettn, issueDate: parts[4] || "" };
+}
+
+export function parseReturnInvoice(notes: string | null | undefined): { scenario: string; number: string; ettn: string } | null {
+  const line = (notes || "")
+    .split("\n")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith("[IADE] issued"));
+  if (!line) return null;
+  const parts = line.split("|").map((part) => part.trim());
+  const ettn = parts[3] || "";
+  if (!ettn) return null;
   return { scenario: parts[1] || "", number: parts[2] || "", ettn };
+}
+
+function upsertTaggedNote(notes: string | null, tag: string, line: string): string {
+  const parts = (notes || "").split("\n");
+  const index = parts.findLastIndex((part) => part.trim().startsWith(tag));
+  if (index >= 0) parts[index] = line;
+  else parts.push(line);
+  return parts.join("\n").replace(/\n{3,}/g, "\n\n").trim();
+}
+
+/** e-Arşiv, düzenleme gününden sonraki 7. günün sonuna kadar iptal edilebilir. */
+function eArchiveCancelOpen(issueDate: string, now = new Date()): boolean {
+  const start = new Date(`${issueDate}T00:00:00+03:00`);
+  if (!Number.isFinite(start.getTime())) return false;
+  const end = start.getTime() + 8 * 24 * 60 * 60 * 1000 - 1;
+  return now.getTime() <= end;
 }
 
 async function fetchOutboxInvoicePdf(config: InvoiceConfig, invoiceId: string): Promise<Buffer> {
@@ -202,17 +230,34 @@ async function fetchOutboxInvoicePdf(config: InvoiceConfig, invoiceId: string): 
   return Buffer.from(data, "base64");
 }
 
-export async function loadOrderInvoicePdf(orderId: string): Promise<{ number: string; pdf: Buffer }> {
+export async function loadOrderInvoicePdf(orderId: string, kind: "sale" | "return" = "sale"): Promise<{ number: string; pdf: Buffer }> {
   const config = readConfig();
   if (!config) throw new Error("Uyum ayarı eksik");
   const supabase = createServiceRoleClient();
   const { data } = await supabase.from("orders").select("order_number, notes").eq("id", orderId).maybeSingle();
   if (!data) throw new Error("Sipariş bulunamadı");
   const row = data as { order_number: string; notes: string | null };
-  const issued = parseIssuedInvoice(row.notes);
-  if (!issued) throw new Error("Bu siparişin kesilmiş faturası yok");
+  const issued = kind === "return" ? parseReturnInvoice(row.notes) : parseIssuedInvoice(row.notes);
+  if (!issued) throw new Error(kind === "return" ? "Bu siparişin iade faturası yok" : "Bu siparişin kesilmiş faturası yok");
   const pdf = await fetchOutboxInvoicePdf(config, issued.ettn);
   return { number: issued.number || row.order_number, pdf };
+}
+
+async function fetchOutboxIssueDate(config: InvoiceConfig, invoiceId: string): Promise<string> {
+  const body =
+    `<tem:GetOutboxInvoice>` +
+    `<tem:userInfo Username="${xml(config.username)}" Password="${xml(config.password)}"/>` +
+    `<tem:invoiceId>${xml(invoiceId)}</tem:invoiceId>` +
+    `</tem:GetOutboxInvoice>`;
+  const response = await soap(config.endpoint, "GetOutboxInvoice", body);
+  const result = response.match(/GetOutboxInvoiceResult\b[^>]*/)?.[0] || "";
+  if (attr(result, "IsSucceded").toLowerCase() !== "true") {
+    throw new Error(attr(result, "Message") || "Fatura tarihi alınamadı");
+  }
+  const decoded = response.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
+  const date = decoded.match(/<(?:\w+:)?IssueDate>([^<]+)</)?.[1]?.slice(0, 10) || "";
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error("Fatura tarihi okunamadı");
+  return date;
 }
 
 async function isEInvoiceUser(config: InvoiceConfig, taxId: string): Promise<boolean> {
@@ -279,6 +324,7 @@ function buildInvoiceXml(input: {
   eInvoice: boolean;
   lines: { name: string; quantity: number; gross: number }[];
   issuedAt: Date;
+  returnOf?: { number: string; issueDate: string };
 }): string {
   const { config, order, taxId, eInvoice, lines, issuedAt } = input;
   const addr = order.shipping_address || {};
@@ -293,7 +339,8 @@ function buildInvoiceXml(input: {
   const phone = String(addr.phone || order.guest_phone || "");
   const customerScheme = taxId.length === 10 ? "VKN" : "TCKN";
   const profile = eInvoice ? "TEMELFATURA" : "EARSIVFATURA";
-  const number = invoiceNumberForOrder(config.prefix, order.order_number, issuedAt.getFullYear());
+  const numberKey = input.returnOf ? `${order.order_number}-IADE` : order.order_number;
+  const number = invoiceNumberForOrder(config.prefix, numberKey, issuedAt.getFullYear());
   const uuid = crypto.randomUUID();
   const date = issuedAt.toISOString().slice(0, 10);
   const time = issuedAt.toISOString().slice(11, 19);
@@ -334,10 +381,13 @@ function buildInvoiceXml(input: {
     `<cbc:UUID>${uuid}</cbc:UUID>` +
     `<cbc:IssueDate>${date}</cbc:IssueDate>` +
     `<cbc:IssueTime>${time}</cbc:IssueTime>` +
-    `<cbc:InvoiceTypeCode>SATIS</cbc:InvoiceTypeCode>` +
-    `<cbc:Note>${xml(order.order_number)} internet satışı. Tutarlar KDV dahildir.</cbc:Note>` +
+    `<cbc:InvoiceTypeCode>${input.returnOf ? "IADE" : "SATIS"}</cbc:InvoiceTypeCode>` +
+    `<cbc:Note>${xml(input.returnOf ? `${order.order_number} iade faturası. İlk fatura ${input.returnOf.number}.` : `${order.order_number} internet satışı. Tutarlar KDV dahildir.`)}</cbc:Note>` +
     `<cbc:DocumentCurrencyCode>TRY</cbc:DocumentCurrencyCode>` +
     `<cbc:LineCountNumeric>${priced.length}</cbc:LineCountNumeric>` +
+    (input.returnOf
+      ? `<cac:BillingReference><cac:InvoiceDocumentReference><cbc:ID>${xml(input.returnOf.number)}</cbc:ID><cbc:IssueDate>${xml(input.returnOf.issueDate)}</cbc:IssueDate><cbc:DocumentTypeCode>SATIS</cbc:DocumentTypeCode><cbc:DocumentType>İade Edilen Fatura</cbc:DocumentType></cac:InvoiceDocumentReference></cac:BillingReference>`
+      : "") +
     `<cac:AccountingSupplierParty>${partyXml({
       scheme: "VKN",
       id: config.vkn,
@@ -490,7 +540,7 @@ export async function issueInvoiceForPaidOrder(orderId: string, options?: { forc
     const ettn = attr(value, "Id");
     const number = attr(value, "Number") || invoiceNumberForOrder(config.prefix, order.order_number);
     const returnedScenario = attr(value, "InvoiceScenario") || scenario;
-    const notes = upsertInvoiceNote(sending, `[FATURA] issued | ${returnedScenario} | ${number} | ${ettn}`);
+    const notes = upsertInvoiceNote(sending, `[FATURA] issued | ${returnedScenario} | ${number} | ${ettn} | ${issuedAt.toISOString().slice(0, 10)}`);
     await saveInvoiceNote(order.id, notes, {
       invoice_status: "issued",
       invoice_number: number,
@@ -571,44 +621,172 @@ export async function retryRecentStoreInvoices(): Promise<number> {
     const next = await issueInvoiceForPaidOrder((row as { id: string }).id);
     if (next === "issued") issued += 1;
   }
+
+  const { data: returns } = await supabase
+    .from("orders")
+    .select("id, notes")
+    .eq("payment_status", "REFUNDED")
+    .or("notes.ilike.%[IADE] failed%,notes.ilike.%[FATURA IPTAL] başarısız%")
+    .order("updated_at", { ascending: true })
+    .limit(10);
+  for (const row of returns ?? []) {
+    const record = row as { id: string; notes: string | null };
+    if ((record.notes || "").includes("[IADE] issued")) continue;
+    await cancelInvoiceForRefundedOrder(record.id);
+    const { data: after } = await supabase.from("orders").select("notes").eq("id", record.id).maybeSingle();
+    const notes = (after as { notes: string | null } | null)?.notes || "";
+    if (notes.includes("[IADE] issued") || notes.includes("[FATURA IPTAL] e-Arşiv iptal edildi")) issued += 1;
+  }
   return issued;
 }
 
+async function issueReturnInvoice(orderId: string, original: { number: string; issueDate: string; scenario: string }): Promise<void> {
+  const supabase = createServiceRoleClient();
+  const { data: orderRow } = await supabase
+    .from("orders")
+    .select("id, order_number, notes, guest_email, guest_name, guest_phone, shipping_address, shipping_cost, total, payment_status, delivery_method, updated_at")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (!orderRow) return;
+  const order = orderRow as OrderForInvoice;
+  if (parseReturnInvoice(order.notes)) return;
+  const config = readConfig();
+  if (!config) {
+    await saveInvoiceNote(orderId, upsertTaggedNote(order.notes, "[IADE]", "[IADE] failed | Uyum ayarı eksik"));
+    return;
+  }
+  const addr = order.shipping_address || {};
+  const resolvedTax = resolveBuyerTaxId(String(addr.taxId || ""));
+  if ("error" in resolvedTax) {
+    await saveInvoiceNote(orderId, upsertTaggedNote(order.notes, "[IADE]", "[IADE] failed | TCKN/VKN geçersiz"));
+    return;
+  }
+  const taxId = resolvedTax.taxId;
+  const eInvoice = original.scenario.toLowerCase().includes("einvoice");
+  const { data: items } = await supabase.from("order_items").select("name, price, quantity, size").eq("order_id", order.id);
+  const lines = (items ?? []).map((item) => {
+    const row = item as { name: string; price: number; quantity: number; size: string | null };
+    const size = row.size && row.size !== "tek_beden" ? ` (${row.size})` : "";
+    return {
+      name: `${row.name}${size}`.slice(0, 200),
+      quantity: Math.max(1, Number(row.quantity) || 1),
+      gross: money(Number(row.price) * Math.max(1, Number(row.quantity) || 1)),
+    };
+  });
+  const shipping = money(Number(order.shipping_cost) || 0);
+  if (shipping > 0) lines.push({ name: "Kargo", quantity: 1, gross: shipping });
+  if (lines.length === 0) throw new Error("İade fatura kalemi yok");
+
+  const issuedAt = new Date();
+  const invoiceXml = buildInvoiceXml({
+    config,
+    order,
+    taxId,
+    eInvoice,
+    lines,
+    issuedAt,
+    returnOf: { number: original.number, issueDate: original.issueDate },
+  });
+  const scenario = eInvoice ? "eInvoice" : "eArchive";
+  const nowStamp = stamp();
+  const archive = eInvoice
+    ? ""
+    : `<tem:EArchiveInvoiceInfo DeliveryType="Electronic">` +
+      `<tem:InternetSalesInfo>` +
+      `<tem:WebAddress>${xml(config.webAddress)}</tem:WebAddress>` +
+      `<tem:PaymentMidierName>iyzico</tem:PaymentMidierName>` +
+      `<tem:PaymentType>KREDIKARTI/BANKAKARTI</tem:PaymentType>` +
+      `<tem:PaymentDate>${nowStamp}</tem:PaymentDate>` +
+      `<tem:ShipmentInfo>` +
+      `<tem:SendDate>${nowStamp}</tem:SendDate>` +
+      `<tem:Carier SenderTcknVkn="${xml(config.carrierVkn)}" SenderName="${xml(config.carrierName)}"/>` +
+      `</tem:ShipmentInfo>` +
+      `</tem:InternetSalesInfo>` +
+      `</tem:EArchiveInvoiceInfo>`;
+  const body =
+    `<tem:SendInvoice>` +
+    `<tem:userInfo Username="${xml(config.username)}" Password="${xml(config.password)}"/>` +
+    `<tem:invoices><tem:InvoiceInfo LocalDocumentId="${xml(order.order_number + "-IADE")}">` +
+    `<tem:Invoice xmlns:cac="urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2">${invoiceXml}</tem:Invoice>` +
+    `<tem:TargetCustomer VknTckn="${xml(taxId)}" Title="${xml(String(addr.fullName || order.guest_name || "Müşteri"))}"/>` +
+    archive +
+    `<tem:Scenario>${scenario}</tem:Scenario>` +
+    `<tem:CreateDateUtc>${nowStamp}</tem:CreateDateUtc>` +
+    `</tem:InvoiceInfo></tem:invoices>` +
+    `</tem:SendInvoice>`;
+  const response = await soap(config.endpoint, "SendInvoice", body);
+  const result = response.match(/SendInvoiceResult\b[^>]*/)?.[0] || "";
+  if (attr(result, "IsSucceded").toLowerCase() !== "true") {
+    throw new Error(attr(result, "Message") || "İade faturası reddedildi");
+  }
+  const value = response.match(/<[^>]*Value\b[^>]*/)?.[0] || "";
+  const ettn = attr(value, "Id");
+  const number = attr(value, "Number") || invoiceNumberForOrder(config.prefix, `${order.order_number}-IADE`);
+  const returnedScenario = attr(value, "InvoiceScenario") || scenario;
+  const freshNotes = (await supabase.from("orders").select("notes").eq("id", orderId).maybeSingle()).data as { notes: string | null } | null;
+  const notes = upsertTaggedNote(freshNotes?.notes ?? order.notes, "[IADE]", `[IADE] issued | ${returnedScenario} | ${number} | ${ettn} | ${issuedAt.toISOString().slice(0, 10)}`);
+  await saveInvoiceNote(orderId, notes, { invoice_status: "return_issued" });
+}
+
+/**
+ * İade onaylanınca: e-Arşiv 7 gün içindeyse iptal edilir.
+ * Süre dolduysa veya fatura e-Fatura ise iade faturası kesilir.
+ */
 export async function cancelInvoiceForRefundedOrder(orderId: string): Promise<void> {
   const supabase = createServiceRoleClient();
   const { data } = await supabase.from("orders").select("id, notes").eq("id", orderId).maybeSingle();
   if (!data) return;
   const notes = (data as { notes: string | null }).notes || "";
-  if (notes.includes("[FATURA IPTAL]")) return;
-  const issued = notes.split("\n").map((line) => line.trim()).find((line) => line.startsWith("[FATURA] issued"));
+  if (notes.includes("[IADE] issued")) return;
+  if (notes.includes("[FATURA IPTAL] e-Arşiv iptal edildi")) return;
+  const issued = parseIssuedInvoice(notes);
   if (!issued) return;
-  const parts = issued.split("|").map((part) => part.trim());
-  const scenario = parts[1] || "";
-  const ettn = parts[3] || "";
-  if (scenario.toLowerCase().includes("einvoice")) {
-    await saveInvoiceNote(orderId, `${notes}\n[FATURA IPTAL] e-Fatura iptali Uyum panelinden yapılmalı`);
-    return;
-  }
   const config = readConfig();
-  if (!config || !ettn) {
-    await saveInvoiceNote(orderId, `${notes}\n[FATURA IPTAL] e-Arşiv iptal edilemedi: ayar veya ETTN yok`);
+  if (!config) {
+    await saveInvoiceNote(orderId, upsertTaggedNote(notes, "[IADE]", "[IADE] failed | Uyum ayarı eksik"));
     return;
   }
-  try {
-    const body =
-      `<tem:CancelEArchiveInvoice>` +
-      `<tem:userInfo Username="${xml(config.username)}" Password="${xml(config.password)}"/>` +
-      `<tem:request InvoiceId="${xml(ettn)}" CancelDate="${stamp()}"/>` +
-      `</tem:CancelEArchiveInvoice>`;
-    const response = await soap(config.endpoint, "CancelEArchiveInvoice", body);
-    const result = response.match(/CancelEArchiveInvoiceResult\b[^>]*/)?.[0] || "";
-    if (attr(result, "IsSucceded").toLowerCase() !== "true") {
-      throw new Error(attr(result, "Message") || "e-Arşiv iptal reddedildi");
+
+  let issueDate = issued.issueDate;
+  if (!issueDate) {
+    try {
+      issueDate = await fetchOutboxIssueDate(config, issued.ettn);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      await saveInvoiceNote(orderId, upsertTaggedNote(notes, "[IADE]", `[IADE] failed | ${message.slice(0, 180)}`));
+      return;
     }
-    await saveInvoiceNote(orderId, `${notes}\n[FATURA IPTAL] e-Arşiv iptal edildi`, { invoice_status: "cancelled" });
+  }
+
+  const eInvoice = issued.scenario.toLowerCase().includes("einvoice");
+  if (!eInvoice && eArchiveCancelOpen(issueDate)) {
+    try {
+      const body =
+        `<tem:CancelEArchiveInvoice>` +
+        `<tem:userInfo Username="${xml(config.username)}" Password="${xml(config.password)}"/>` +
+        `<tem:request InvoiceId="${xml(issued.ettn)}" CancelDate="${stamp()}"/>` +
+        `</tem:CancelEArchiveInvoice>`;
+      const response = await soap(config.endpoint, "CancelEArchiveInvoice", body);
+      const result = response.match(/CancelEArchiveInvoiceResult\b[^>]*/)?.[0] || "";
+      if (attr(result, "IsSucceded").toLowerCase() !== "true") {
+        throw new Error(attr(result, "Message") || "e-Arşiv iptal reddedildi");
+      }
+      await saveInvoiceNote(orderId, upsertTaggedNote(notes, "[FATURA IPTAL]", "[FATURA IPTAL] e-Arşiv iptal edildi"), { invoice_status: "cancelled" });
+      return;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error("Uyum e-Arşiv iptal:", message);
+      await saveInvoiceNote(orderId, upsertTaggedNote(notes, "[FATURA IPTAL]", `[FATURA IPTAL] başarısız | ${message.slice(0, 180)}`));
+      return;
+    }
+  }
+
+  try {
+    await issueReturnInvoice(orderId, { number: issued.number, issueDate, scenario: issued.scenario });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("Uyum fatura iptal:", message);
-    await saveInvoiceNote(orderId, `${notes}\n[FATURA IPTAL] başarısız | ${message.slice(0, 180)}`);
+    console.error("Uyum iade faturası:", message);
+    const { data: latest } = await supabase.from("orders").select("notes").eq("id", orderId).maybeSingle();
+    await saveInvoiceNote(orderId, upsertTaggedNote((latest as { notes: string | null } | null)?.notes ?? notes, "[IADE]", `[IADE] failed | ${message.slice(0, 180)}`));
   }
 }

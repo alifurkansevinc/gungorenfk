@@ -114,6 +114,13 @@ function invoicePdfReady(notes?: string | null): boolean {
   return (notes || "").split("\n").some((line) => line.trim().startsWith("[FATURA] issued"));
 }
 
+function returnInvoiceLine(notes?: string | null): string | null {
+  const line = (notes || "").split("\n").map((part) => part.trim()).find((part) => part.startsWith("[IADE] issued"));
+  if (!line) return null;
+  const number = line.split("|").map((part) => part.trim())[2];
+  return `İade faturası: ${number || "kesildi"}`;
+}
+
 type Summary = {
   total: number;
   byPayment: Record<string, number>;
@@ -668,6 +675,9 @@ export default function AdminSiparislerPage() {
                   {invoiceLine(selected.notes) && (
                     <p className="mt-2 text-sm font-medium text-gray-800">{invoiceLine(selected.notes)}</p>
                   )}
+                  {returnInvoiceLine(selected.notes) && (
+                    <p className="mt-1 text-sm font-medium text-gray-800">{returnInvoiceLine(selected.notes)}</p>
+                  )}
                 </div>
                 <div>
                   <h3 className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
@@ -704,6 +714,26 @@ export default function AdminSiparislerPage() {
                         </li>
                       ))}
                   </ul>
+                </div>
+              )}
+              {returnInvoiceLine(selected.notes) && (
+                <div>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-gray-700">İade faturası</h3>
+                    <a
+                      href={`/api/admin/orders/invoice?orderId=${selected.id}&kind=iade`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm font-medium text-bordo hover:underline"
+                    >
+                      Yeni sekmede aç
+                    </a>
+                  </div>
+                  <iframe
+                    title={`İade faturası ${selected.orderNumber}`}
+                    src={`/api/admin/orders/invoice?orderId=${selected.id}&kind=iade`}
+                    className="h-[520px] w-full rounded-xl border border-gray-200 bg-white"
+                  />
                 </div>
               )}
               {invoicePdfReady(selected.notes) && (
