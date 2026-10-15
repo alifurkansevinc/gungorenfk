@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { retryRecentStoreInvoices } from "@/lib/uyum-invoice";
+import { probeUyumConnection, retryRecentStoreInvoices } from "@/lib/uyum-invoice";
 
 function authorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -14,6 +14,10 @@ function authorized(request: Request): boolean {
 export async function GET(request: Request) {
   if (!authorized(request)) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
+  }
+  if (new URL(request.url).searchParams.get("probe") === "1") {
+    const probe = await probeUyumConnection();
+    return NextResponse.json(probe, { status: probe.ok ? 200 : 502 });
   }
   try {
     const invoiced = await retryRecentStoreInvoices();

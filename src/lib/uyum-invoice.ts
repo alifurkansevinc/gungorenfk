@@ -467,6 +467,24 @@ export async function issueInvoiceForPaidOrder(orderId: string): Promise<Invoice
   }
 }
 
+/** Kullanıcı adı ve şifreyi dener. Fatura kesmez. */
+export async function probeUyumConnection(): Promise<{ ok: boolean; message: string }> {
+  const config = readConfig();
+  if (!config) return { ok: false, message: "Uyum ayarı eksik" };
+  try {
+    const eInvoice = await isEInvoiceUser(config, FALLBACK_TCKN);
+    return {
+      ok: true,
+      message: eInvoice
+        ? "Bağlantı tamam. 11111111111 e-Fatura mükellefi göründü."
+        : "Bağlantı tamam. 11111111111 e-Arşiv mükellefi.",
+    };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    return { ok: false, message: message.slice(0, 300) };
+  }
+}
+
 export async function retryRecentStoreInvoices(): Promise<number> {
   const supabase = createServiceRoleClient();
   const dueBefore = new Date(Date.now() - INVOICE_AFTER_MS).toISOString();
