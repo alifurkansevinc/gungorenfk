@@ -20,6 +20,37 @@ import { MatchEventsChips } from "@/components/MatchEventsChips";
 
 type ResultType = "W" | "D" | "L";
 
+function groupMatchesByWeek<T extends { match_date: string; match_time?: string | null; season?: string | null }>(
+  matches: T[],
+) {
+  const sorted = [...matches].sort((a, b) => {
+    const byDate = a.match_date.localeCompare(b.match_date);
+    if (byDate !== 0) return byDate;
+    return (a.match_time || "").localeCompare(b.match_time || "");
+  });
+  const groups: { key: string; week: number; season: string | null; matches: T[] }[] = [];
+  let week = 0;
+  let seasonKey = "\0";
+  let lastDate = "";
+  for (const m of sorted) {
+    const season = m.season?.trim() || "";
+    if (season !== seasonKey) {
+      seasonKey = season;
+      week = 0;
+      lastDate = "";
+    }
+    if (m.match_date !== lastDate) {
+      week += 1;
+      lastDate = m.match_date;
+    }
+    const key = `${seasonKey}:${week}`;
+    const prev = groups[groups.length - 1];
+    if (!prev || prev.key !== key) groups.push({ key, week, season: season || null, matches: [m] });
+    else prev.matches.push(m);
+  }
+  return groups;
+}
+
 function maclarHref(q: { sezon?: string; puan?: string }): string {
   const p = new URLSearchParams();
   if (q.sezon) p.set("sezon", q.sezon);
@@ -90,10 +121,7 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
   const leagueName = standings.rows.length > 0 ? standings.league_name : "İstanbul 1. Amatör Lig";
   const activeSeasonTab = showAllSeasons ? null : typeof filter === "string" ? filter : null;
   const qBase = { sezon: sp?.sezon?.trim(), puan: sp?.puan?.trim() };
-  // En üstte en yeni, en altta en eski (tarihe göre azalan)
-  const sortedDbMatches = [...matches]
-    .filter((m) => !m.id.startsWith("demo-"))
-    .sort((a, b) => b.match_date.localeCompare(a.match_date));
+  const fixtureWeeks = groupMatchesByWeek(matches.filter((m) => !m.id.startsWith("demo-")));
 
   return (
     <div className="min-h-screen">
@@ -259,14 +287,26 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
             )}
           </div>
           <div className="space-y-0 overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm">
-            {sortedDbMatches.length === 0 ? (
+            {fixtureWeeks.length === 0 ? (
               <div className="py-10 text-center text-sm text-siyah/50">
                 {hasAnyRealDbMatch
                   ? "Bu sezona ait maç yok. Üstteki sezon seçiciden başka sezon veya «Tümü»nü deneyin."
                   : "Optaport’tan henüz maç gelmedi."}
               </div>
             ) : (
-              sortedDbMatches.map((m, i) => {
+              fixtureWeeks.map((group) => (
+                <div key={group.key}>
+                  <div className="border-b border-siyah/10 bg-siyah/[0.04] px-4 py-2 text-left">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-siyah/70">
+                      {group.week}. Hafta
+                      {showAllSeasons && group.season ? (
+                        <span className="ml-2 font-medium normal-case tracking-normal text-siyah/45">
+                          {formatSeasonTabLabel(group.season)}
+                        </span>
+                      ) : null}
+                    </p>
+                  </div>
+                  {group.matches.map((m, i) => {
                 const hasScoreDb = m.goals_for != null && m.goals_against != null;
                 const result: ResultType = !hasScoreDb ? "D" : m.goals_for! > m.goals_against! ? "W" : m.goals_for! < m.goals_against! ? "L" : "D";
                 const müsabakaLabel = normalizeSiteCompetition(m.competition) || leagueName;
@@ -314,8 +354,10 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
                       )}
                     </span>
                   </div>
-                );
-              })
+                  );
+                  })}
+                </div>
+              ))
             )}
           </div>
         </section>
