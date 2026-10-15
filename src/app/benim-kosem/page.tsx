@@ -6,6 +6,7 @@ import type { FanLevel } from "@/types/db";
 import { FanLevelBadge } from "@/app/taraftar/FanLevelBadge";
 import { FavoriOyuncuSec } from "./FavoriOyuncuSec";
 import { signOutCurrentUser } from "@/app/actions/auth";
+import { netPaidStoreSpend } from "@/lib/store-spend";
 
 export const metadata = {
   title: "Benim Köşem | Güngören FK",
@@ -85,10 +86,16 @@ export default async function BenimKosemPage() {
   // Efektif mağaza harcaması: üye + aynı e-postayla yapılan misafir siparişlerinin toplamı (barem doğru ilerlesin)
   const { data: paidOrdersForSpend } = await supabase
     .from("orders")
-    .select("total")
+    .select("id, total")
     .eq("payment_status", "PAID")
     .or(userEmail ? `user_id.eq.${user.id},and(user_id.is.null,guest_email.eq.${userEmail})` : `user_id.eq.${user.id}`);
-  const storeSpend = (paidOrdersForSpend ?? []).reduce((sum, o) => sum + Number((o as { total: number }).total || 0), 0);
+  const storeSpend = await netPaidStoreSpend(
+    supabase,
+    (paidOrdersForSpend ?? []).map((order) => ({
+      id: (order as { id: string }).id,
+      total: Number((order as { total: number }).total) || 0,
+    }))
+  );
 
   const { data: myTickets } = await supabase
     .from("match_tickets")
@@ -516,9 +523,17 @@ export default async function BenimKosemPage() {
                             <span className="mt-1.5 inline-flex items-center rounded-md bg-siyah/10 px-2 py-0.5 text-[11px] font-medium text-siyah/70">QR üzerinde kullanıldı · Tekrar kullanılamaz</span>
                           )}
                         </div>
-                        <span className="text-sm text-siyah/60 shrink-0">
-                          {new Date((o as { created_at: string }).created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
-                        </span>
+                        <div className="flex shrink-0 items-center gap-3">
+                          <Link
+                            href={`/benim-kosem/iade-degisim?siparis=${encodeURIComponent((o as { order_number: string }).order_number)}`}
+                            className="text-xs font-semibold text-bordo hover:underline"
+                          >
+                            İade / değişim
+                          </Link>
+                          <span className="text-sm text-siyah/60">
+                            {new Date((o as { created_at: string }).created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" })}
+                          </span>
+                        </div>
                       </li>
                     );
                   })}

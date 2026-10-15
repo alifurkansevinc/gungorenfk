@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   Search,
   Eye,
@@ -241,7 +242,7 @@ export default function AdminSiparislerPage() {
   const handleFullRefund = async (order: Order) => {
     if (
       !confirm(
-        `${order.orderNumber} siparişi için TAM İADE yapılacak:\n\n• iyzico üzerinden tutar geri ödenir\n• Stoklar ürünlere iade edilir\n• Taraftar mağaza harcaması (varsa) düşülür\n• Sipariş: ödeme İade, durum İptal\n\nDevam?`
+        `${order.orderNumber} siparişi için kalan tutarın TAM İADESİ yapılacak:\n\n• iyzico üzerinden kalan tutar geri ödenir\n• Açık iade/değişim talebi varsa işlem durur\n• Stoklar ürünlere iade edilir\n• Taraftar mağaza harcaması düşülür\n• Sipariş: ödeme İade, durum İptal\n\nDevam?`
       )
     ) {
       return;
@@ -417,6 +418,14 @@ export default function AdminSiparislerPage() {
           <h1 className="text-2xl font-bold text-gray-900">Siparişler</h1>
           <p className="text-gray-500">Tüm siparişleri görüntüleyin ve yönetin. Ödenen sipariş silinemez; bekleyenler 36 saat sonra otomatik silinir.</p>
         </div>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/admin/siparisler/talepler"
+            className="inline-flex items-center gap-2 rounded-xl border border-bordo/30 bg-bordo/5 px-4 py-2.5 text-sm font-medium text-bordo hover:bg-bordo/10"
+          >
+            <RotateCcw className="h-4 w-4" />
+            İade / değişim talepleri
+          </Link>
         <button
           type="button"
           onClick={() => fetchOrders()}
@@ -425,6 +434,7 @@ export default function AdminSiparislerPage() {
           <RefreshCw className="h-4 w-4" />
           Yenile
         </button>
+        </div>
       </div>
 
       {summary && (

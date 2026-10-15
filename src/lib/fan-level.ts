@@ -1,4 +1,5 @@
 import { createServiceRoleClient } from "@/lib/supabase/service";
+import { netPaidStoreSpend } from "@/lib/store-spend";
 
 /**
  * Taraftar baremleri (mağaza, bilet, bağış) hedefe ulaştıysa bir üst seviyeye geçirir ve baremleri sıfırlar.
@@ -19,11 +20,14 @@ export async function checkAndLevelUp(userId: string): Promise<{ leveledUp: bool
   const { data: paidOrders } = profileEmail
     ? await supabase
         .from("orders")
-        .select("total")
+        .select("id, total")
         .eq("payment_status", "PAID")
         .or(`user_id.eq.${userId},and(user_id.is.null,guest_email.eq.${profileEmail})`)
-    : await supabase.from("orders").select("total").eq("payment_status", "PAID").eq("user_id", userId);
-  const effectiveStoreSpend = (paidOrders ?? []).reduce((s, o) => s + Number((o as { total: number }).total || 0), 0);
+    : await supabase.from("orders").select("id, total").eq("payment_status", "PAID").eq("user_id", userId);
+  const effectiveStoreSpend = await netPaidStoreSpend(
+    supabase,
+    (paidOrders ?? []).map((order) => ({ id: (order as { id: string }).id, total: Number((order as { total: number }).total) || 0 }))
+  );
 
   const { data: distinctMatches } = await supabase
     .from("match_tickets")

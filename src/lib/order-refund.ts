@@ -1,7 +1,21 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { adjustProductSizeStock, normalizeSize } from "@/lib/order-stock";
+
+type StockRequestRow = {
+  id: string;
+  order_item_id: string;
+  request_type: string;
+  status: string;
+  quantity: number;
+  to_size: string | null;
+  stock_reserved: boolean;
+  old_stock_restored: boolean;
+};
 
 /**
- * Ödeme sonrası düşülen stoku iade eder (beden bazlı stock_by_size).
+ * Ödeme sonrası düşülen stoku iade eder.
+ * Tamamlanmış iadelerde stoğu ikinci kez yazmaz.
+ * Açık beden değişiminde ayrılan yeni bedeni geri açar; eski beden zaten stoğa alındıysa onu tekrar eklemez.
  */
 export async function restoreStockForOrder(
   supabase: SupabaseClient,
@@ -9,24 +23,41 @@ export async function restoreStockForOrder(
 ): Promise<{ ok: true } | { ok: false; error: string }> {
   const { data: orderItems, error: itemsErr } = await supabase
     .from("order_items")
-    .select("product_id, size, quantity")
+    .select("id, product_id, size, quantity")
     .eq("order_id", orderId);
   if (itemsErr) return { ok: false, error: itemsErr.message };
 
+  const { data: requestRows, error: reqErr } = await supabase
+    .from("order_service_requests")
+    .select("id, order_item_id, request_type, status, quantity, to_size, stock_reserved, old_stock_restored")
+    .eq("order_id", orderId);
+  if (reqErr) return { ok: false, error: reqErr.message };
+  const requests = (requestRows ?? []) as StockRequestRow[];
+
   for (const item of orderItems ?? []) {
-    const productId = (item as { product_id: string }).product_id;
-    const size = ((item as { size: string | null }).size ?? "tek_beden").trim() || "tek_beden";
-    const qty = Math.max(1, Number((item as { quantity: number }).quantity) || 1);
-    const { data: prod, error: prodErr } = await supabase.from("store_products").select("stock_by_size").eq("id", productId).single();
-    if (prodErr || !prod) continue;
-    const stock = (prod.stock_by_size as Record<string, number> | null) ?? {};
-    const current = Math.max(0, Number(stock[size]) || 0);
-    const nextStock = { ...stock, [size]: current + qty };
-    const { error: upErr } = await supabase
-      .from("store_products")
-      .update({ stock_by_size: nextStock, updated_at: new Date().toISOString() })
-      .eq("id", productId);
-    if (upErr) return { ok: false, error: upErr.message };
+    const row = item as { id: string; product_id: string | null; size: string | null; quantity: number };
+    if (!row.product_id) continue;
+    const itemRequests = requests.filter((request) => request.order_item_id === row.id);
+    const returnedQty = itemRequests
+      .filter((request) => request.request_type === "RETURN" && request.status === "TAMAMLANDI" && request.old_stock_restored)
+      .reduce((sum, request) => sum + Number(request.quantity || 0), 0);
+    const originalAlreadyBack = itemRequests.some(
+      (request) => request.request_type === "SIZE_EXCHANGE" && request.old_stock_restored && request.status !== "TAMAMLANDI"
+    );
+    if (!originalAlreadyBack) {
+      const qty = Math.max(0, Number(row.quantity) - returnedQty);
+      if (qty > 0) {
+        const restored = await adjustProductSizeStock(supabase, row.product_id, normalizeSize(row.size), qty);
+        if (!restored.ok) return restored;
+      }
+    }
+    for (const exchange of itemRequests) {
+      if (exchange.request_type !== "SIZE_EXCHANGE" || !exchange.stock_reserved || exchange.status === "TAMAMLANDI") continue;
+      if (!exchange.to_size) continue;
+      const released = await adjustProductSizeStock(supabase, row.product_id, exchange.to_size, Number(exchange.quantity) || 1);
+      if (!released.ok) return released;
+      await supabase.from("order_service_requests").update({ stock_reserved: false }).eq("id", exchange.id);
+    }
   }
   return { ok: true };
 }

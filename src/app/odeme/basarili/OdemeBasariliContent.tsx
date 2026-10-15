@@ -10,10 +10,12 @@ export default function OdemeBasariliContent({
   initialReceipt,
   orderNumber,
   levelUp,
+  receiptToken,
 }: {
   initialReceipt: ReceiptData;
   orderNumber: string;
   levelUp: boolean;
+  receiptToken?: string | null;
 }) {
   const { clearCart } = useCart();
   useEffect(() => {
@@ -165,6 +167,22 @@ export default function OdemeBasariliContent({
             {receipt.deliveryMethod !== "store_pickup" && (
               <p className="mt-4 text-sm text-siyah/70">
                 Siparişiniz en kısa sürede kargoya verilecektir. Sorularınız için kulüp ile iletişime geçebilirsiniz.
+              </p>
+            )}
+            {orderNumber && (
+              <p className="mt-4 text-sm text-siyah/70">
+                Teslimattan sonra 14 gün içinde{" "}
+                <Link
+                  href={
+                    receiptToken
+                      ? `/siparis/talep?orderNumber=${encodeURIComponent(orderNumber)}&token=${encodeURIComponent(receiptToken)}`
+                      : "/benim-kosem/iade-degisim"
+                  }
+                  className="font-medium text-bordo hover:underline"
+                >
+                  iade veya beden değişimi
+                </Link>{" "}
+                talebi açabilirsiniz. İsim-numara yazdırılan formalar bu kapsama girmez.
               </p>
             )}
           </>

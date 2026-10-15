@@ -2,6 +2,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { retrieveCheckoutForm, retrievePaymentRefundStatus } from "@/lib/iyzico";
 import { restoreStockForOrder, reverseFanStoreSpendForOrder } from "@/lib/order-refund";
+import { closeOpenServiceRequests } from "@/lib/order-service";
+import { completedRefundTotal } from "@/lib/store-spend";
+import { roundMoney } from "@/lib/order-stock";
 import { checkAndLevelUp } from "@/lib/fan-level";
 import { interpretCheckoutResult, isCheckoutToken } from "@/lib/iyzico-result";
 import { cancelInvoiceForRefundedOrder } from "@/lib/uyum-invoice";
@@ -515,7 +518,13 @@ export async function syncIyzicoPanelRefunds(): Promise<{ checked: number; refun
       if (!claimed?.length) continue;
       const stock = await restoreStockForOrder(supabase, order.id);
       if (!stock.ok) console.error("iyzico panel iadesi stok:", stock.error);
-      await reverseFanStoreSpendForOrder(supabase, order);
+      const already = await completedRefundTotal(supabase, order.id);
+      const refundedBefore = already.ok ? already.amount : Number(order.total);
+      const remaining = Math.max(0, roundMoney(Number(order.total) - refundedBefore));
+      if (remaining > 0) {
+        await reverseFanStoreSpendForOrder(supabase, { ...order, total: remaining });
+      }
+      await closeOpenServiceRequests(supabase, order.id);
       try {
         await cancelInvoiceForRefundedOrder(order.id);
       } catch (err) {

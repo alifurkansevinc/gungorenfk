@@ -13,6 +13,7 @@ export default function robots(): MetadataRoute.Robots {
         "/auth/",
         "/benim-kosem/",
         "/odeme",
+        "/siparis/",
         "/sepet",
         "/taraftar/kayit/complete",
       ],

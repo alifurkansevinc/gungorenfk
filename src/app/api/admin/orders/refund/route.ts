@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { refundPaymentV2 } from "@/lib/iyzico";
 import { restoreStockForOrder, reverseFanStoreSpendForOrder } from "@/lib/order-refund";
+import { closeOpenServiceRequests, fullRefundPlan } from "@/lib/order-service";
 import { cancelInvoiceForRefundedOrder } from "@/lib/uyum-invoice";
 
 /**
@@ -70,9 +71,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Sipariş tutarı geçersiz." }, { status: 400 });
   }
 
+  const plan = await fullRefundPlan(supabase, orderId, total);
+  if ("error" in plan) {
+    return NextResponse.json({ error: plan.error }, { status: 400 });
+  }
+  const refundAmount = plan.remaining;
+
   let refundRes: Awaited<ReturnType<typeof refundPaymentV2>>;
   try {
-    refundRes = await refundPaymentV2({ paymentId: row.payment_id.trim(), price: total });
+    refundRes = await refundPaymentV2({ paymentId: row.payment_id.trim(), price: refundAmount });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("refundPaymentV2 error:", e);
@@ -101,10 +108,10 @@ export async function POST(req: NextRequest) {
   await reverseFanStoreSpendForOrder(supabase, {
     user_id: row.user_id,
     guest_email: row.guest_email,
-    total,
+    total: refundAmount,
   });
 
-  const refundNote = `\n[İADE ${new Date().toISOString()}] iyzico refundHostReference: ${refundRes.refundHostReference ?? "—"} tutar: ${refundRes.price ?? total}`;
+  const refundNote = `\n[İADE ${new Date().toISOString()}] iyzico refundHostReference: ${refundRes.refundHostReference ?? "—"} tutar: ${refundRes.price ?? refundAmount}`;
   const { error: upErr } = await supabase
     .from("orders")
     .update({
@@ -121,6 +128,8 @@ export async function POST(req: NextRequest) {
     console.error("Uyum fatura iptal:", err);
   }
 
+  await closeOpenServiceRequests(supabase, orderId);
+
   if (upErr) {
     console.error("Order update after refund:", upErr);
     return NextResponse.json(
@@ -136,7 +145,7 @@ export async function POST(req: NextRequest) {
     success: true,
     data: {
       orderNumber: row.order_number,
-      refundedPrice: refundRes.price ?? String(total),
+      refundedPrice: refundRes.price ?? String(refundAmount),
       refundHostReference: refundRes.refundHostReference,
     },
   });

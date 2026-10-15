@@ -33,6 +33,7 @@ export default async function OdemeBasariliPage({ searchParams }: Props) {
       initialReceipt={receipt}
       orderNumber={orderNumber}
       levelUp={levelUp}
+      receiptToken={token}
     />
   );
 }
