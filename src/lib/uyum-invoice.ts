@@ -4,7 +4,7 @@ import { FALLBACK_TCKN, resolveBuyerTaxId } from "@/lib/tax-id";
 const INVOICE_AFTER_MS = 4 * 24 * 60 * 60 * 1000;
 
 const SOAP_NS = "http://tempuri.org/";
-const DEFAULT_ENDPOINT = "https://edonusumapi.uyum.com.tr/Services/BasicIntegration";
+const DEFAULT_ENDPOINT = "http://edonusumapi.uyum.com.tr/Services/BasicIntegration";
 
 type InvoiceConfig = {
   username: string;
