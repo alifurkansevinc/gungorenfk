@@ -144,6 +144,7 @@ export default function AdminSiparislerPage() {
       if (!cancelled) {
         const parts: string[] = [];
         if (result.reconciled > 0) parts.push(`${result.reconciled} siparişin ödemesi iyzico'dan onaylandı`);
+        if (result.refunded > 0) parts.push(`${result.refunded} siparişin iyzico iadesi panele işlendi`);
         if (result.expired > 0) parts.push(`${result.expired} adet bekleyen sipariş silindi`);
         if (parts.length) setNotify({ type: "ok", msg: `${parts.join(". ")}.` });
       }

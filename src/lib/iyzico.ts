@@ -62,6 +62,25 @@ async function iyzicoPost<T = Record<string, unknown>>(path: string, body: unkno
   return json;
 }
 
+/** Raporlama GET. İmza yalnızca /v2 yolunu kapsar, sorgu dizesini kapsamaz. */
+async function iyzicoGetV2<T = Record<string, unknown>>(path: string, query: Record<string, string>): Promise<T> {
+  const { apiKey, secretKey, baseUrl } = getIyzicoEnv();
+  const randomString = generateRandomString();
+  const signature = crypto.createHmac("sha256", secretKey).update(randomString + path).digest("hex");
+  const authorizationParams = [`apiKey:${apiKey}`, `randomKey:${randomString}`, `signature:${signature}`].join("&");
+  const url = new URL(`${path}?${new URLSearchParams(query).toString()}`, baseUrl).toString();
+  const res = await fetch(url, {
+    method: "GET",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json",
+      "x-iyzi-rnd": randomString,
+      Authorization: `IYZWSv2 ${Buffer.from(authorizationParams).toString("base64")}`,
+    },
+  });
+  return (await res.json().catch(() => ({}))) as T;
+}
+
 const LOCALE_TR = "tr";
 const CURRENCY_TRY = "TRY";
 const PAYMENT_GROUP_PRODUCT = "PRODUCT";
@@ -236,4 +255,26 @@ export async function refundPaymentV2(params: {
     errorCode?: string;
     errorMessage?: string;
   }>;
+}
+
+/** iyzico panelinden yapılan iade durumunu döner. Ödeme sorgusu iadeyi göstermez. */
+export async function retrievePaymentRefundStatus(paymentId: string): Promise<{
+  status?: string;
+  errorMessage?: string;
+  paymentRefundStatus?: string;
+}> {
+  const json = await iyzicoGetV2<{
+    status?: string;
+    errorMessage?: string;
+    payments?: Array<{ paymentRefundStatus?: string }>;
+  }>("/v2/reporting/payment/details", {
+    paymentId,
+    locale: LOCALE_TR,
+    conversationId: generateConversationId(),
+  });
+  return {
+    status: json.status,
+    errorMessage: json.errorMessage,
+    paymentRefundStatus: json.payments?.[0]?.paymentRefundStatus,
+  };
 }

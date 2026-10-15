@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { createServiceRoleClient } from "@/lib/supabase/service";
-import { retrieveCheckoutForm } from "@/lib/iyzico";
+import { retrieveCheckoutForm, retrievePaymentRefundStatus } from "@/lib/iyzico";
+import { restoreStockForOrder, reverseFanStoreSpendForOrder } from "@/lib/order-refund";
 import { checkAndLevelUp } from "@/lib/fan-level";
 import { interpretCheckoutResult, isCheckoutToken } from "@/lib/iyzico-result";
 
@@ -472,4 +473,52 @@ export async function reconcilePendingOrdersDue(cutoffIso: string): Promise<{ ch
     }
   }
   return { checked: tokens.length, paid };
+}
+
+/**
+ * iyzico panelinden yapılan tam iadeleri mağaza siparişine yazar.
+ * Site butonu kullanılmadan iade edilince kayıt PAID kalıyordu.
+ */
+export async function syncIyzicoPanelRefunds(): Promise<{ checked: number; refunded: number }> {
+  const supabase = createServiceRoleClient();
+  const since = new Date(Date.now() - 21 * 24 * 60 * 60 * 1000).toISOString();
+  const { data } = await supabase
+    .from("orders")
+    .select("id, notes, user_id, guest_email, total, payment_id")
+    .eq("payment_status", "PAID")
+    .eq("payment_method", "iyzico")
+    .gte("created_at", since)
+    .order("created_at", { ascending: false })
+    .limit(40);
+
+  let refunded = 0;
+  for (const row of data ?? []) {
+    const paymentId = String((row as { payment_id: string | null }).payment_id || "").trim();
+    if (!/^\d+$/.test(paymentId)) continue;
+    try {
+      const report = await retrievePaymentRefundStatus(paymentId);
+      if (report.paymentRefundStatus !== "TOTALLY_REFUNDED") continue;
+      const order = row as { id: string; notes: string | null; user_id: string | null; guest_email: string | null; total: number };
+      const note = `\n[İADE ${new Date().toISOString()}] iyzico panelinden tam iade`;
+      const { data: claimed } = await supabase
+        .from("orders")
+        .update({
+          payment_status: "REFUNDED",
+          status: "CANCELLED",
+          notes: `${order.notes || ""}${note}`,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", order.id)
+        .eq("payment_status", "PAID")
+        .select("id");
+      if (!claimed?.length) continue;
+      const stock = await restoreStockForOrder(supabase, order.id);
+      if (!stock.ok) console.error("iyzico panel iadesi stok:", stock.error);
+      await reverseFanStoreSpendForOrder(supabase, order);
+      refunded += 1;
+    } catch (err) {
+      console.error("iyzico panel iade sorgusu:", err);
+    }
+  }
+  return { checked: data?.length ?? 0, refunded };
 }
