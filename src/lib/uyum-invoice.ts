@@ -351,7 +351,7 @@ async function saveInvoiceNote(
   await supabase.from("orders").update({ notes, updated_at: new Date().toISOString() }).eq("id", orderId);
 }
 
-export async function issueInvoiceForPaidOrder(orderId: string): Promise<InvoiceNoteState> {
+export async function issueInvoiceForPaidOrder(orderId: string, options?: { force?: boolean }): Promise<InvoiceNoteState> {
   const supabase = createServiceRoleClient();
   const { data: orderRow } = await supabase
     .from("orders")
@@ -361,7 +361,7 @@ export async function issueInvoiceForPaidOrder(orderId: string): Promise<Invoice
   if (!orderRow) return "failed";
   const order = orderRow as OrderForInvoice;
   if (order.payment_status !== "PAID") return invoiceNoteState(order.notes);
-  if (!invoiceIsDue(order.notes)) return "none";
+  if (!options?.force && !invoiceIsDue(order.notes)) return "none";
   const state = invoiceNoteState(order.notes);
   if (state === "issued" || state === "skipped" || state === "sending") return state;
 
@@ -465,6 +465,30 @@ export async function issueInvoiceForPaidOrder(orderId: string): Promise<Invoice
     await saveInvoiceNote(order.id, notes, { invoice_status: "failed", buyer_tax_id: taxId });
     return "failed";
   }
+}
+
+/** Tek sipariş. force true ise 4 gün beklenmez. */
+export async function issueInvoiceForOrderNumber(
+  orderNumber: string,
+  options?: { force?: boolean }
+): Promise<{ ok: boolean; message: string }> {
+  const supabase = createServiceRoleClient();
+  const { data } = await supabase
+    .from("orders")
+    .select("id, notes, payment_status")
+    .eq("order_number", orderNumber)
+    .maybeSingle();
+  if (!data) return { ok: false, message: "Sipariş bulunamadı" };
+  const row = data as { id: string; notes: string | null; payment_status: string };
+  if (row.payment_status !== "PAID") return { ok: false, message: `Sipariş ödenmemiş: ${row.payment_status}` };
+  const state = await issueInvoiceForPaidOrder(row.id, options);
+  const { data: after } = await supabase.from("orders").select("notes").eq("id", row.id).maybeSingle();
+  const line = String((after as { notes?: string } | null)?.notes || "")
+    .split("\n")
+    .map((part) => part.trim())
+    .filter((part) => part.startsWith("[FATURA]"))
+    .at(-1) || state;
+  return { ok: state === "issued", message: line };
 }
 
 /** Kullanıcı adı ve şifreyi dener. Fatura kesmez. */

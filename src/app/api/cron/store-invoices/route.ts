@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { probeUyumConnection, retryRecentStoreInvoices } from "@/lib/uyum-invoice";
+import { issueInvoiceForOrderNumber, probeUyumConnection, retryRecentStoreInvoices } from "@/lib/uyum-invoice";
 
 function authorized(request: Request): boolean {
   const secret = process.env.CRON_SECRET;
@@ -15,9 +15,15 @@ export async function GET(request: Request) {
   if (!authorized(request)) {
     return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
   }
-  if (new URL(request.url).searchParams.get("probe") === "1") {
+  const url = new URL(request.url);
+  if (url.searchParams.get("probe") === "1") {
     const probe = await probeUyumConnection();
     return NextResponse.json(probe, { status: probe.ok ? 200 : 502 });
+  }
+  const orderNumber = url.searchParams.get("order")?.trim();
+  if (orderNumber) {
+    const result = await issueInvoiceForOrderNumber(orderNumber, { force: url.searchParams.get("force") === "1" });
+    return NextResponse.json(result, { status: result.ok ? 200 : 502 });
   }
   try {
     const invoiced = await retryRecentStoreInvoices();
