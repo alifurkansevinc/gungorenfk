@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { refundPaymentV2 } from "@/lib/iyzico";
 import { restoreStockForOrder, reverseFanStoreSpendForOrder } from "@/lib/order-refund";
+import { cancelInvoiceForRefundedOrder } from "@/lib/uyum-invoice";
 
 /**
  * Admin: Tam iade (iyzico Refund V2 + stok geri + mağaza harcaması düzeltmesi).
@@ -113,6 +114,12 @@ export async function POST(req: NextRequest) {
       updated_at: new Date().toISOString(),
     })
     .eq("id", orderId);
+
+  try {
+    await cancelInvoiceForRefundedOrder(orderId);
+  } catch (err) {
+    console.error("Uyum fatura iptal:", err);
+  }
 
   if (upErr) {
     console.error("Order update after refund:", upErr);

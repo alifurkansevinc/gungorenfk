@@ -8,6 +8,7 @@ import { matchEndAtIso } from "@/lib/match-schedule";
 import { seasonLabelFromMatchDate, toCanonicalSeasonKey } from "@/lib/seasons";
 import { filterSquadForMatchSeason } from "@/lib/football-season";
 import { reconcilePendingIyzicoPayments, reconcilePendingOrdersDue, syncIyzicoPanelRefunds } from "@/lib/checkout-settlement";
+import { retryRecentStoreInvoices } from "@/lib/uyum-invoice";
 
 async function supabase() {
   return getAdminSupabase();
@@ -1142,18 +1143,20 @@ export async function deleteDonation(id: string): Promise<{ ok: true } | { error
 const PENDING_ORDER_EXPIRE_HOURS = 36;
 
 /** Bekleyen (PENDING ödeme) siparişler 36 saat içinde ödenmezse sistemden silinir. Siparişler sayfası yüklenirken çağrılır. */
-export async function expireOldPendingOrders(): Promise<{ expired: number; reconciled: number; refunded: number }> {
+export async function expireOldPendingOrders(): Promise<{ expired: number; reconciled: number; refunded: number; invoiced: number }> {
   const s = createServiceRoleClient();
   const cutoff = new Date();
   cutoff.setTime(cutoff.getTime() - PENDING_ORDER_EXPIRE_HOURS * 60 * 60 * 1000);
   const cutoffIso = cutoff.toISOString();
   let reconciled = 0;
   let refunded = 0;
+  let invoiced = 0;
   try {
     const due = await reconcilePendingOrdersDue(cutoffIso);
     const recent = await reconcilePendingIyzicoPayments("order");
     reconciled = due.paid + recent.paid;
     refunded = (await syncIyzicoPanelRefunds()).refunded;
+    invoiced = await retryRecentStoreInvoices();
   } catch (err) {
     console.error("iyzico sipariş sorgusu:", err);
   }
@@ -1162,11 +1165,11 @@ export async function expireOldPendingOrders(): Promise<{ expired: number; recon
     .select("id")
     .eq("payment_status", "PENDING")
     .lt("created_at", cutoffIso);
-  if (!toDelete?.length) return { expired: 0, reconciled, refunded };
+  if (!toDelete?.length) return { expired: 0, reconciled, refunded, invoiced };
   const { error } = await s.from("orders").delete().in("id", toDelete.map((r) => r.id));
-  if (error) return { expired: 0, reconciled, refunded };
+  if (error) return { expired: 0, reconciled, refunded, invoiced };
   revalidatePath("/admin/siparisler");
-  return { expired: toDelete.length, reconciled, refunded };
+  return { expired: toDelete.length, reconciled, refunded, invoiced };
 }
 
 /** Sipariş siler. Ödendi (PAID) statüsündeki siparişler silinemez (DB trigger da engeller). Sadece başarısız vb. silinebilir. */

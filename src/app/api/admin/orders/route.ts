@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
 
   let query = supabase
     .from("orders")
-    .select("id, order_number, user_id, guest_email, guest_name, guest_phone, shipping_address, subtotal, shipping_cost, total, status, payment_status, payment_method, delivery_method, pickup_date, pickup_code, created_at, updated_at")
+    .select("id, order_number, user_id, guest_email, guest_name, guest_phone, shipping_address, subtotal, shipping_cost, total, status, payment_status, payment_method, delivery_method, pickup_date, pickup_code, notes, created_at, updated_at")
     .order("created_at", { ascending: false });
 
   if (startDate) query = query.gte("created_at", startDate);
@@ -152,6 +152,8 @@ export async function GET(req: NextRequest) {
       deliveryMethod: o.delivery_method ?? "shipping",
       pickupDate: o.pickup_date,
       pickupCode: o.pickup_code,
+      notes: o.notes,
+      buyerTaxId: (addr.taxId as string) || null,
       createdAt: o.created_at,
       updatedAt: o.updated_at,
     };

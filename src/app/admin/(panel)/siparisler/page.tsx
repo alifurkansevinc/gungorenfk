@@ -58,6 +58,8 @@ type Order = {
   pickupCode: string | null;
   createdAt: string;
   paymentMethod?: string | null;
+  notes?: string | null;
+  buyerTaxId?: string | null;
 };
 
 const KARGO_LOGO_URL = "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/Futbolcular/logobordo-02.png";
@@ -89,6 +91,22 @@ function formatDate(s: string) {
 
 function formatPrice(n: number) {
   return new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", minimumFractionDigits: 2 }).format(n);
+}
+
+function invoiceLine(notes?: string | null): string | null {
+  const lines = (notes || "").split("\n").map((line) => line.trim());
+  const last = lines.filter((line) => line.startsWith("[FATURA]")).at(-1);
+  if (!last) return null;
+  const cancelled = lines.some((line) => line.startsWith("[FATURA IPTAL]"));
+  if (last.includes(" issued ")) {
+    const parts = last.split("|").map((part) => part.trim());
+    const label = `Fatura: ${parts[2] || "kesildi"}${parts[1] ? ` (${parts[1]})` : ""}`;
+    return cancelled ? `${label} · iptal` : label;
+  }
+  if (last.includes(" failed ")) return "Fatura kesilemedi";
+  if (last.includes(" skipped ")) return "Fatura için TCKN/VKN yok";
+  if (last.includes(" sending ")) return "Fatura kesiliyor";
+  return null;
 }
 
 type Summary = {
@@ -145,6 +163,7 @@ export default function AdminSiparislerPage() {
         const parts: string[] = [];
         if (result.reconciled > 0) parts.push(`${result.reconciled} siparişin ödemesi iyzico'dan onaylandı`);
         if (result.refunded > 0) parts.push(`${result.refunded} siparişin iyzico iadesi panele işlendi`);
+        if (result.invoiced > 0) parts.push(`${result.invoiced} siparişin faturası kesildi`);
         if (result.expired > 0) parts.push(`${result.expired} adet bekleyen sipariş silindi`);
         if (parts.length) setNotify({ type: "ok", msg: `${parts.join(". ")}.` });
       }
@@ -628,6 +647,12 @@ export default function AdminSiparislerPage() {
                   <p className="text-sm text-gray-600">{selected.customer.email}</p>
                   {selected.customer.phone && (
                     <p className="text-sm text-gray-600">{selected.customer.phone}</p>
+                  )}
+                  {selected.buyerTaxId && (
+                    <p className="text-sm text-gray-600">TCKN/VKN: {selected.buyerTaxId}</p>
+                  )}
+                  {invoiceLine(selected.notes) && (
+                    <p className="mt-2 text-sm font-medium text-gray-800">{invoiceLine(selected.notes)}</p>
                   )}
                 </div>
                 <div>

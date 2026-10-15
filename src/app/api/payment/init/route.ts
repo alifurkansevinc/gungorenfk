@@ -9,6 +9,7 @@ import {
   FORMA_NAME_PRINT_ADDON_TRY,
   normalizeNamePrintPayload,
 } from "@/lib/forma-name-print";
+import { isValidBuyerTaxId } from "@/lib/tax-id";
 
 const DEFAULT_SHIPPING_COST = 29.9;
 const DEFAULT_FREE_THRESHOLD = 500;
@@ -71,6 +72,7 @@ export async function POST(req: NextRequest) {
         addressLine?: string;
         zipCode?: string;
         postalCode?: string;
+        taxId?: string;
       };
       deliveryMethod?: "shipping" | "store_pickup";
     };
@@ -86,6 +88,10 @@ export async function POST(req: NextRequest) {
     }
     if (deliveryMethod === "shipping" && (!shippingAddress?.city || (!shippingAddress?.address && !shippingAddress?.addressLine))) {
       return NextResponse.json({ success: false, error: "Teslimat adresi gereklidir." }, { status: 400 });
+    }
+    const taxId = String(shippingAddress?.taxId || "").replace(/\D/g, "");
+    if (!isValidBuyerTaxId(taxId)) {
+      return NextResponse.json({ success: false, error: "Fatura için geçerli TCKN (11 hane) veya VKN (10 hane) gerekli." }, { status: 400 });
     }
 
     const supabase = createServiceRoleClient();
@@ -230,7 +236,7 @@ export async function POST(req: NextRequest) {
         guest_name: !userId ? fullName : null,
         guest_phone: !userId ? phone : null,
         shipping_address: deliveryMethod === "store_pickup"
-          ? { fullName, email: email || shippingAddress?.email, phone, city: shipCity, address: "Mağazadan teslim", zipCode }
+          ? { fullName, email: email || shippingAddress?.email, phone, city: shipCity, address: "Mağazadan teslim", zipCode, taxId }
           : {
               fullName,
               email: email || shippingAddress?.email,
@@ -240,6 +246,7 @@ export async function POST(req: NextRequest) {
               neighborhood,
               address,
               zipCode,
+              taxId,
             },
         subtotal,
         shipping_cost: shippingCost,
@@ -296,6 +303,7 @@ export async function POST(req: NextRequest) {
         name: firstName,
         surname: lastName,
         email: email || (shippingAddress as { email?: string }).email || "musteri@gungorenfk.com",
+        identityNumber: taxId,
         phone,
         registrationAddress: [neighborhood, address].filter(Boolean).join(", ") || address,
         city: shipCity,

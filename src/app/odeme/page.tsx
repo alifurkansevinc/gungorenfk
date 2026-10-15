@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
+import { isValidBuyerTaxId } from "@/lib/tax-id";
 
 type ShippingSettings = {
   freeShippingThreshold: number;
@@ -42,7 +43,7 @@ export default function OdemePage() {
   const total = totalPrice + shippingCost;
 
   const [userId, setUserId] = useState<string | null>(null);
-  const [customerInfo, setCustomerInfo] = useState({ fullName: "", email: "", phone: "" });
+  const [customerInfo, setCustomerInfo] = useState({ fullName: "", email: "", phone: "", taxId: "" });
   const [shippingAddress, setShippingAddress] = useState({
     fullName: "",
     phone: "",
@@ -53,7 +54,15 @@ export default function OdemePage() {
   });
 
   useEffect(() => {
-    if (items.length === 0 && !checkoutFormContent) router.replace("/sepet");
+    if (checkoutFormContent || items.length > 0) return;
+    try {
+      const raw = localStorage.getItem("gungoren_cart");
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed) && parsed.length > 0) return;
+    } catch {
+      // bozuk sepet kaydı varsa ödeme sayfasında kalmayalım
+    }
+    router.replace("/sepet");
   }, [items.length, checkoutFormContent, router]);
 
   useEffect(() => {
@@ -99,14 +108,20 @@ export default function OdemePage() {
   const phone = shippingAddress.phone || customerInfo.phone;
   const email = customerInfo.email;
 
-  const validateStep1 = () => customerInfo.fullName.trim() && customerInfo.email.trim() && customerInfo.phone.trim();
+  const validateStep1 = () =>
+    Boolean(
+      customerInfo.fullName.trim() &&
+      customerInfo.email.trim() &&
+      customerInfo.phone.trim() &&
+      isValidBuyerTaxId(customerInfo.taxId)
+    );
   const validateStep2 = () =>
     shippingAddress.city.trim() && shippingAddress.address.trim() && fullName && phone;
 
   const handleNextStep = () => {
     setError(null);
     if (currentStep === 1 && !validateStep1()) {
-      setError("Ad, e-posta ve telefon gerekli.");
+      setError("Ad, e-posta, telefon ve geçerli TCKN (11 hane) veya VKN (10 hane) gerekli.");
       return;
     }
     if (currentStep === 2 && !validateStep2()) {
@@ -152,6 +167,7 @@ export default function OdemePage() {
             district: shippingAddress.district,
             address: shippingAddress.address,
             zipCode: shippingAddress.zipCode,
+            taxId: customerInfo.taxId.replace(/\D/g, ""),
           },
         }),
       });
@@ -253,6 +269,20 @@ export default function OdemePage() {
                       onChange={(e) => setCustomerInfo((c) => ({ ...c, email: e.target.value }))}
                       className={inputClass}
                       placeholder="ornek@email.com"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="taxId" className={labelClass}>TCKN / VKN</label>
+                    <input
+                      id="taxId"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      required
+                      maxLength={11}
+                      value={customerInfo.taxId}
+                      onChange={(e) => setCustomerInfo((c) => ({ ...c, taxId: e.target.value.replace(/\D/g, "").slice(0, 11) }))}
+                      className={inputClass}
+                      placeholder="Fatura için 11 haneli TCKN veya 10 haneli VKN"
                     />
                   </div>
                   <div>
