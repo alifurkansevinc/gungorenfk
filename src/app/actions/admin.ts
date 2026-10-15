@@ -7,7 +7,7 @@ import { createServiceRoleClient } from "@/lib/supabase/service";
 import { matchEndAtIso } from "@/lib/match-schedule";
 import { seasonLabelFromMatchDate, toCanonicalSeasonKey } from "@/lib/seasons";
 import { filterSquadForMatchSeason } from "@/lib/football-season";
-import { reconcilePendingIyzicoPayments } from "@/lib/checkout-settlement";
+import { reconcilePendingIyzicoPayments, reconcilePendingOrdersDue } from "@/lib/checkout-settlement";
 
 async function supabase() {
   return getAdminSupabase();
@@ -1139,20 +1139,22 @@ export async function deleteDonation(id: string): Promise<{ ok: true } | { error
   return { ok: true };
 }
 
-const PENDING_ORDER_EXPIRE_DAYS = 3;
+const PENDING_ORDER_EXPIRE_HOURS = 36;
 
-/** Bekleyen (PENDING ödeme) siparişler 3 gün içinde ödenmezse sistemden silinir. Siparişler sayfası yüklenirken çağrılır. */
+/** Bekleyen (PENDING ödeme) siparişler 36 saat içinde ödenmezse sistemden silinir. Siparişler sayfası yüklenirken çağrılır. */
 export async function expireOldPendingOrders(): Promise<{ expired: number; reconciled: number }> {
+  const s = createServiceRoleClient();
+  const cutoff = new Date();
+  cutoff.setTime(cutoff.getTime() - PENDING_ORDER_EXPIRE_HOURS * 60 * 60 * 1000);
+  const cutoffIso = cutoff.toISOString();
   let reconciled = 0;
   try {
-    reconciled = (await reconcilePendingIyzicoPayments("order")).paid;
+    const due = await reconcilePendingOrdersDue(cutoffIso);
+    const recent = await reconcilePendingIyzicoPayments("order");
+    reconciled = due.paid + recent.paid;
   } catch (err) {
     console.error("iyzico sipariş sorgusu:", err);
   }
-  const s = createServiceRoleClient();
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - PENDING_ORDER_EXPIRE_DAYS);
-  const cutoffIso = cutoff.toISOString();
   const { data: toDelete } = await s
     .from("orders")
     .select("id")

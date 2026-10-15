@@ -391,7 +391,7 @@ export default function AdminSiparislerPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Siparişler</h1>
-          <p className="text-gray-500">Tüm siparişleri görüntüleyin ve yönetin. Ödenen sipariş silinemez; bekleyenler 3 gün sonra otomatik silinir.</p>
+          <p className="text-gray-500">Tüm siparişleri görüntüleyin ve yönetin. Ödenen sipariş silinemez; bekleyenler 36 saat sonra otomatik silinir.</p>
         </div>
         <button
           type="button"

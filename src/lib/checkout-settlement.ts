@@ -401,8 +401,8 @@ export async function reconcilePendingIyzicoPayments(kind: "order" | "donation" 
       .eq("payment_status", "PENDING")
       .eq("payment_method", "iyzico")
       .not("payment_id", "is", null)
-      .order("created_at", { ascending: true })
-      .limit(10);
+      .order("created_at", { ascending: false })
+      .limit(15);
     for (const row of data ?? []) {
       const token = (row as { payment_id: string | null }).payment_id;
       if (token && isCheckoutToken(token)) tokens.push(token);
@@ -442,6 +442,33 @@ export async function reconcilePendingIyzicoPayments(kind: "order" | "donation" 
       if (result.outcome === "paid") paid += 1;
     } catch (err) {
       console.error("iyzico reconcile error:", err);
+    }
+  }
+  return { checked: tokens.length, paid };
+}
+
+/** Süresi dolmak üzere olan bekleyen siparişlerin tamamını iyzico'dan doğrular. */
+export async function reconcilePendingOrdersDue(cutoffIso: string): Promise<{ checked: number; paid: number }> {
+  const supabase = createServiceRoleClient();
+  const { data } = await supabase
+    .from("orders")
+    .select("payment_id")
+    .eq("payment_status", "PENDING")
+    .eq("payment_method", "iyzico")
+    .lt("created_at", cutoffIso)
+    .not("payment_id", "is", null);
+  const tokens: string[] = [];
+  for (const row of data ?? []) {
+    const token = (row as { payment_id: string | null }).payment_id;
+    if (token && isCheckoutToken(token)) tokens.push(token);
+  }
+  let paid = 0;
+  for (const token of tokens) {
+    try {
+      const result = await applyCheckoutToken(token, { markFailure: false });
+      if (result.outcome === "paid") paid += 1;
+    } catch (err) {
+      console.error("iyzico reconcile due error:", err);
     }
   }
   return { checked: tokens.length, paid };

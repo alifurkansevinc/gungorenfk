@@ -46,7 +46,7 @@ https://www.siteniz.com/api/iyzico/webhook
 
 İmza doğrulaması `X-IYZ-SIGNATURE-V3` ile yapılır. Bildirimdeki token, iyzico’dan tekrar sorgulanır; yalnızca `paymentStatus = SUCCESS` olan sipariş, bağış veya bilet **Ödendi** yapılır. Aynı bildirim iki kez gelirse stok ve taraftar harcaması bir kez işlenir.
 
-Admin siparişler sayfası açıldığında bekleyen iyzico siparişleri de yeniden sorgulanır. Ödemesi alınmış olanlar, 3 gün dolup silinmeden önce **Ödendi** durumuna çekilir.
+Admin siparişler sayfası açıldığında bekleyen iyzico siparişleri de yeniden sorgulanır. Ödemesi alınmış olanlar, 36 saat dolup silinmeden önce **Ödendi** durumuna çekilir.
 
 ### 5. Veritabanı
 Supabase’de `008_orders_and_iyzico.sql` migration’ı uygulanmış olmalı. Uygulanmadıysa SQL Editor’den çalıştırın.
