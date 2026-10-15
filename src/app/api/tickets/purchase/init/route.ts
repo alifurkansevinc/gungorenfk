@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { initializeCheckoutForm } from "@/lib/iyzico";
+import { publicBaseUrl } from "@/lib/public-base-url";
 import { checkAndLevelUp } from "@/lib/fan-level";
 
 const TICKET_PRICE = 0;
@@ -24,7 +25,7 @@ export async function POST(req: NextRequest) {
 
     const supabaseAuth = await createClient();
     const { data: { user } } = await supabaseAuth.auth.getUser();
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const baseUrl = publicBaseUrl(req);
 
     if (!user) {
       const loginUrl = `${baseUrl}/taraftar/giris?redirect=${encodeURIComponent("/biletler")}`;

@@ -7,6 +7,7 @@ import { createServiceRoleClient } from "@/lib/supabase/service";
 import { matchEndAtIso } from "@/lib/match-schedule";
 import { seasonLabelFromMatchDate, toCanonicalSeasonKey } from "@/lib/seasons";
 import { filterSquadForMatchSeason } from "@/lib/football-season";
+import { reconcilePendingIyzicoPayments } from "@/lib/checkout-settlement";
 
 async function supabase() {
   return getAdminSupabase();
@@ -1103,7 +1104,13 @@ export async function updateMackolikFixtureUrl(url: string) {
 const PENDING_DONATION_EXPIRE_DAYS = 3;
 
 /** Bekleyen (PENDING) bağışlar 3 gün içinde ödenmezse sistemden silinir. Bağışlar sayfası yüklenirken çağrılır. */
-export async function expireOldPendingDonations(): Promise<{ expired: number }> {
+export async function expireOldPendingDonations(): Promise<{ expired: number; reconciled: number }> {
+  let reconciled = 0;
+  try {
+    reconciled = (await reconcilePendingIyzicoPayments("donation")).paid;
+  } catch (err) {
+    console.error("iyzico bağış sorgusu:", err);
+  }
   const s = createServiceRoleClient();
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - PENDING_DONATION_EXPIRE_DAYS);
@@ -1113,11 +1120,11 @@ export async function expireOldPendingDonations(): Promise<{ expired: number }> 
     .select("id")
     .eq("payment_status", "PENDING")
     .lt("created_at", cutoffIso);
-  if (!toDelete?.length) return { expired: 0 };
+  if (!toDelete?.length) return { expired: 0, reconciled };
   const { error } = await s.from("donations").delete().in("id", toDelete.map((r) => r.id));
-  if (error) return { expired: 0 };
+  if (error) return { expired: 0, reconciled };
   revalidatePath("/admin/bagislar");
-  return { expired: toDelete.length };
+  return { expired: toDelete.length, reconciled };
 }
 
 /** Bağış siler. Ödendi (PAID) statüsündeki kayıtlar silinemez (DB trigger da engeller). */
@@ -1135,7 +1142,13 @@ export async function deleteDonation(id: string): Promise<{ ok: true } | { error
 const PENDING_ORDER_EXPIRE_DAYS = 3;
 
 /** Bekleyen (PENDING ödeme) siparişler 3 gün içinde ödenmezse sistemden silinir. Siparişler sayfası yüklenirken çağrılır. */
-export async function expireOldPendingOrders(): Promise<{ expired: number }> {
+export async function expireOldPendingOrders(): Promise<{ expired: number; reconciled: number }> {
+  let reconciled = 0;
+  try {
+    reconciled = (await reconcilePendingIyzicoPayments("order")).paid;
+  } catch (err) {
+    console.error("iyzico sipariş sorgusu:", err);
+  }
   const s = createServiceRoleClient();
   const cutoff = new Date();
   cutoff.setDate(cutoff.getDate() - PENDING_ORDER_EXPIRE_DAYS);
@@ -1145,11 +1158,11 @@ export async function expireOldPendingOrders(): Promise<{ expired: number }> {
     .select("id")
     .eq("payment_status", "PENDING")
     .lt("created_at", cutoffIso);
-  if (!toDelete?.length) return { expired: 0 };
+  if (!toDelete?.length) return { expired: 0, reconciled };
   const { error } = await s.from("orders").delete().in("id", toDelete.map((r) => r.id));
-  if (error) return { expired: 0 };
+  if (error) return { expired: 0, reconciled };
   revalidatePath("/admin/siparisler");
-  return { expired: toDelete.length };
+  return { expired: toDelete.length, reconciled };
 }
 
 /** Sipariş siler. Ödendi (PAID) statüsündeki siparişler silinemez (DB trigger da engeller). Sadece başarısız vb. silinebilir. */

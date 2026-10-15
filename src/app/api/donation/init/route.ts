@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { initializeCheckoutForm } from "@/lib/iyzico";
+import { publicBaseUrl } from "@/lib/public-base-url";
 
 const MIN_AMOUNT = 10;
 const MAX_AMOUNT = 100_000;
@@ -59,7 +60,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Kayıt oluşturulamadı." }, { status: 500 });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const baseUrl = publicBaseUrl(req);
     const result = await initializeCheckoutForm({
       orderId: donation.id,
       orderNumber: `BAGIS-${Date.now().toString(36).toUpperCase()}`,

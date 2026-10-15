@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/service";
 import { initializeCheckoutForm, type PaymentRequest, type CartItemForIyzico } from "@/lib/iyzico";
+import { publicBaseUrl } from "@/lib/public-base-url";
 import { getStoreDiscountForLevel, getMemberProductDiscountsForUser, getEffectiveProductPrice } from "@/lib/data";
 import {
   isFormaProductName,
@@ -275,7 +276,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, error: "Sipariş kalemleri yazılamadı." }, { status: 500 });
     }
 
-    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "http://localhost:3000");
+    const baseUrl = publicBaseUrl(req);
     const basketForIyzico: CartItemForIyzico[] = validatedItems.map((i) => ({
       id: i.id,
       name: i.iyzicoName,

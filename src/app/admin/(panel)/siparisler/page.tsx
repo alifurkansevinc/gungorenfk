@@ -141,7 +141,12 @@ export default function AdminSiparislerPage() {
     let cancelled = false;
     (async () => {
       const result = await expireOldPendingOrders();
-      if (result.expired > 0 && !cancelled) setNotify({ type: "ok", msg: `${result.expired} adet bekleyen sipariş silindi.` });
+      if (!cancelled) {
+        const parts: string[] = [];
+        if (result.reconciled > 0) parts.push(`${result.reconciled} siparişin ödemesi iyzico'dan onaylandı`);
+        if (result.expired > 0) parts.push(`${result.expired} adet bekleyen sipariş silindi`);
+        if (parts.length) setNotify({ type: "ok", msg: `${parts.join(". ")}.` });
+      }
       if (!cancelled) await fetchOrders();
     })();
     return () => { cancelled = true; };

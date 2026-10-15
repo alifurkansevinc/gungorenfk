@@ -26,15 +26,27 @@ IYZICO_BASE_URL=https://sandbox-api.iyzipay.com
 Vercel kullanıyorsanız: **Project → Settings → Environment Variables** içine aynı üç değişkeni ekleyin.
 
 ### 4. Callback URL
-Ödeme sonrası iyzico kullanıcıyı şu adrese yönlendirir: `{SITE_URL}/api/payment/callback`.  
-Kod bu adresi otomatik üretir: `NEXT_PUBLIC_BASE_URL` veya (Vercel’de) `https://${VERCEL_URL}`.  
-Canlı sitede doğru çalışması için:
+Ödeme sonrası iyzico, müşterinin tarayıcısını `{SITE}/api/payment/callback` adresine POST ile yönlendirir.  
+Adres, ödemenin başladığı sitenin host’undan üretilir (`https://www.siteniz.com` gibi). Böylece eski bir `NEXT_PUBLIC_BASE_URL` ödemeyi başka domaine yollayıp siparişi **Bekliyor** bırakmaz.
+
+Yine de kanonik adresi tanımlayın:
 
 ```env
-NEXT_PUBLIC_BASE_URL=https://siteniz.com
+NEXT_PUBLIC_SITE_URL=https://www.siteniz.com
 ```
 
-iyzico panelde ayrıca callback URL girmeniz gerekmez; istek içinde gönderiliyor.
+### 4b. Webhook (ödeme alındı, sipariş bekliyor)
+Tarayıcı 3D Secure sonrası kapanırsa callback hiç gelmez; para çekilmiş olur, sipariş `PENDING` kalır. Bunu iyzico’nun sunucudan sunucuya bildirimi kapatır.
+
+iyzico panel → **Ayarlar → Firma Ayarları → İşyeri Bildirimleri**:
+
+```text
+https://www.siteniz.com/api/iyzico/webhook
+```
+
+İmza doğrulaması `X-IYZ-SIGNATURE-V3` ile yapılır. Bildirimdeki token, iyzico’dan tekrar sorgulanır; yalnızca `paymentStatus = SUCCESS` olan sipariş, bağış veya bilet **Ödendi** yapılır. Aynı bildirim iki kez gelirse stok ve taraftar harcaması bir kez işlenir.
+
+Admin siparişler sayfası açıldığında bekleyen iyzico siparişleri de yeniden sorgulanır. Ödemesi alınmış olanlar, 3 gün dolup silinmeden önce **Ödendi** durumuna çekilir.
 
 ### 5. Veritabanı
 Supabase’de `008_orders_and_iyzico.sql` migration’ı uygulanmış olmalı. Uygulanmadıysa SQL Editor’den çalıştırın.
@@ -72,14 +84,16 @@ Supabase’de `008_orders_and_iyzico.sql` migration’ı uygulanmış olmalı. U
    IYZICO_BASE_URL=https://sandbox-api.iyzipay.com
    ```
 
-4. **Callback URL:** Ödeme sonrası iyzico kullanıcıyı `{SITE_URL}/api/payment/callback` adresine POST ile yönlendirir. `NEXT_PUBLIC_BASE_URL` veya `VERCEL_URL` doğru olmalı.
+4. **Callback URL:** Ödeme sonrası tarayıcı `{SITE}/api/payment/callback` adresine döner. Adres, ödemenin açıldığı host’tan üretilir.
+5. **Webhook:** iyzico panelde İşyeri Bildirimleri URL’si `{SITE}/api/iyzico/webhook` olmalı. Callback kaçsa bile ödenen kayıt burada kapanır.
 
 ## Akış
 
 1. Kullanıcı mağazadan ürünleri sepete ekler → `/sepet` → "Ödemeye geç" → `/odeme`
 2. Adres bilgilerini doldurur → "iyzico ile ödemeye geç" → `POST /api/payment/init` → sipariş oluşturulur, iyzico Checkout Form HTML döner
-3. Sayfada iyzico formu (kart bilgileri) gösterilir → kullanıcı öder → iyzico 3D Secure sonrası `POST /api/payment/callback?token=...` yapar
-4. Callback token ile iyzico’dan sonucu alır, siparişi PAID/FAILED günceller, `/odeme/basarili` veya `/odeme/hata` yönlendirir.
+3. Sayfada iyzico formu gösterilir → kullanıcı öder → tarayıcı `POST /api/payment/callback` yapar. Token, form gövdesinden veya adres çubuğundan okunur.
+4. Callback, token ile iyzico sonucunu sorgular. `SUCCESS` ise sipariş bir kez **Ödendi** yapılır (stok ve taraftar harcaması da bir kez). Sorgu hatasında sipariş bekliyor kalır; iptal edilmez.
+5. Tarayıcı kapanırsa iyzico aynı sonucu `POST /api/iyzico/webhook` ile bildirir. Admin siparişler sayfası da bekleyen kayıtları yeniden sorgular.
 
 ## Admin
 
