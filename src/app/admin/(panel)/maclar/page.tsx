@@ -3,7 +3,6 @@ import { getMackolikFixtureUrl } from "@/lib/data";
 import { getAdminSupabase } from "../../actions";
 import { MacSilButton } from "./MacSilButton";
 import { MacPasifToggle } from "./MacPasifToggle";
-import { MackolikImportButton } from "./MackolikImportButton";
 import { MackolikLinkForm } from "./MackolikLinkForm";
 import {
   formatSeasonTabLabel,
@@ -41,13 +40,12 @@ export default async function AdminMaclarPage({ searchParams }: { searchParams: 
         <div>
           <h1 className="text-2xl font-bold text-siyah">Maçlar</h1>
           <p className="mt-1 text-siyah/70">
-            Maç ekle/düzenle, Mackolik içe aktar veya Optaport’tan sync. Sezon etiketi{" "}
-            <span className="font-semibold text-siyah">{formatSeasonTabLabel(currentKey)}</span> formatında
-            (Optaport ile aynı). Pasif maç sitede görünmez.
+            Maçlar Optaport’tan gelir. Puan durumu Mackolik linkinden, sezon sezon çekilir. Sezon etiketi{" "}
+            <span className="font-semibold text-siyah">{formatSeasonTabLabel(currentKey)}</span>. Pasif maç sitede
+            görünmez.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3">
-          <MackolikImportButton />
           <Link
             href="/admin/maclar/haftanin-oyuncusu"
             className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-950 hover:bg-amber-100"

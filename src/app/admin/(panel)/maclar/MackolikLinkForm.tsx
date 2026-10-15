@@ -29,7 +29,7 @@ export function MackolikLinkForm({ initialUrl }: { initialUrl: string | null }) 
     <form onSubmit={handleSubmit} className="flex flex-wrap items-end gap-3 rounded-lg border border-siyah/10 bg-siyah/[0.02] p-4">
       <div className="min-w-0 flex-1">
         <label htmlFor="mackolik-url" className="mb-1 block text-xs font-medium text-siyah/70">
-          Mackolik fikstür linki
+          Mackolik puan durumu linki
         </label>
         <div className="flex items-center gap-2">
           <Link2 className="h-4 w-4 shrink-0 text-siyah/50" />
@@ -43,7 +43,8 @@ export function MackolikLinkForm({ initialUrl }: { initialUrl: string | null }) 
           />
         </div>
         <p className="mt-1 text-xs text-siyah/60">
-          Link değişirse buraya yapıştırıp kaydedin. Sayfa yapısı aynıysa içe aktarma ve skor çekme aynı şekilde çalışır.
+          Takımın puan durumu sayfası. Güncel sezon ve listedeki geçmiş sezonlar bu linkten günde bir kez yazılır. Maçlar
+          Optaport’tan gelir.
         </p>
       </div>
       <button

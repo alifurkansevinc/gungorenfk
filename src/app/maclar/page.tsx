@@ -8,10 +8,8 @@ import {
   getLeagueStandings,
   getLeagueStandingsSeasons,
   getNextMatch,
-  getMackolikFixtureUrl,
   getMatchEventsByMatchIds,
 } from "@/lib/data";
-import { getMackolikMatches } from "@/lib/mackolik";
 import { matchSeasonTabToStandingsSeason, resolveSeasonQueryParam, formatSeasonTabLabel, getFootballSeasonLabelForDate } from "@/lib/seasons";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { NextMatchCard } from "@/components/NextMatchCard";
@@ -58,12 +56,11 @@ export const dynamic = "force-dynamic";
 
 export default async function MaclarPage({ searchParams }: { searchParams: Promise<{ sezon?: string; puan?: string }> }) {
   const sp = await searchParams;
-  const [seasonList, peek, standingsSeasonList, nextMatch, mackolikMatches] = await Promise.all([
+  const [seasonList, peek, standingsSeasonList, nextMatch] = await Promise.all([
     getMatchSeasonsForPublic(),
     getMatches(1, { season: "all" }),
     getLeagueStandingsSeasons(),
     getNextMatch(),
-    getMackolikFixtureUrl().then((url) => getMackolikMatches(url)),
   ]);
   const { filter } = resolveSeasonQueryParam(sp?.sezon, seasonList);
   const rawPuan = sp?.puan?.trim();
@@ -85,13 +82,14 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
   ]);
   const eventsByMatch = await getMatchEventsByMatchIds(matches.map((m) => m.id));
   const hasAnyRealDbMatch = peek.length > 0 && !peek[0].id.startsWith("demo-");
-  const useMackolik = mackolikMatches.length > 0 && !hasAnyRealDbMatch;
   const leagueName = standings.rows.length > 0 ? standings.league_name : "İstanbul 1. Amatör Lig";
   const activeSeasonTab = showAllSeasons ? null : typeof filter === "string" ? filter : null;
   const currentSeasonKey = getFootballSeasonLabelForDate(new Date());
   const qBase = { sezon: sp?.sezon?.trim(), puan: sp?.puan?.trim() };
   // En üstte en yeni, en altta en eski (tarihe göre azalan)
-  const sortedDbMatches = [...matches].sort((a, b) => b.match_date.localeCompare(a.match_date));
+  const sortedDbMatches = [...matches]
+    .filter((m) => !m.id.startsWith("demo-"))
+    .sort((a, b) => b.match_date.localeCompare(a.match_date));
 
   return (
     <div className="min-h-screen">
@@ -199,7 +197,9 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
                 Veritabanında bu sezon için puan satırı yok. Farklı sezon seçin veya cron senkronunu kontrol edin.
               </div>
             )}
-            <p className="mt-2 text-[10px] sm:text-xs text-siyah/50">Kaynak: Mackolik.com — günde bir kez güncellenir.</p>
+            <p className="mt-2 text-[10px] sm:text-xs text-siyah/50">
+              Kaynak: Mackolik. Güncel sezon ve geçmiş sezonlar günde bir kez güncellenir.
+            </p>
           </section>
         )}
 
@@ -207,22 +207,20 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
           <WeekPlayerShowcase />
         </div>
 
-        {/* Fikstür ve sonuçlar — Mackolik’ten veya veritabanından */}
+        {/* Fikstür ve sonuçlar — Optaport senkronu */}
         <section id="fikstur" className="scroll-mt-28">
           <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <h2 className="text-xs sm:text-sm font-semibold uppercase tracking-wider text-siyah/60">Fikstür ve sonuçlar</h2>
               <p className="text-[10px] sm:text-xs text-siyah/50 mt-1">
-                {useMackolik
-                  ? "Kaynak: Mackolik.com — Güngören Belediye Spor Kulübü fikstürü."
-                  : showAllSeasons
-                    ? "Tüm sezonlardaki kayıtlı maçlar."
-                    : activeSeasonTab
-                      ? `${formatSeasonTabLabel(activeSeasonTab)} sezonu maçları.`
-                      : "Veritabanındaki maçlar."}
+                {showAllSeasons
+                  ? "Kaynak: Optaport. Tüm sezonlardaki maçlar."
+                  : activeSeasonTab
+                    ? `Kaynak: Optaport. ${formatSeasonTabLabel(activeSeasonTab)} sezonu maçları.`
+                    : "Kaynak: Optaport."}
               </p>
             </div>
-            {!useMackolik && seasonList.length > 0 && (
+            {seasonList.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5">
                 <span className="text-[10px] font-medium uppercase tracking-wider text-siyah/45">Sezon</span>
                 {seasonList.map((s) => {
@@ -257,48 +255,11 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
             )}
           </div>
           <div className="space-y-0 overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm">
-            {useMackolik ? (
-              mackolikMatches.length === 0 ? (
-                <div className="py-10 text-center text-sm text-siyah/50">Henüz maç yok.</div>
-              ) : (
-                mackolikMatches.map((m, i) => {
-                  const hasScore = m.goalsHome != null && m.goalsAway != null;
-                  const isFinished = m.status === "finished";
-                  const isGungorenHome = /güngören|gungoren|güngören bld/i.test(m.home);
-                  const ourGoals = hasScore ? (isGungorenHome ? m.goalsHome! : m.goalsAway!) : 0;
-                  const theirGoals = hasScore ? (isGungorenHome ? m.goalsAway! : m.goalsHome!) : 0;
-                  const result: ResultType = !hasScore ? "D" : ourGoals > theirGoals ? "W" : ourGoals < theirGoals ? "L" : "D";
-                  const müsabakaLabel = (m.competition && m.competition.trim()) ? m.competition : leagueName;
-                  const dateStr = new Date(m.date + "T12:00:00").toLocaleDateString("tr-TR", { day: "2-digit", month: "2-digit", year: "2-digit" });
-                  return (
-                    <div
-                      key={`mackolik-${i}-${m.date}-${m.home}`}
-                      className={`flex flex-col items-center justify-center px-4 py-5 text-center transition-colors hover:bg-siyah/[0.03] ${i > 0 ? "border-t border-siyah/5" : ""} ${isFinished ? "bg-siyah/[0.02]" : ""}`}
-                    >
-                      <p className="mb-2 text-xs font-medium text-siyah/60">
-                        {dateStr} <span className="mx-1.5 text-siyah/40">·</span> {müsabakaLabel}
-                      </p>
-                      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-4 gap-y-2 w-full max-w-xl mx-auto">
-                        <span className={`min-w-0 truncate text-left text-sm sm:max-w-[180px] ${/güngören|gungoren|güngören bld/i.test(m.home) ? "font-extrabold text-siyah" : "font-medium text-siyah"}`} title={m.home}>{m.home}</span>
-                        <div className="flex items-center justify-center gap-2 w-20 shrink-0 tabular-nums">
-                          <span className="font-bold text-siyah w-6 text-center">{hasScore ? m.goalsHome : "–"}</span>
-                          <ResultBadge result={result} />
-                          <span className="font-bold text-siyah w-6 text-center">{hasScore ? m.goalsAway : "–"}</span>
-                        </div>
-                        <span className={`min-w-0 truncate text-right text-sm sm:max-w-[180px] ${/güngören|gungoren|güngören bld/i.test(m.away) ? "font-extrabold text-siyah" : "font-medium text-siyah"}`} title={m.away}>{m.away}</span>
-                      </div>
-                      <span className={`mt-2 text-[11px] font-medium ${isFinished ? "text-emerald-600" : "text-bordo/90"}`}>
-                        {isFinished ? "Bitti" : "Planlanan"}
-                      </span>
-                    </div>
-                  );
-                })
-              )
-            ) : sortedDbMatches.length === 0 ? (
+            {sortedDbMatches.length === 0 ? (
               <div className="py-10 text-center text-sm text-siyah/50">
                 {hasAnyRealDbMatch
                   ? "Bu sezona ait maç yok. Üstteki sezon seçiciden başka sezon veya «Tümü»nü deneyin."
-                  : "Henüz maç eklenmedi."}
+                  : "Optaport’tan henüz maç gelmedi."}
               </div>
             ) : (
               sortedDbMatches.map((m, i) => {
