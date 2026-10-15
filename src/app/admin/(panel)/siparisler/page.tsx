@@ -109,6 +109,10 @@ function invoiceLine(notes?: string | null): string | null {
   return null;
 }
 
+function invoicePdfReady(notes?: string | null): boolean {
+  return (notes || "").split("\n").some((line) => line.trim().startsWith("[FATURA] issued"));
+}
+
 type Summary = {
   total: number;
   byPayment: Record<string, number>;
@@ -690,6 +694,26 @@ export default function AdminSiparislerPage() {
                         </li>
                       ))}
                   </ul>
+                </div>
+              )}
+              {invoicePdfReady(selected.notes) && (
+                <div>
+                  <div className="mb-2 flex items-center justify-between gap-3">
+                    <h3 className="text-sm font-semibold text-gray-700">Fatura</h3>
+                    <a
+                      href={`/api/admin/orders/invoice?orderId=${selected.id}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-sm font-medium text-bordo hover:underline"
+                    >
+                      Yeni sekmede aç
+                    </a>
+                  </div>
+                  <iframe
+                    title={`Fatura ${selected.orderNumber}`}
+                    src={`/api/admin/orders/invoice?orderId=${selected.id}`}
+                    className="h-[520px] w-full rounded-xl border border-gray-200 bg-white"
+                  />
                 </div>
               )}
               <div>

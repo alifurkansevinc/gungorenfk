@@ -174,6 +174,47 @@ function attr(chunk: string, name: string): string {
   return match?.[1] ?? "";
 }
 
+export function parseIssuedInvoice(notes: string | null | undefined): { scenario: string; number: string; ettn: string } | null {
+  const line = (notes || "")
+    .split("\n")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith("[FATURA] issued"));
+  if (!line) return null;
+  const parts = line.split("|").map((part) => part.trim());
+  const ettn = parts[3] || "";
+  if (!ettn) return null;
+  return { scenario: parts[1] || "", number: parts[2] || "", ettn };
+}
+
+async function fetchOutboxInvoicePdf(config: InvoiceConfig, invoiceId: string): Promise<Buffer> {
+  const body =
+    `<tem:GetOutboxInvoicePdf>` +
+    `<tem:userInfo Username="${xml(config.username)}" Password="${xml(config.password)}"/>` +
+    `<tem:invoiceId>${xml(invoiceId)}</tem:invoiceId>` +
+    `</tem:GetOutboxInvoicePdf>`;
+  const response = await soap(config.endpoint, "GetOutboxInvoicePdf", body);
+  const result = response.match(/GetOutboxInvoicePdfResult\b[^>]*/)?.[0] || "";
+  if (attr(result, "IsSucceded").toLowerCase() !== "true") {
+    throw new Error(attr(result, "Message") || "Fatura PDF alınamadı");
+  }
+  const data = response.match(/<[^>]*\bData\b[^>]*>([^<]+)<\/[^>]*\bData>/)?.[1]?.replace(/\s/g, "") || "";
+  if (!data) throw new Error("Fatura PDF boş döndü");
+  return Buffer.from(data, "base64");
+}
+
+export async function loadOrderInvoicePdf(orderId: string): Promise<{ number: string; pdf: Buffer }> {
+  const config = readConfig();
+  if (!config) throw new Error("Uyum ayarı eksik");
+  const supabase = createServiceRoleClient();
+  const { data } = await supabase.from("orders").select("order_number, notes").eq("id", orderId).maybeSingle();
+  if (!data) throw new Error("Sipariş bulunamadı");
+  const row = data as { order_number: string; notes: string | null };
+  const issued = parseIssuedInvoice(row.notes);
+  if (!issued) throw new Error("Bu siparişin kesilmiş faturası yok");
+  const pdf = await fetchOutboxInvoicePdf(config, issued.ettn);
+  return { number: issued.number || row.order_number, pdf };
+}
+
 async function isEInvoiceUser(config: InvoiceConfig, taxId: string): Promise<boolean> {
   const body =
     `<tem:IsEInvoiceUser>` +
