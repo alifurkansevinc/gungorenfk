@@ -41,6 +41,10 @@ export async function POST(req: NextRequest) {
   if (updateError) {
     return NextResponse.json({ error: updateError.message }, { status: 500 });
   }
+
+  const { sendOrderStatusEmail } = await import("@/lib/order-emails");
+  await sendOrderStatusEmail(supabase, order.id, "delivered");
+
   return NextResponse.json({
     success: true,
     message: "Sipariş teslim alındı olarak işaretlendi.",

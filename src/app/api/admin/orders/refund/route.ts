@@ -130,6 +130,11 @@ export async function POST(req: NextRequest) {
 
   await closeOpenServiceRequests(supabase, orderId);
 
+  if (!upErr) {
+    const { sendOrderStatusEmail } = await import("@/lib/order-emails");
+    await sendOrderStatusEmail(supabase, orderId, "cancelled");
+  }
+
   if (upErr) {
     console.error("Order update after refund:", upErr);
     return NextResponse.json(

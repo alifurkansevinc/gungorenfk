@@ -8,6 +8,7 @@ import { roundMoney } from "@/lib/order-stock";
 import { checkAndLevelUp } from "@/lib/fan-level";
 import { interpretCheckoutResult, isCheckoutToken } from "@/lib/iyzico-result";
 import { cancelInvoiceForRefundedOrder } from "@/lib/uyum-invoice";
+import { sendOrderStatusEmail } from "@/lib/order-emails";
 
 export type CheckoutSettlement = {
   outcome: "paid" | "already_paid" | "failed" | "pending" | "query_error" | "not_found";
@@ -180,6 +181,7 @@ async function settleOrder(
       levelUp = levelResult.leveledUp;
       newLevelId = levelResult.newLevelId;
     }
+    await sendOrderStatusEmail(supabase, order.id, "paid");
     return { outcome: "paid", redirectPath: orderSuccessPath(order, levelUp, newLevelId) };
   }
   if (interpreted === "failed" && markFailure) {
@@ -525,6 +527,7 @@ export async function syncIyzicoPanelRefunds(): Promise<{ checked: number; refun
         await reverseFanStoreSpendForOrder(supabase, { ...order, total: remaining });
       }
       await closeOpenServiceRequests(supabase, order.id);
+      await sendOrderStatusEmail(supabase, order.id, "cancelled");
       try {
         await cancelInvoiceForRefundedOrder(order.id);
       } catch (err) {

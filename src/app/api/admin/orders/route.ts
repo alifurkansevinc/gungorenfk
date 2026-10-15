@@ -187,8 +187,21 @@ export async function PUT(req: NextRequest) {
   }
 
   const supabase = createServiceRoleClient();
+  const { data: before } = await supabase
+    .from("orders")
+    .select("status, delivery_method")
+    .eq("id", id)
+    .maybeSingle();
+
   const { error } = await supabase.from("orders").update(updates).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  if (typeof status === "string" && before?.status !== status) {
+    const { emailKindForStatus, sendOrderStatusEmail } = await import("@/lib/order-emails");
+    const kind = emailKindForStatus(status, (before as { delivery_method?: string } | null)?.delivery_method);
+    if (kind) await sendOrderStatusEmail(supabase, id, kind);
+  }
+
   return NextResponse.json({ success: true });
 }
 
