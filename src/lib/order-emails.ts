@@ -27,45 +27,57 @@ type OrderItemRow = {
   size: string | null;
 };
 
-/** Site ile aynı palet / varlıklar */
+/** gungorenspor.com paleti */
 const BORDO = "#8B1538";
 const SIYAH = "#0A0A0A";
 const BEYAZ = "#FFFFFF";
-const MUTED = "#5a5a5a";
-const LINE = "rgba(10,10,10,0.1)";
-const PAGE_BG = "#f8f8f8";
+const MUTED = "rgba(255,255,255,0.55)";
+const LINE = "rgba(255,255,255,0.12)";
 
 const SITE_LOGO =
   "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/Futbolcular/logobordo-02.png";
-const SLOGAN_IMG =
-  "https://rdhqyfsqspcsdugeevon.supabase.co/storage/v1/object/public/Futbolcular/logobordo-06.png";
 
-const FONT_BODY = "'Outfit',system-ui,-apple-system,sans-serif";
+const FONT_BODY = "'Outfit',system-ui,-apple-system,BlinkMacSystemFont,sans-serif";
 const FONT_DISPLAY = "'Oswald',Arial,Helvetica,sans-serif";
 
 const KIND_META: Record<
   OrderEmailKind,
-  { badge: string; headline: (pickup: boolean) => string; accent: string }
+  {
+    eyebrow: string;
+    line1: (pickup: boolean) => string;
+    line2: (pickup: boolean) => string;
+    note: (pickup: boolean) => string;
+  }
 > = {
   paid: {
-    badge: "Ödeme alındı",
-    headline: (pickup) => (pickup ? "Siparişiniz kayda geçti" : "Siparişiniz hazırlanıyor"),
-    accent: BORDO,
+    eyebrow: "Ödeme onaylandı",
+    line1: () => "Siparişiniz",
+    line2: (pickup) => (pickup ? "kayda geçti" : "hazırlanıyor"),
+    note: (pickup) =>
+      pickup
+        ? "Hazır olduğunda mağazadan teslim alabilirsiniz."
+        : "Paket hazırlanıyor. Kargoya çıkınca haber vereceğiz.",
   },
   shipped: {
-    badge: "Sevkiyat",
-    headline: (pickup) => (pickup ? "Mağazadan teslime hazır" : "Siparişiniz kargoda"),
-    accent: BORDO,
+    eyebrow: "Sevkiyat",
+    line1: () => "Siparişiniz",
+    line2: (pickup) => (pickup ? "teslime hazır" : "yola çıktı"),
+    note: (pickup) =>
+      pickup
+        ? "Kimlik ve teslim kodu ile mağazadan alabilirsiniz."
+        : "Kargo sürecinde sorun olursa bize yazın.",
   },
   delivered: {
-    badge: "Teslim edildi",
-    headline: () => "Siparişiniz tamamlandı",
-    accent: "#166534",
+    eyebrow: "Teslimat tamam",
+    line1: () => "Siparişiniz",
+    line2: () => "teslim edildi",
+    note: () => "Bizi tercih ettiğiniz için teşekkür ederiz.",
   },
   cancelled: {
-    badge: "İptal",
-    headline: () => "Sipariş iptal edildi",
-    accent: "#991b1b",
+    eyebrow: "Sipariş kapandı",
+    line1: () => "Sipariş",
+    line2: () => "iptal edildi",
+    note: () => "Sorularınız için bilgi@gungorenspor.com",
   },
 };
 
@@ -121,10 +133,10 @@ function customerName(order: OrderMailRow): string {
 }
 
 function deliveryLabel(order: OrderMailRow): string {
-  return order.delivery_method === "store_pickup" ? "Mağazadan teslim" : "Kargo ile teslimat";
+  return order.delivery_method === "store_pickup" ? "Mağazadan teslim" : "Kargo";
 }
 
-function supportLine(): string {
+function supportLink(): string {
   return `<a href="mailto:bilgi@gungorenspor.com" style="color:${BORDO};text-decoration:none;font-weight:600;">bilgi@gungorenspor.com</a>`;
 }
 
@@ -133,22 +145,22 @@ function renderItems(items: OrderItemRow[]): string {
   const rows = items
     .map((it) => {
       const name = escapeHtml(it.name || "Ürün");
-      const size = it.size ? ` · ${escapeHtml(String(it.size))}` : "";
+      const size = it.size ? escapeHtml(String(it.size)) : "—";
       const qty = Number(it.quantity) || 1;
       const line = formatTry((Number(it.price) || 0) * qty);
       return `<tr>
-        <td style="padding:14px 0;border-bottom:1px solid ${LINE};font-family:${FONT_BODY};font-size:15px;color:${SIYAH};">
-          <strong style="font-weight:600;">${name}</strong>${size}
-          <div style="color:${MUTED};font-size:13px;margin-top:4px;font-weight:400;">Adet: ${qty}</div>
+        <td style="padding:16px 0;border-bottom:1px solid ${LINE};">
+          <div style="font-family:${FONT_BODY};font-size:15px;font-weight:600;color:${BEYAZ};">${name}</div>
+          <div style="margin-top:4px;font-family:${FONT_BODY};font-size:12px;letter-spacing:0.06em;text-transform:uppercase;color:${MUTED};">${size} · ×${qty}</div>
         </td>
-        <td style="padding:14px 0;border-bottom:1px solid ${LINE};font-family:${FONT_BODY};font-size:15px;font-weight:600;color:${SIYAH};text-align:right;white-space:nowrap;vertical-align:top;">${escapeHtml(line)}</td>
+        <td style="padding:16px 0;border-bottom:1px solid ${LINE};font-family:${FONT_BODY};font-size:15px;font-weight:600;color:${BEYAZ};text-align:right;white-space:nowrap;vertical-align:top;">${escapeHtml(line)}</td>
       </tr>`;
     })
     .join("");
   return `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:8px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px;">
       <tr>
-        <td colspan="2" style="padding:0 0 10px;font-family:${FONT_DISPLAY};font-size:12px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:${MUTED};">Sipariş özeti</td>
+        <td colspan="2" style="padding:0 0 8px;font-family:${FONT_BODY};font-size:11px;font-weight:600;letter-spacing:0.22em;text-transform:uppercase;color:${MUTED};">Sipariş özeti</td>
       </tr>
       ${rows}
     </table>`;
@@ -160,198 +172,210 @@ function renderTotals(order: OrderMailRow): string {
   const shippingRow =
     order.delivery_method === "shipping"
       ? `<tr>
-          <td style="padding:6px 0;font-family:${FONT_BODY};font-size:14px;color:${MUTED};">Kargo</td>
-          <td style="padding:6px 0;font-family:${FONT_BODY};font-size:14px;color:${MUTED};text-align:right;">${escapeHtml(formatTry(shipping))}</td>
+          <td style="padding:8px 0;font-family:${FONT_BODY};font-size:14px;color:${MUTED};">Kargo</td>
+          <td style="padding:8px 0;font-family:${FONT_BODY};font-size:14px;color:${MUTED};text-align:right;">${escapeHtml(formatTry(shipping))}</td>
         </tr>`
       : "";
   return `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:8px;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:4px;">
       ${shippingRow}
       <tr>
-        <td style="padding:14px 0 0;font-family:${FONT_DISPLAY};font-size:14px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;color:${SIYAH};border-top:1px solid ${SIYAH};">Toplam</td>
-        <td style="padding:14px 0 0;font-family:${FONT_BODY};font-size:20px;font-weight:700;color:${BORDO};text-align:right;border-top:1px solid ${SIYAH};">${escapeHtml(formatTry(total))}</td>
+        <td style="padding:18px 0 0;font-family:${FONT_DISPLAY};font-size:13px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:${BEYAZ};border-top:1px solid ${LINE};">Toplam</td>
+        <td style="padding:18px 0 0;font-family:${FONT_BODY};font-size:22px;font-weight:700;color:${BEYAZ};text-align:right;border-top:1px solid ${LINE};">${escapeHtml(formatTry(total))}</td>
       </tr>
     </table>`;
 }
 
-function metaBlock(order: OrderMailRow, isPickup: boolean): string {
+function orderPanel(order: OrderMailRow, isPickup: boolean): string {
   const pickup =
     isPickup && order.pickup_code
       ? `<tr>
-          <td style="padding:12px 0;font-family:${FONT_BODY};font-size:13px;color:${MUTED};width:38%;border-top:1px solid ${LINE};">Teslim kodu</td>
-          <td style="padding:12px 0;font-family:${FONT_DISPLAY};font-size:18px;font-weight:600;letter-spacing:0.12em;color:${SIYAH};border-top:1px solid ${LINE};">${escapeHtml(order.pickup_code)}</td>
+          <td style="padding:14px 0 0;border-top:1px solid ${LINE};">
+            <div style="font-family:${FONT_BODY};font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:${MUTED};">Teslim kodu</div>
+            <div style="margin-top:6px;font-family:${FONT_DISPLAY};font-size:28px;font-weight:700;letter-spacing:0.18em;color:${BEYAZ};">${escapeHtml(order.pickup_code)}</div>
+          </td>
         </tr>`
       : "";
   return `
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:24px 0;border-top:1px solid ${LINE};border-bottom:1px solid ${LINE};">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:28px 0;border:1px solid ${LINE};">
       <tr>
-        <td style="padding:12px 0;font-family:${FONT_BODY};font-size:13px;color:${MUTED};width:38%;">Sipariş no</td>
-        <td style="padding:12px 0;font-family:${FONT_BODY};font-size:15px;font-weight:600;color:${SIYAH};">${escapeHtml(order.order_number)}</td>
+        <td style="width:4px;background:${BORDO};font-size:0;line-height:0;">&nbsp;</td>
+        <td style="padding:20px 22px;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+              <td style="padding-bottom:14px;">
+                <div style="font-family:${FONT_BODY};font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:${MUTED};">Sipariş no</div>
+                <div style="margin-top:6px;font-family:${FONT_DISPLAY};font-size:20px;font-weight:600;letter-spacing:0.04em;color:${BEYAZ};">${escapeHtml(order.order_number)}</div>
+              </td>
+              <td align="right" valign="top" style="padding-bottom:14px;">
+                <div style="font-family:${FONT_BODY};font-size:10px;font-weight:600;letter-spacing:0.2em;text-transform:uppercase;color:${MUTED};">Teslimat</div>
+                <div style="margin-top:6px;font-family:${FONT_BODY};font-size:14px;font-weight:500;color:${BEYAZ};">${escapeHtml(deliveryLabel(order))}</div>
+              </td>
+            </tr>
+            ${pickup}
+          </table>
+        </td>
       </tr>
-      <tr>
-        <td style="padding:12px 0;font-family:${FONT_BODY};font-size:13px;color:${MUTED};border-top:1px solid ${LINE};">Teslimat</td>
-        <td style="padding:12px 0;font-family:${FONT_BODY};font-size:15px;color:${SIYAH};border-top:1px solid ${LINE};">${escapeHtml(deliveryLabel(order))}</td>
-      </tr>
-      ${pickup}
     </table>`;
 }
 
 function ctaButton(href: string, label: string): string {
   return `
-    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:28px 0 12px;">
+    <table role="presentation" cellpadding="0" cellspacing="0" style="margin:32px 0 8px;">
       <tr>
         <td style="border-radius:999px;background:${BORDO};">
-          <a href="${escapeHtml(href)}" style="display:inline-block;padding:14px 28px;font-family:${FONT_BODY};font-size:14px;font-weight:700;color:${BEYAZ};text-decoration:none;letter-spacing:0.02em;">${escapeHtml(label)}</a>
+          <a href="${escapeHtml(href)}" style="display:inline-block;padding:16px 32px;font-family:${FONT_BODY};font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${BEYAZ};text-decoration:none;">${escapeHtml(label)}</a>
         </td>
       </tr>
     </table>`;
 }
 
 /**
- * gungorenspor.com header diline yakın:
- * siyah bar + yatay logo (daire/overlap yok) + Oswald/Outfit + slogan vurgusu
+ * gungorenspor.com hero dili:
+ * siyah zemin, Oswald başlık, bordo vurgu, HİÇ VAZGEÇMEDİK manifesto.
  */
 function wrapEmail(opts: {
   title: string;
-  badge: string;
-  accent: string;
-  headline: string;
+  eyebrow: string;
+  line1: string;
+  line2: string;
+  note: string;
   intro: string;
-  bodyExtra: string;
   order: OrderMailRow;
   items: OrderItemRow[];
   site: string;
 }): string {
   const isPickup = opts.order.delivery_method === "store_pickup";
+  const preheader = `${opts.line1} ${opts.line2} · ${opts.order.order_number}`;
+
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <meta name="supported-color-schemes" content="dark">
   <title>${escapeHtml(opts.title)}</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <!--[if mso]>
+  <style>body,table,td{font-family:Arial,sans-serif!important}</style>
+  <![endif]-->
 </head>
-<body style="margin:0;padding:0;background:${PAGE_BG};font-family:${FONT_BODY};color:${SIYAH};-webkit-font-smoothing:antialiased;">
-  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(opts.headline)} · ${escapeHtml(opts.order.order_number)}</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${PAGE_BG};padding:0;">
-    <tr><td align="center" style="padding:0;">
+<body style="margin:0;padding:0;background:${SIYAH};font-family:${FONT_BODY};color:${BEYAZ};-webkit-font-smoothing:antialiased;">
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(preheader)}</div>
 
-      <!-- Site header gibi üst bar -->
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${SIYAH};">
-        <tr>
-          <td align="center" style="padding:0;">
-            <table role="presentation" width="100%" style="max-width:600px;" cellpadding="0" cellspacing="0">
-              <tr>
-                <td style="padding:10px 24px 8px;border-bottom:1px solid rgba(255,255,255,0.1);">
-                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                    <tr>
-                      <td style="font-family:${FONT_BODY};font-size:11px;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.5);">
-                        Resmi internet sitesi
-                      </td>
-                      <td align="right" style="font-family:${FONT_BODY};font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:${BORDO};">
-                        Mağaza
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-              <tr>
-                <td style="padding:14px 24px 16px;">
-                  <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                    <tr>
-                      <td valign="middle" style="vertical-align:middle;">
-                        <a href="${escapeHtml(opts.site)}" style="text-decoration:none;">
-                          <img src="${SITE_LOGO}" width="140" height="56" alt="Güngören FK" style="display:block;height:52px;width:auto;max-width:160px;object-fit:contain;border:0;">
-                        </a>
-                      </td>
-                      <td valign="middle" align="right" style="vertical-align:middle;">
-                        <div style="font-family:${FONT_DISPLAY};font-size:18px;font-weight:600;letter-spacing:0.04em;text-transform:uppercase;color:${BEYAZ};">Güngören FK</div>
-                      </td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>
-      </table>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${SIYAH};">
+    <tr>
+      <td align="center" style="padding:0;">
+        <table role="presentation" width="100%" style="max-width:640px;background:${SIYAH};" cellpadding="0" cellspacing="0">
 
-      <!-- İçerik kartı -->
-      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;">
-        <tr>
-          <td style="padding:28px 24px 8px;background:${BEYAZ};">
-            <span style="display:inline-block;font-family:${FONT_BODY};font-size:11px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;color:${opts.accent};">${escapeHtml(opts.badge)}</span>
-            <h1 style="margin:12px 0 14px;font-family:${FONT_DISPLAY};font-size:36px;line-height:1.05;font-weight:700;letter-spacing:-0.01em;color:${SIYAH};">${escapeHtml(opts.headline)}</h1>
-            <p style="margin:0;font-family:${FONT_BODY};font-size:16px;font-weight:300;line-height:1.6;color:${MUTED};">${opts.intro}</p>
-            ${metaBlock(opts.order, isPickup)}
-            ${opts.bodyExtra}
-            ${renderItems(opts.items)}
-            ${renderTotals(opts.order)}
-            ${ctaButton(opts.site, "Siteye git")}
-            <p style="margin:8px 0 0;font-family:${FONT_BODY};font-size:13px;line-height:1.55;color:${MUTED};">Sorularınız için ${supportLine()}</p>
-          </td>
-        </tr>
+          <!-- Üst bar — site header -->
+          <tr>
+            <td style="padding:18px 28px 12px;border-bottom:1px solid ${LINE};">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td valign="middle">
+                    <a href="${escapeHtml(opts.site)}" style="text-decoration:none;">
+                      <img src="${SITE_LOGO}" width="132" height="52" alt="Güngören FK" style="display:block;height:48px;width:auto;max-width:150px;border:0;">
+                    </a>
+                  </td>
+                  <td valign="middle" align="right">
+                    <span style="font-family:${FONT_BODY};font-size:11px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:${MUTED};">Mağaza</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
 
-        <!-- Slogan bandı — ana sayfa sağ görsel dili -->
-        <tr>
-          <td style="background:${SIYAH};padding:28px 24px;text-align:center;">
-            <img src="${SLOGAN_IMG}" width="280" height="90" alt="Hiç vazgeçmedik" style="display:inline-block;width:280px;max-width:85%;height:auto;margin:0 auto 14px;">
-            <div style="font-family:${FONT_DISPLAY};font-size:14px;font-weight:600;letter-spacing:0.28em;text-transform:uppercase;color:${BEYAZ};">Hiç vazgeçmedik</div>
-            <div style="margin-top:14px;font-family:${FONT_BODY};font-size:11px;color:rgba(255,255,255,0.45);line-height:1.5;">
-              Otomatik sipariş bilgilendirmesi<br>
-              <a href="${escapeHtml(opts.site)}" style="color:${BORDO};text-decoration:none;font-weight:600;">gungorenspor.com</a>
-            </div>
-          </td>
-        </tr>
-      </table>
+          <!-- Hero tipografi -->
+          <tr>
+            <td style="padding:40px 28px 8px;">
+              <div style="font-family:${FONT_BODY};font-size:11px;font-weight:600;letter-spacing:0.28em;text-transform:uppercase;color:${BORDO};">${escapeHtml(opts.eyebrow)}</div>
+              <h1 style="margin:18px 0 0;font-family:${FONT_DISPLAY};font-size:52px;line-height:0.92;font-weight:700;letter-spacing:-0.02em;text-transform:uppercase;color:${BEYAZ};">
+                ${escapeHtml(opts.line1)}<br>
+                <span style="color:${BORDO};">${escapeHtml(opts.line2)}</span>
+              </h1>
+              <p style="margin:22px 0 0;max-width:420px;font-family:${FONT_BODY};font-size:16px;font-weight:300;line-height:1.65;color:${MUTED};">${opts.intro}</p>
+              <p style="margin:10px 0 0;font-family:${FONT_BODY};font-size:14px;line-height:1.55;color:rgba(255,255,255,0.4);">${escapeHtml(opts.note)}</p>
+            </td>
+          </tr>
 
-    </td></tr>
+          <!-- Sipariş paneli + ürünler -->
+          <tr>
+            <td style="padding:12px 28px 8px;">
+              ${orderPanel(opts.order, isPickup)}
+              ${renderItems(opts.items)}
+              ${renderTotals(opts.order)}
+              ${ctaButton(opts.site + "/magaza", "Mağazaya dön")}
+              <p style="margin:18px 0 0;font-family:${FONT_BODY};font-size:13px;color:${MUTED};">Destek: ${supportLink()}</p>
+            </td>
+          </tr>
+
+          <!-- Manifesto — site hero sloganı -->
+          <tr>
+            <td style="padding:48px 28px 36px;text-align:center;border-top:1px solid ${LINE};">
+              <div style="font-family:${FONT_BODY};font-size:10px;font-weight:600;letter-spacing:0.32em;text-transform:uppercase;color:rgba(255,255,255,0.35);margin-bottom:16px;">
+                Güngören Belediye Spor Kulübü
+              </div>
+              <div style="font-family:${FONT_DISPLAY};font-size:42px;line-height:0.95;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:${BEYAZ};">
+                Hiç<br>vazgeçmedik
+              </div>
+              <div style="margin:28px auto 0;width:64px;height:3px;background:${BORDO};font-size:0;line-height:0;">&nbsp;</div>
+              <p style="margin:22px 0 0;font-family:${FONT_BODY};font-size:11px;letter-spacing:0.04em;color:rgba(255,255,255,0.35);">
+                <a href="${escapeHtml(opts.site)}" style="color:rgba(255,255,255,0.55);text-decoration:none;">gungorenspor.com</a>
+                &nbsp;·&nbsp; Otomatik sipariş bildirimi
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
   </table>
 </body>
 </html>`;
 }
 
-function buildCopy(kind: OrderEmailKind, order: OrderMailRow, name: string): { subject: string; intro: string; bodyExtra: string; text: string } {
+function buildCopy(
+  kind: OrderEmailKind,
+  order: OrderMailRow,
+  name: string
+): { subject: string; intro: string; text: string } {
   const isPickup = order.delivery_method === "store_pickup";
   const refunded = order.payment_status === "REFUNDED";
   const no = order.order_number;
   const total = formatTry(Number(order.total) || 0);
+  const meta = KIND_META[kind];
 
   if (kind === "paid") {
-    const subject = `Siparişiniz alındı — ${no}`;
-    const intro = `Merhaba <strong style="color:${SIYAH};font-weight:600;">${name}</strong>, ödemeniz alındı. Teşekkür ederiz.`;
-    const bodyExtra = isPickup
-      ? `<p style="margin:0;font-family:${FONT_BODY};font-size:15px;line-height:1.6;color:${MUTED};">Siparişiniz hazırlandığında mağazadan teslim alabilirsiniz. Teslim kodunuz yukarıda yer alır.</p>`
-      : `<p style="margin:0;font-family:${FONT_BODY};font-size:15px;line-height:1.6;color:${MUTED};">Siparişiniz hazırlanıyor. Kargoya verildiğinde sizi bilgilendireceğiz.</p>`;
-    return { subject, intro, bodyExtra, text: `Siparişiniz alındı (${no}). Tutar: ${total}.` };
+    return {
+      subject: `Siparişiniz alındı — ${no}`,
+      intro: `Merhaba <strong style="color:${BEYAZ};font-weight:600;">${name}</strong>, ödemeniz alındı.`,
+      text: `Siparişiniz alındı (${no}). Tutar: ${total}. ${meta.note(isPickup)}`,
+    };
   }
-
   if (kind === "shipped") {
-    const subject = isPickup ? `Teslime hazır — ${no}` : `Siparişiniz kargoda — ${no}`;
-    const intro = isPickup
-      ? `Merhaba <strong style="color:${SIYAH};font-weight:600;">${name}</strong>, siparişiniz mağazadan teslime hazır.`
-      : `Merhaba <strong style="color:${SIYAH};font-weight:600;">${name}</strong>, siparişiniz kargoya verildi.`;
-    const bodyExtra = isPickup
-      ? `<p style="margin:0;font-family:${FONT_BODY};font-size:15px;line-height:1.6;color:${MUTED};">Teslim alırken kimliğiniz ve teslim kodunuz yeterli olacaktır.</p>`
-      : `<p style="margin:0;font-family:${FONT_BODY};font-size:15px;line-height:1.6;color:${MUTED};">Kargo sürecinde sorun olursa bilgi@gungorenspor.com adresine yazabilirsiniz.</p>`;
-    return { subject, intro, bodyExtra, text: `${subject}. Tutar: ${total}.` };
+    return {
+      subject: isPickup ? `Teslime hazır — ${no}` : `Siparişiniz kargoda — ${no}`,
+      intro: `Merhaba <strong style="color:${BEYAZ};font-weight:600;">${name}</strong>, siparişiniz hareketlendi.`,
+      text: `${isPickup ? "Teslime hazır" : "Kargoda"} (${no}). ${meta.note(isPickup)}`,
+    };
   }
-
   if (kind === "delivered") {
-    const subject = `Siparişiniz teslim edildi — ${no}`;
-    const intro = `Merhaba <strong style="color:${SIYAH};font-weight:600;">${name}</strong>, siparişiniz teslim edildi.`;
-    const bodyExtra = `<p style="margin:0;font-family:${FONT_BODY};font-size:15px;line-height:1.6;color:${MUTED};">Bizi tercih ettiğiniz için teşekkür ederiz.</p>`;
-    return { subject, intro, bodyExtra, text: `Siparişiniz teslim edildi (${no}).` };
+    return {
+      subject: `Siparişiniz teslim edildi — ${no}`,
+      intro: `Merhaba <strong style="color:${BEYAZ};font-weight:600;">${name}</strong>, teslimat tamamlandı.`,
+      text: `Teslim edildi (${no}).`,
+    };
   }
-
-  const subject = refunded ? `Sipariş iadesi — ${no}` : `Sipariş iptali — ${no}`;
-  const intro = refunded
-    ? `Merhaba <strong style="color:${SIYAH};font-weight:600;">${name}</strong>, siparişiniz iptal edildi ve iade süreci başlatıldı.`
-    : `Merhaba <strong style="color:${SIYAH};font-weight:600;">${name}</strong>, siparişiniz iptal edildi.`;
-  const bodyExtra = `<p style="margin:0;font-family:${FONT_BODY};font-size:15px;line-height:1.6;color:${MUTED};">Yardıma ihtiyacınız olursa ${supportLine()}</p>`;
-  return { subject, intro, bodyExtra, text: `${subject}. Tutar: ${total}.` };
+  return {
+    subject: refunded ? `Sipariş iadesi — ${no}` : `Sipariş iptali — ${no}`,
+    intro: `Merhaba <strong style="color:${BEYAZ};font-weight:600;">${name}</strong>, ${
+      refunded ? "iade süreci başlatıldı." : "siparişiniz iptal edildi."
+    }`,
+    text: `İptal (${no}).`,
+  };
 }
 
 export function buildOrderEmailContent(
@@ -366,11 +390,11 @@ export function buildOrderEmailContent(
   const copy = buildCopy(kind, order, name);
   const html = wrapEmail({
     title: copy.subject,
-    badge: meta.badge,
-    accent: meta.accent,
-    headline: meta.headline(isPickup),
+    eyebrow: meta.eyebrow,
+    line1: meta.line1(isPickup),
+    line2: meta.line2(isPickup),
+    note: meta.note(isPickup),
     intro: copy.intro,
-    bodyExtra: copy.bodyExtra,
     order,
     items,
     site,
