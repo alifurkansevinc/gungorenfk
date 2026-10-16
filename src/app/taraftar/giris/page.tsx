@@ -90,21 +90,33 @@ function TaraftarGirisContent() {
           E-posta adresinizi yazıp sıfırlama linki gönderin. Gelen linke tıklayıp yeni şifre belirleyin.
         </p>
         {resetError && <p className="mt-2 rounded bg-red-50 p-2 text-sm text-red-800">{resetError}</p>}
-        {resetSent && <p className="mt-2 rounded bg-green-50 p-2 text-sm text-green-800">E-posta gönderildi. Gelen linke tıklayıp yeni şifre belirleyin.</p>}
+        {resetSent && (
+          <p className="mt-2 rounded bg-green-50 p-2 text-sm text-green-800">
+            E-posta adresiniz kayıtlıysa sıfırlama bağlantısı gönderildi. Gelen kutusu ve spam klasörünü kontrol edin.
+          </p>
+        )}
         <form
           onSubmit={async (e) => {
             e.preventDefault();
             setResetError(null);
             setResetLoading(true);
-            const supabase = createClient();
-            const redirectToUrl = typeof window !== "undefined" ? `${window.location.origin}/api/auth/callback` : "";
-            const { error: err } = await supabase.auth.resetPasswordForEmail(resetEmail.trim(), { redirectTo: redirectToUrl });
-            setResetLoading(false);
-            if (err) {
-              setResetError(err.message);
-              return;
+            try {
+              const res = await fetch("/api/auth/forgot-password", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ email: resetEmail.trim(), next: "/taraftar/giris" }),
+              });
+              const data = await res.json().catch(() => ({}));
+              if (!res.ok) {
+                setResetError(typeof data.error === "string" ? data.error : "Gönderilemedi.");
+                return;
+              }
+              setResetSent(true);
+            } catch {
+              setResetError("Bağlantı hatası. Tekrar deneyin.");
+            } finally {
+              setResetLoading(false);
             }
-            setResetSent(true);
           }}
           className="mt-3 flex gap-2"
         >

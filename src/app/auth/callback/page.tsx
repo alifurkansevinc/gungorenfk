@@ -4,12 +4,18 @@ import { Suspense, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { useRouter, useSearchParams } from "next/navigation";
 
+function safeNextPath(raw: string | null): string {
+  if (raw === "/admin/giris" || raw?.startsWith("/admin/")) return "/admin/giris";
+  return "/taraftar/giris";
+}
+
 function AuthCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState<"wait" | "form" | "done" | "error">("wait");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const nextPath = safeNextPath(searchParams.get("next"));
 
   useEffect(() => {
     const supabase = createClient();
@@ -112,7 +118,7 @@ function AuthCallbackContent() {
       return;
     }
     setStep("done");
-    setTimeout(() => router.replace("/admin/giris"), 2000);
+    setTimeout(() => router.replace(nextPath), 2000);
   }
 
   if (step === "wait") {
@@ -128,7 +134,7 @@ function AuthCallbackContent() {
       <div className="mx-auto max-w-md px-4 py-16">
         <h1 className="text-xl font-bold text-siyah">Şifre sıfırlama</h1>
         <p className="mt-2 rounded bg-red-100 p-3 text-sm text-red-800">{error}</p>
-        <a href="/admin/giris" className="mt-4 inline-block text-bordo underline">Giriş sayfasına dön</a>
+        <a href={nextPath} className="mt-4 inline-block text-bordo underline">Giriş sayfasına dön</a>
       </div>
     );
   }
