@@ -194,7 +194,7 @@ function ctaButton(href: string, label: string): string {
     <table role="presentation" cellpadding="0" cellspacing="0" style="margin:24px 0 8px;">
       <tr>
         <td style="border-radius:6px;background:${BORDO};">
-          <a href="${escapeHtml(href)}" style="display:inline-block;padding:14px 22px;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.02em;">${escapeHtml(label)}</a>
+          <a href="${escapeHtml(href)}" style="display:inline-block;padding:14px 22px;font-family:'Outfit',Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.04em;text-transform:uppercase;">${escapeHtml(label)}</a>
         </td>
       </tr>
     </table>`;
@@ -213,41 +213,52 @@ function wrapEmail(opts: {
 }): string {
   const logo = `${opts.site}/icon-192.png`;
   const isPickup = opts.order.delivery_method === "store_pickup";
+  const fontBody = "'Outfit',Arial,Helvetica,sans-serif";
+  const fontDisplay = "'Oswald',Arial,Helvetica,sans-serif";
   return `<!DOCTYPE html>
 <html lang="tr">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>${escapeHtml(opts.title)}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
-<body style="margin:0;padding:0;background:${BG};font-family:Georgia,'Times New Roman',serif;color:${INK};">
+<body style="margin:0;padding:0;background:${BG};font-family:${fontBody};color:${INK};-webkit-font-smoothing:antialiased;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;">${escapeHtml(opts.headline)} · ${escapeHtml(opts.order.order_number)}</div>
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:28px 12px;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:${BG};padding:36px 12px 28px;">
     <tr><td align="center">
-      <table role="presentation" width="100%" style="max-width:580px;background:#ffffff;border-radius:14px;overflow:hidden;border:1px solid ${LINE};">
+      <!-- overflow:visible: logo header üstüne binsin, beyaza taşsın -->
+      <table role="presentation" width="100%" style="max-width:580px;background:#ffffff;border-radius:16px;border:1px solid ${LINE};overflow:visible;">
         <tr>
-          <td style="background:linear-gradient(135deg,${BORDO_DARK} 0%,${BORDO} 100%);padding:22px 28px;">
+          <td style="padding:0;background:linear-gradient(135deg,${BORDO_DARK} 0%,${BORDO} 100%);border-radius:16px 16px 0 0;">
             <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
               <tr>
-                <td style="vertical-align:middle;">
-                  <img src="${escapeHtml(logo)}" width="44" height="44" alt="Güngören Spor" style="display:block;border-radius:50%;border:2px solid rgba(255,255,255,0.35);">
+                <td width="112" valign="top" style="width:112px;padding:0 0 0 22px;">
+                  <img src="${escapeHtml(logo)}" width="92" height="92" alt="Güngören Spor" style="display:block;width:92px;height:92px;margin-top:-18px;margin-bottom:-34px;border-radius:50%;border:5px solid #ffffff;background:#ffffff;box-shadow:0 10px 24px rgba(0,0,0,0.22);">
                 </td>
-                <td style="vertical-align:middle;padding-left:14px;">
-                  <div style="font-family:Arial,Helvetica,sans-serif;font-size:11px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.75);">Güngören Spor</div>
-                  <div style="font-family:Arial,Helvetica,sans-serif;font-size:18px;font-weight:700;color:#ffffff;margin-top:2px;">Mağaza</div>
+                <td valign="middle" style="padding:20px 26px 20px 10px;">
+                  <div style="font-family:${fontDisplay};font-size:22px;font-weight:700;letter-spacing:0.04em;text-transform:uppercase;color:#ffffff;line-height:1.1;">Güngören Spor</div>
+                  <div style="font-family:${fontBody};font-size:13px;font-weight:600;color:rgba(255,255,255,0.88);margin-top:6px;letter-spacing:0.02em;">Mağaza sipariş bilgilendirmesi</div>
                 </td>
               </tr>
             </table>
           </td>
         </tr>
         <tr>
-          <td style="height:4px;background:${opts.accent};font-size:0;line-height:0;">&nbsp;</td>
+          <td style="background:${BORDO_DARK};padding:10px 26px 10px 128px;font-family:${fontDisplay};font-size:13px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#ffffff;">
+            Hiç vazgeçmedik
+          </td>
         </tr>
         <tr>
-          <td style="padding:28px 28px 8px;font-family:Arial,Helvetica,sans-serif;">
-            <span style="display:inline-block;padding:6px 12px;border-radius:999px;background:${opts.accent}14;color:${opts.accent};font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">${escapeHtml(opts.badge)}</span>
-            <h1 style="margin:16px 0 10px;font-family:Georgia,'Times New Roman',serif;font-size:26px;line-height:1.25;font-weight:700;color:${INK};">${escapeHtml(opts.headline)}</h1>
-            <p style="margin:0 0 8px;font-size:15px;line-height:1.6;color:${MUTED};">${opts.intro}</p>
+          <td style="height:3px;background:${opts.accent};font-size:0;line-height:0;">&nbsp;</td>
+        </tr>
+        <tr>
+          <td style="padding:44px 28px 10px;font-family:${fontBody};">
+            <span style="display:inline-block;padding:6px 12px;border-radius:999px;background:${opts.accent}14;color:${opts.accent};font-family:${fontBody};font-size:11px;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;">${escapeHtml(opts.badge)}</span>
+            <h1 style="margin:14px 0 10px;font-family:${fontDisplay};font-size:28px;line-height:1.15;font-weight:700;letter-spacing:0.02em;text-transform:uppercase;color:${INK};">${escapeHtml(opts.headline)}</h1>
+            <p style="margin:0 0 8px;font-size:15px;line-height:1.65;color:${MUTED};font-family:${fontBody};">${opts.intro}</p>
             ${metaCard(opts.order, isPickup)}
             ${opts.bodyExtra}
             ${renderItems(opts.items)}
@@ -257,7 +268,8 @@ function wrapEmail(opts: {
           </td>
         </tr>
         <tr>
-          <td style="padding:20px 28px 24px;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.5;color:#8a8a8a;border-top:1px solid ${LINE};">
+          <td style="padding:18px 28px 22px;font-family:${fontBody};font-size:11px;line-height:1.55;color:#8a8a8a;border-top:1px solid ${LINE};">
+            <div style="font-family:${fontDisplay};font-size:12px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:${BORDO};margin-bottom:8px;">Hiç vazgeçmedik</div>
             Bu e-posta sipariş bilgilendirmesi için otomatik gönderilmiştir.<br>
             © Güngören Spor · <a href="${escapeHtml(opts.site)}" style="color:${BORDO};text-decoration:none;">gungorenspor.com</a>
           </td>
