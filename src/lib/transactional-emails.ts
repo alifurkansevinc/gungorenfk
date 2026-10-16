@@ -15,7 +15,7 @@ import {
   type ServiceRequestType,
 } from "@/lib/order-service-shared";
 
-const { beyaz: BEYAZ, muted: MUTED, fontBody } = BRAND;
+const { siyah: SIYAH, muted: MUTED, fontBody } = BRAND;
 
 async function resolveUserEmail(supabase: SupabaseClient, userId: string | null | undefined): Promise<string | null> {
   if (!userId) return null;
@@ -112,7 +112,7 @@ export async function sendTicketPaidEmail(supabase: SupabaseClient, ticketId: st
         eyebrow: "Bilet",
         line1: "Biletiniz",
         line2: "hazır",
-        introHtml: `Merhaba <strong style="color:${BEYAZ};font-weight:600;">${escapeHtml(name)}</strong>, ödemeniz alındı. Biletiniz aşağıda.`,
+        introHtml: `Merhaba <strong style="color:${SIYAH};font-weight:800;">${escapeHtml(name)}</strong>, ödemeniz alındı. Biletiniz aşağıda.`,
         bodyHtml,
         ctaHref: `${site}/biletler/basarili?qrCode=${encodeURIComponent(ticket.qr_code)}${seatCode !== "—" ? `&seatCode=${encodeURIComponent(seatCode)}` : ""}`,
         ctaLabel: "Bileti aç",
@@ -154,7 +154,7 @@ export async function sendDonationReceiptEmail(supabase: SupabaseClient, donatio
       ])}
       <p style="margin:0;font-family:${fontBody};font-size:14px;line-height:1.6;color:${MUTED};">
         Desteğiniz için teşekkür ederiz. Bu e-posta bağış makbuzunuzdur.
-        ${d.message ? `<br><br><em style="color:rgba(255,255,255,0.4);">“${escapeHtml(String(d.message).slice(0, 200))}”</em>` : ""}
+        ${d.message ? `<br><br><em style="color:${MUTED};">“${escapeHtml(String(d.message).slice(0, 200))}”</em>` : ""}
       </p>
     `;
 
@@ -166,7 +166,7 @@ export async function sendDonationReceiptEmail(supabase: SupabaseClient, donatio
         eyebrow: "Bağış",
         line1: "Teşekkürler",
         line2: "makbuzunuz",
-        introHtml: `Merhaba <strong style="color:${BEYAZ};font-weight:600;">${escapeHtml(name)}</strong>, bağışınız alındı.`,
+        introHtml: `Merhaba <strong style="color:${SIYAH};font-weight:800;">${escapeHtml(name)}</strong>, bağışınız alındı.`,
         bodyHtml,
         ctaHref: `${site}/bagis/basarili?id=${encodeURIComponent(d.id)}`,
         ctaLabel: "Makbuzu gör",
@@ -269,7 +269,7 @@ export async function sendServiceRequestStatusEmail(
         eyebrow: typeLabel,
         line1: "Talebiniz",
         line2,
-        introHtml: `Merhaba <strong style="color:${BEYAZ};font-weight:600;">${escapeHtml(name)}</strong>, talebinizin durumu güncellendi.`,
+        introHtml: `Merhaba <strong style="color:${SIYAH};font-weight:800;">${escapeHtml(name)}</strong>, talebinizin durumu güncellendi.`,
         bodyHtml,
         ctaHref: `${site}/benim-kosem`,
         ctaLabel: "Benim Köşem",
@@ -351,7 +351,7 @@ export async function sendMotmLotteryWinnerEmails(
           eyebrow: "Çekiliş",
           line1: "Tebrikler",
           line2: "talihli",
-          introHtml: `Merhaba <strong style="color:${BEYAZ};font-weight:600;">${escapeHtml(w.display_name)}</strong>, çekilişte seçildin.`,
+          introHtml: `Merhaba <strong style="color:${SIYAH};font-weight:800;">${escapeHtml(w.display_name)}</strong>, çekilişte seçildin.`,
           bodyHtml,
           ctaHref: site,
           ctaLabel: "Siteye git",
