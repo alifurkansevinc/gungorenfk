@@ -36,6 +36,12 @@ export async function createFanProfileAfterSignup(input: FanProfileInput) {
   if (error) {
     return { error: error.message };
   }
+  try {
+    const { sendFanWelcomeEmail } = await import("@/lib/transactional-emails");
+    await sendFanWelcomeEmail(input.email.trim().toLowerCase(), input.first_name.trim());
+  } catch (err) {
+    console.error("[welcome-mail]", err);
+  }
   return { ok: true };
 }
 

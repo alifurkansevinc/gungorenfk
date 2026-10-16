@@ -94,6 +94,12 @@ export async function POST(req: NextRequest) {
       }
       const eventLabel = (event as { title: string }).title;
       if (isFree) {
+        try {
+          const { sendTicketPaidEmail } = await import("@/lib/transactional-emails");
+          await sendTicketPaidEmail(supabase, ticket.id);
+        } catch (err) {
+          console.error("[ticket-mail]", err);
+        }
         const params = new URLSearchParams({ qrCode, type: "event" });
         return NextResponse.json({
           success: true,
@@ -249,6 +255,12 @@ export async function POST(req: NextRequest) {
     }
 
     if (isFree) {
+      try {
+        const { sendTicketPaidEmail } = await import("@/lib/transactional-emails");
+        await sendTicketPaidEmail(supabase, ticket.id);
+      } catch (err) {
+        console.error("[ticket-mail]", err);
+      }
       {
         const { data: profile } = await supabase
           .from("fan_profiles")

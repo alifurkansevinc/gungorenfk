@@ -520,10 +520,27 @@ export async function transitionServiceRequest(input: {
   if (!request) return { error: "Talep bulunamadı." };
   const note = (input.adminNote || "").trim().slice(0, 500) || null;
 
-  if (input.action === "approve") return approveRequest(supabase, request, note);
-  if (input.action === "reject") return rejectRequest(supabase, request, note);
-  if (input.action === "receive") return receiveRequest(supabase, request, note);
-  return completeRequest(supabase, request, note);
+  let result: { ok: true; message: string } | { error: string };
+  if (input.action === "approve") result = await approveRequest(supabase, request, note);
+  else if (input.action === "reject") result = await rejectRequest(supabase, request, note);
+  else if (input.action === "receive") result = await receiveRequest(supabase, request, note);
+  else result = await completeRequest(supabase, request, note);
+
+  if ("ok" in result) {
+    const statusMap = {
+      approve: "ONAYLANDI",
+      reject: "REDDEDILDI",
+      receive: "TESLIM_ALINDI",
+      complete: "TAMAMLANDI",
+    } as const;
+    try {
+      const { sendServiceRequestStatusEmail } = await import("@/lib/transactional-emails");
+      await sendServiceRequestStatusEmail(supabase, request.id, statusMap[input.action]);
+    } catch (err) {
+      console.error("[service-request-mail]", err);
+    }
+  }
+  return result;
 }
 
 async function approveRequest(

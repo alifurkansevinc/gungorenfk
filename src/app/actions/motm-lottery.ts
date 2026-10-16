@@ -332,6 +332,13 @@ export async function runMotmLotteryDraw(eventId: string): Promise<MotmLotteryAc
     .eq("id", eventId);
   if (finErr) return { ok: false, error: finErr.message };
 
+  try {
+    const { sendMotmLotteryWinnerEmails } = await import("@/lib/transactional-emails");
+    await sendMotmLotteryWinnerEmails(supabase, eventId, winners);
+  } catch (err) {
+    console.error("[lottery-winner-mail]", err);
+  }
+
   revalidatePath(`/admin/maclar/motm-cekilis/${eventId}`);
   revalidate();
   return { ok: true };

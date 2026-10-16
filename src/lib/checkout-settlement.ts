@@ -9,6 +9,7 @@ import { checkAndLevelUp } from "@/lib/fan-level";
 import { interpretCheckoutResult, isCheckoutToken } from "@/lib/iyzico-result";
 import { cancelInvoiceForRefundedOrder } from "@/lib/uyum-invoice";
 import { sendOrderStatusEmail } from "@/lib/order-emails";
+import { sendDonationReceiptEmail, sendTicketPaidEmail } from "@/lib/transactional-emails";
 
 export type CheckoutSettlement = {
   outcome: "paid" | "already_paid" | "failed" | "pending" | "query_error" | "not_found";
@@ -34,6 +35,8 @@ type DonationRow = {
   user_id: string | null;
   amount: number;
   payment_status: string;
+  guest_email?: string | null;
+  guest_name?: string | null;
 };
 
 type TicketRow = {
@@ -260,6 +263,7 @@ async function settleDonation(
         newLevelId = levelResult.newLevelId;
       }
     }
+    await sendDonationReceiptEmail(supabase, donation.id);
     return { outcome: "paid", redirectPath: donationSuccessPath(donation.id, levelUp, newLevelId) };
   }
   if (interpreted === "failed" && markFailure) {
@@ -326,6 +330,7 @@ async function settleTicket(
       levelUp = levelResult.leveledUp;
       newLevelId = levelResult.newLevelId;
     }
+    await sendTicketPaidEmail(supabase, ticket.id);
     return { outcome: "paid", redirectPath: await ticketSuccessPath(supabase, ticket, levelUp, newLevelId) };
   }
   if (interpreted === "failed" && markFailure) {
@@ -353,12 +358,16 @@ export async function applyCheckoutToken(token: string, options?: { markFailure?
   const order = await findOrder(supabase, token);
   const { data: donation } = order
     ? { data: null }
-    : await supabase.from("donations").select("id, user_id, amount, payment_status").eq("payment_token", token).maybeSingle();
+    : await supabase
+        .from("donations")
+        .select("id, user_id, amount, payment_status, guest_email, guest_name")
+        .eq("payment_token", token)
+        .maybeSingle();
   const { data: ticket } = order || donation
     ? { data: null }
     : await supabase
         .from("match_tickets")
-        .select("id, user_id, match_id, event_id, qr_code, seat_id, payment_status")
+        .select("id, user_id, match_id, event_id, qr_code, seat_id, payment_status, guest_email, guest_name")
         .eq("payment_token", token)
         .maybeSingle();
 

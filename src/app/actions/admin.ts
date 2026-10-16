@@ -90,6 +90,21 @@ async function replaceMatchMotmCandidates(
   return { ok: true };
 }
 
+/** Oy kullanan taraftarlara maçın yıldızı sonucunu e-posta ile duyurur. */
+export async function announceMotmMatchResultForm(formData: FormData): Promise<void> {
+  const matchId = String(formData.get("match_id") ?? "").trim();
+  if (!matchId) redirect("/admin/maclar");
+  await getAdminSupabase();
+  const supabase = createServiceRoleClient();
+  const { sendMotmMatchResultEmails } = await import("@/lib/transactional-emails");
+  const result = await sendMotmMatchResultEmails(supabase, matchId);
+  const q = new URLSearchParams();
+  if (result.error) q.set("motmMailErr", result.error);
+  else q.set("motmMailOk", String(result.sent));
+  revalidatePath(`/admin/maclar/duzenle/${matchId}`);
+  redirect(`/admin/maclar/duzenle/${matchId}?${q.toString()}`);
+}
+
 export async function createMatch(formData: FormData) {
   const s = matchesClient();
   const manOfTheMatch = (formData.get("man_of_the_match_id") as string)?.trim() || null;

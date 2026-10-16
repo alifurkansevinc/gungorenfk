@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getAdminSupabase } from "@/app/admin/actions";
+import { announceMotmMatchResultForm } from "@/app/actions/admin";
 
 function formatTr(iso: string | null | undefined): string {
   if (!iso) return "—";
@@ -143,6 +144,21 @@ export async function MatchMotmAdminResults({ matchId }: { matchId: string }) {
             </tbody>
           </table>
         </div>
+      )}
+
+      {totalVotes > 0 && (
+        <form action={announceMotmMatchResultForm} className="mt-4">
+          <input type="hidden" name="match_id" value={matchId} />
+          <button
+            type="submit"
+            className="rounded-lg bg-bordo px-4 py-2.5 text-sm font-semibold text-beyaz hover:bg-bordo-dark"
+          >
+            Sonucu oy verenlere e-posta ile duyur
+          </button>
+          <p className="mt-1.5 text-[11px] text-siyah/55">
+            En çok oy alan oyuncuyu, oy kullanan taraftarlara markalı mail ile gönderir.
+          </p>
+        </form>
       )}
 
       <p className="mt-2 text-[11px] text-siyah/55">
