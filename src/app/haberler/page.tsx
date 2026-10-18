@@ -4,6 +4,8 @@ import Image from "next/image";
 import { FadeInSection } from "@/components/FadeInSection";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { Calendar, MapPin, Clock, Ticket, ArrowRight } from "lucide-react";
+import { TicketsUnavailableNotice } from "@/components/TicketsUnavailableNotice";
+import { TICKETS_PUBLIC_ENABLED } from "@/lib/tickets-public";
 
 export const metadata = {
   title: "Etkinlikler | Güngören FK",
@@ -143,7 +145,7 @@ export default async function HaberlerPage() {
                             Detay
                             <ArrowRight className="h-4 w-4" />
                           </Link>
-                          {isTicketed && (
+                          {isTicketed && TICKETS_PUBLIC_ENABLED && (
                             <Link
                               href="/biletler"
                               className="inline-flex items-center gap-2 rounded-xl border-2 border-bordo px-5 py-2.5 text-sm font-semibold text-bordo transition-all hover:bg-bordo/10"
@@ -151,6 +153,11 @@ export default async function HaberlerPage() {
                               <Ticket className="h-4 w-4" />
                               Bilet Al
                             </Link>
+                          )}
+                          {isTicketed && !TICKETS_PUBLIC_ENABLED && (
+                            <div className="w-full basis-full">
+                              <TicketsUnavailableNotice variant="inline" />
+                            </div>
                           )}
                         </div>
                       </div>

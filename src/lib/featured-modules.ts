@@ -1,5 +1,7 @@
+import { TICKETS_PUBLIC_ENABLED } from "@/lib/tickets-public";
+
 /** Sitedeki modüller: öne çıkan bölümüne eklenebilir. Admin sadece bu listeden seçer. */
-export const FEATURED_MODULE_OPTIONS = [
+const FEATURED_MODULE_OPTIONS_ALL = [
   { key: "magaza", label: "Mağaza", link: "/magaza", defaultTitle: "Mağaza", defaultSubtitle: "Resmi ürünler" },
   { key: "bagis", label: "Bağış Yap", link: "/bagis", defaultTitle: "Bağış Yap", defaultSubtitle: "Destek ol" },
   { key: "kadro", label: "Kadro", link: "/kadro", defaultTitle: "Kadro", defaultSubtitle: "Takım" },
@@ -10,8 +12,14 @@ export const FEATURED_MODULE_OPTIONS = [
   { key: "kulup", label: "Kulüp", link: "/kulup", defaultTitle: "Kulüp", defaultSubtitle: "Kulübümüz" },
 ] as const;
 
-export type FeaturedModuleKey = (typeof FEATURED_MODULE_OPTIONS)[number]["key"];
+export const FEATURED_MODULE_OPTIONS = (
+  TICKETS_PUBLIC_ENABLED
+    ? FEATURED_MODULE_OPTIONS_ALL
+    : FEATURED_MODULE_OPTIONS_ALL.filter((m) => m.key !== "biletler")
+) as readonly (typeof FEATURED_MODULE_OPTIONS_ALL)[number][];
+
+export type FeaturedModuleKey = (typeof FEATURED_MODULE_OPTIONS_ALL)[number]["key"];
 
 export function getModuleByKey(key: string) {
-  return FEATURED_MODULE_OPTIONS.find((m) => m.key === key);
+  return FEATURED_MODULE_OPTIONS_ALL.find((m) => m.key === key);
 }

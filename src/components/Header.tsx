@@ -5,18 +5,19 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { SITE_LOGO_URL } from "@/lib/demo-images";
+import { TICKETS_PUBLIC_ENABLED } from "@/lib/tickets-public";
 
-const NAV_BASE = [
+const NAV_BASE: { href: string; label: string }[] = [
   { href: "/maclar", label: "Sıralama & Maçlar" },
   { href: "/magaza", label: "Mağaza" },
   { href: "/bagis", label: "Bağış Yap" },
-  { href: "/biletler", label: "Biletler" },
+  ...(TICKETS_PUBLIC_ENABLED ? [{ href: "/biletler", label: "Biletler" }] : []),
   { href: "/kadro", label: "Kadro" },
   { href: "/transferler", label: "Transferler" },
   { href: "/kulup/teknik-heyet", label: "Teknik Heyet" },
   { href: "/kulup/yonetim-kurulu", label: "Yönetim Kurulu" },
   { href: "/haberler", label: "Etkinlikler" },
-] as const;
+];
 
 export function Header() {
   const [logoError, setLogoError] = useState(false);

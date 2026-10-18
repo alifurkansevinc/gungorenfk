@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { getSiteUrl } from "@/lib/site-url";
 import { createPublicSupabaseClient } from "@/lib/supabase/public-anon";
+import { TICKETS_PUBLIC_ENABLED } from "@/lib/tickets-public";
 
 type Change = NonNullable<MetadataRoute.Sitemap[number]["changeFrequency"]>;
 
@@ -15,7 +16,9 @@ const STATIC: { path: string; changeFrequency: Change; priority: number }[] = [
   { path: "/kulup/teknik-heyet", changeFrequency: "monthly", priority: 0.7 },
   { path: "/magaza", changeFrequency: "daily", priority: 0.9 },
   { path: "/galeri", changeFrequency: "weekly", priority: 0.8 },
-  { path: "/biletler", changeFrequency: "weekly", priority: 0.85 },
+  ...(TICKETS_PUBLIC_ENABLED
+    ? [{ path: "/biletler", changeFrequency: "weekly" as Change, priority: 0.85 }]
+    : []),
   { path: "/bagis", changeFrequency: "monthly", priority: 0.75 },
   { path: "/taraftar", changeFrequency: "monthly", priority: 0.8 },
   { path: "/taraftar/giris", changeFrequency: "monthly", priority: 0.5 },

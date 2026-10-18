@@ -9,6 +9,7 @@ import { FadeInSection } from "@/components/FadeInSection";
 import { DEMO_IMAGES, HOMEPAGE_SLOGAN_IMAGE_URL } from "@/lib/demo-images";
 import { createClient } from "@/lib/supabase/server";
 import { getModuleByKey } from "@/lib/featured-modules";
+import { TICKETS_PUBLIC_ENABLED } from "@/lib/tickets-public";
 
 export default async function Home() {
   const supabase = await createClient();
@@ -83,48 +84,54 @@ export default async function Home() {
       <AnadoluTemsilcisi />
 
       {/* Öne çıkan kartlar — admin panelinden yönetilen modüller (max 5) */}
-      {(featuredItems?.length ?? 0) > 0 && (
-        <FadeInSection>
-          <section className="py-8 sm:py-10">
-            <div className="mx-auto max-w-7xl px-6">
-              <p className="font-display text-xs font-semibold uppercase tracking-[0.25em] text-siyah/50">Öne çıkan</p>
-              <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                {featuredItems!.map((item, index) => {
-                  const def = getModuleByKey(item.module_key);
-                  const href = item.link?.trim() || def?.link || "#";
-                  const title = item.title?.trim() || def?.defaultTitle || item.module_key;
-                  const subtitle = item.subtitle?.trim() || def?.defaultSubtitle || "";
-                  const isLarge = item.is_large;
-                  return (
-                    <Link
-                      key={item.id}
-                      href={href}
-                      className={`group relative overflow-hidden rounded-2xl bg-siyah shadow-lg card-hover ${
-                        isLarge ? "lg:col-span-2 lg:row-span-2 min-h-[280px]" : "min-h-[180px]"
-                      }`}
-                    >
-                      <Image
-                        src={item.image_url}
-                        alt=""
-                        fill
-                        className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                        sizes={isLarge ? "(max-width: 1024px) 100vw, 50vw" : "25vw"}
-                        unoptimized
-                      />
-                      <div className={`absolute inset-0 ${isLarge ? "bg-gradient-to-t from-siyah/95 via-siyah/40 to-transparent" : "bg-gradient-to-t from-siyah/90 to-transparent"}`} />
-                      <div className={`absolute inset-0 flex flex-col justify-end ${isLarge ? "p-6 sm:p-8" : "p-5"}`}>
-                        <span className="text-xs font-semibold uppercase tracking-wider text-beyaz">{(def?.label ?? item.module_key)}</span>
-                        <span className={`font-display mt-2 font-bold text-beyaz ${isLarge ? "text-xl sm:text-2xl" : "text-lg"}`}>{title}</span>
-                        {subtitle && <span className={`text-beyaz/80 ${isLarge ? "mt-1 text-sm" : "mt-1 text-sm"}`}>{subtitle} →</span>}
-                      </div>
-                    </Link>
-                  );
-                })}
+      {(() => {
+        const visibleFeatured = (featuredItems ?? []).filter(
+          (item) => TICKETS_PUBLIC_ENABLED || item.module_key !== "biletler"
+        );
+        if (visibleFeatured.length === 0) return null;
+        return (
+          <FadeInSection>
+            <section className="py-8 sm:py-10">
+              <div className="mx-auto max-w-7xl px-6">
+                <p className="font-display text-xs font-semibold uppercase tracking-[0.25em] text-siyah/50">Öne çıkan</p>
+                <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                  {visibleFeatured.map((item) => {
+                    const def = getModuleByKey(item.module_key);
+                    const href = item.link?.trim() || def?.link || "#";
+                    const title = item.title?.trim() || def?.defaultTitle || item.module_key;
+                    const subtitle = item.subtitle?.trim() || def?.defaultSubtitle || "";
+                    const isLarge = item.is_large;
+                    return (
+                      <Link
+                        key={item.id}
+                        href={href}
+                        className={`group relative overflow-hidden rounded-2xl bg-siyah shadow-lg card-hover ${
+                          isLarge ? "lg:col-span-2 lg:row-span-2 min-h-[280px]" : "min-h-[180px]"
+                        }`}
+                      >
+                        <Image
+                          src={item.image_url}
+                          alt=""
+                          fill
+                          className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                          sizes={isLarge ? "(max-width: 1024px) 100vw, 50vw" : "25vw"}
+                          unoptimized
+                        />
+                        <div className={`absolute inset-0 ${isLarge ? "bg-gradient-to-t from-siyah/95 via-siyah/40 to-transparent" : "bg-gradient-to-t from-siyah/90 to-transparent"}`} />
+                        <div className={`absolute inset-0 flex flex-col justify-end ${isLarge ? "p-6 sm:p-8" : "p-5"}`}>
+                          <span className="text-xs font-semibold uppercase tracking-wider text-beyaz">{(def?.label ?? item.module_key)}</span>
+                          <span className={`font-display mt-2 font-bold text-beyaz ${isLarge ? "text-xl sm:text-2xl" : "text-lg"}`}>{title}</span>
+                          {subtitle && <span className={`text-beyaz/80 ${isLarge ? "mt-1 text-sm" : "mt-1 text-sm"}`}>{subtitle} →</span>}
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          </section>
-        </FadeInSection>
-      )}
+            </section>
+          </FadeInSection>
+        );
+      })()}
     </div>
   );
 }

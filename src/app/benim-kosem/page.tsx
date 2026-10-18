@@ -7,6 +7,8 @@ import { FanLevelBadge } from "@/app/taraftar/FanLevelBadge";
 import { FavoriOyuncuSec } from "./FavoriOyuncuSec";
 import { signOutCurrentUser } from "@/app/actions/auth";
 import { netPaidStoreSpend } from "@/lib/store-spend";
+import { TicketsUnavailableNotice } from "@/components/TicketsUnavailableNotice";
+import { TICKETS_PUBLIC_ENABLED } from "@/lib/tickets-public";
 
 export const metadata = {
   title: "Benim Köşem | Güngören FK",
@@ -364,9 +366,15 @@ export default async function BenimKosemPage() {
               <h2 className="font-display text-lg font-bold text-siyah break-words">Bilet cüzdanım</h2>
               <p className="mt-1 text-sm text-siyah/70 break-words">Aldığınız maç ve etkinlik biletleri.</p>
               {activeTickets.length === 0 ? (
-                <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center">
+                <div className="mt-4 rounded-xl border border-dashed border-siyah/20 bg-siyah/[0.02] p-6 text-center space-y-3">
                   <p className="text-sm text-siyah/60">Henüz biletiniz yok.</p>
-                  <Link href="/biletler" className="mt-3 inline-block text-sm font-medium text-bordo hover:underline">Biletler →</Link>
+                  {TICKETS_PUBLIC_ENABLED ? (
+                    <Link href="/biletler" className="inline-block text-sm font-medium text-bordo hover:underline">
+                      Biletler →
+                    </Link>
+                  ) : (
+                    <TicketsUnavailableNotice variant="inline" />
+                  )}
                 </div>
               ) : (
                 <div className="mt-4 grid gap-3 grid-cols-1 sm:grid-cols-2 min-w-0">
@@ -400,9 +408,16 @@ export default async function BenimKosemPage() {
                   })}
                 </div>
               )}
-              {activeTickets.length > 0 && (
-                <Link href="/biletler" className="mt-4 block text-center text-sm font-medium text-bordo hover:underline">Yeni bilet al →</Link>
-              )}
+              {activeTickets.length > 0 &&
+                (TICKETS_PUBLIC_ENABLED ? (
+                  <Link href="/biletler" className="mt-4 block text-center text-sm font-medium text-bordo hover:underline">
+                    Yeni bilet al →
+                  </Link>
+                ) : (
+                  <div className="mt-4">
+                    <TicketsUnavailableNotice variant="inline" />
+                  </div>
+                ))}
             </section>
 
             {/* Store cüzdanım — mağazadan teslim alınacak siparişler, QR ile (Bilet cüzdanımın hemen altında) */}

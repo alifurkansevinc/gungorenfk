@@ -4,6 +4,7 @@ import { createServiceRoleClient } from "@/lib/supabase/service";
 import { initializeCheckoutForm } from "@/lib/iyzico";
 import { publicBaseUrl } from "@/lib/public-base-url";
 import { checkAndLevelUp } from "@/lib/fan-level";
+import { TICKETS_PUBLIC_ENABLED, TICKETS_UNAVAILABLE_MESSAGE } from "@/lib/tickets-public";
 
 const TICKET_PRICE = 0;
 
@@ -16,6 +17,13 @@ function generateQrCode(): string {
 
 export async function POST(req: NextRequest) {
   try {
+    if (!TICKETS_PUBLIC_ENABLED) {
+      return NextResponse.json(
+        { success: false, error: TICKETS_UNAVAILABLE_MESSAGE },
+        { status: 503 }
+      );
+    }
+
     const body = await req.json();
     const { matchId, eventId, seatId, taraftar } = body as { matchId?: string; eventId?: string; seatId?: string; taraftar?: boolean };
     const isEventTicket = !!eventId && !matchId;

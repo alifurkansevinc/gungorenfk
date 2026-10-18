@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Ticket, Calendar, Clock, MapPin, ArrowLeft } from "lucide-react";
 import { DEMO_IMAGES } from "@/lib/demo-images";
+import { TicketsUnavailableNotice } from "@/components/TicketsUnavailableNotice";
+import { TICKETS_PUBLIC_ENABLED } from "@/lib/tickets-public";
 
 export default async function HaberDetayPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
@@ -98,25 +100,30 @@ export default async function HaberDetayPage({ params }: { params: Promise<{ slu
                 <li>Çevrimiçi etkinlik</li>
               )}
             </ul>
-            <div className="mt-5 flex flex-wrap gap-3">
-              {(item as { is_ticketed?: boolean | null }).is_ticketed && (
-                <Link
-                  href="/biletler"
-                  className="inline-flex items-center gap-2 rounded-xl bg-bordo px-5 py-2.5 text-sm font-semibold text-beyaz shadow-md transition-all hover:bg-bordo/90"
-                >
-                  <Ticket className="h-4 w-4" />
-                  Bilet Al
-                </Link>
-              )}
-              {(item as { registration_url?: string | null }).registration_url && (
-                <Link
-                  href={(item as { registration_url: string }).registration_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border-2 border-bordo px-5 py-2.5 text-sm font-semibold text-bordo transition-all hover:bg-bordo/10"
-                >
-                  Kayıt / Bilet (harici)
-                </Link>
+            <div className="mt-5 flex flex-col gap-3">
+              <div className="flex flex-wrap gap-3">
+                {(item as { is_ticketed?: boolean | null }).is_ticketed && TICKETS_PUBLIC_ENABLED && (
+                  <Link
+                    href="/biletler"
+                    className="inline-flex items-center gap-2 rounded-xl bg-bordo px-5 py-2.5 text-sm font-semibold text-beyaz shadow-md transition-all hover:bg-bordo/90"
+                  >
+                    <Ticket className="h-4 w-4" />
+                    Bilet Al
+                  </Link>
+                )}
+                {(item as { registration_url?: string | null }).registration_url && (
+                  <Link
+                    href={(item as { registration_url: string }).registration_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-xl border-2 border-bordo px-5 py-2.5 text-sm font-semibold text-bordo transition-all hover:bg-bordo/10"
+                  >
+                    Kayıt / Bilet (harici)
+                  </Link>
+                )}
+              </div>
+              {(item as { is_ticketed?: boolean | null }).is_ticketed && !TICKETS_PUBLIC_ENABLED && (
+                <TicketsUnavailableNotice variant="card" />
               )}
             </div>
           </div>

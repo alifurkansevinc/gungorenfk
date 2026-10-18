@@ -55,10 +55,10 @@ function BasariliContent() {
           </div>
         )}
         <Link
-          href="/biletler"
+          href="/benim-kosem"
           className="mt-8 inline-block rounded-xl bg-bordo px-6 py-3 font-semibold text-beyaz hover:bg-bordo/90"
         >
-          Biletlere dön
+          Benim Köşem
         </Link>
       </div>
     </div>

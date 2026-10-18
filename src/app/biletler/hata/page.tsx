@@ -16,10 +16,10 @@ function HataContent() {
         <h1 className="mt-4 font-display text-xl font-bold text-siyah">Bilet alınamadı</h1>
         <p className="mt-2 text-siyah/70">{decodeURIComponent(error)}</p>
         <Link
-          href="/biletler"
+          href="/"
           className="mt-6 inline-block rounded-xl bg-bordo px-6 py-3 font-semibold text-beyaz hover:bg-bordo/90"
         >
-          Tekrar dene
+          Anasayfa
         </Link>
       </div>
     </div>

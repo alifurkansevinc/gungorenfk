@@ -4,6 +4,7 @@ import { Radio } from "lucide-react";
 import { SITE_LOGO_URL } from "@/lib/demo-images";
 import { getEffectiveMatchStatus } from "@/lib/match-schedule";
 import { normalizeSiteCompetition } from "@/lib/competition-label";
+import { TICKETS_PUBLIC_ENABLED, TICKETS_UNAVAILABLE_MESSAGE } from "@/lib/tickets-public";
 
 type NextMatch = {
   id: string;
@@ -176,19 +177,26 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
             )}
           </div>
 
-          <div className="mt-8 flex justify-center flex-wrap gap-3">
-            <Link
-              href={`/maclar/${match.id}`}
-              className="inline-flex items-center gap-2 rounded-xl bg-beyaz px-6 py-3 font-bold text-siyah shadow-lg transition-all hover:bg-beyaz/90 hover:scale-105"
-            >
-              Maç detayı
-            </Link>
-            <Link
-              href="/biletler"
-              className="inline-flex items-center gap-2 rounded-xl border-2 border-beyaz/50 px-6 py-3 font-bold text-beyaz transition-all hover:bg-beyaz/10"
-            >
-              Bilet al
-            </Link>
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <div className="flex justify-center flex-wrap gap-3">
+              <Link
+                href={`/maclar/${match.id}`}
+                className="inline-flex items-center gap-2 rounded-xl bg-beyaz px-6 py-3 font-bold text-siyah shadow-lg transition-all hover:bg-beyaz/90 hover:scale-105"
+              >
+                Maç detayı
+              </Link>
+              {TICKETS_PUBLIC_ENABLED && (
+                <Link
+                  href="/biletler"
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-beyaz/50 px-6 py-3 font-bold text-beyaz transition-all hover:bg-beyaz/10"
+                >
+                  Bilet al
+                </Link>
+              )}
+            </div>
+            {!TICKETS_PUBLIC_ENABLED && (
+              <p className="max-w-md text-center text-sm text-beyaz/80">{TICKETS_UNAVAILABLE_MESSAGE}</p>
+            )}
           </div>
         </div>
       </div>

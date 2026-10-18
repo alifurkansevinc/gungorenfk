@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { TicketsUnavailableNotice } from "@/components/TicketsUnavailableNotice";
+import { TICKETS_PUBLIC_ENABLED } from "@/lib/tickets-public";
 import { createClient } from "@/lib/supabase/server";
 import { MacKartlari } from "./MacKartlari";
 import { EtkinlikKartlari } from "./EtkinlikKartlari";
@@ -6,14 +8,39 @@ import { BiletIcinGirisCTA } from "./BiletIcinGirisCTA";
 
 export const metadata = {
   title: "Biletler | Güngören FK",
-  description: "Güngören FK maç ve etkinlik biletlerini online alın. QR kod ile giriş.",
+  description: TICKETS_PUBLIC_ENABLED
+    ? "Güngören FK maç ve etkinlik biletlerini online alın. QR kod ile giriş."
+    : "Henüz bilet hizmeti buradan aktif edilmemiştir. Güngören Yanında uygulaması üzerinden işlem yapabilirsiniz.",
 };
 
 export const dynamic = "force-dynamic";
 
 export default async function BiletlerPage() {
+  if (!TICKETS_PUBLIC_ENABLED) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-siyah/5 via-[#f8f8f8] to-bordo/5">
+        <div className="relative overflow-hidden border-b border-siyah/10 bg-gradient-to-br from-siyah via-siyah to-bordo/90 text-beyaz">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(139,21,56,0.4),transparent)]" />
+          <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+            <nav className="text-sm text-beyaz/70">
+              <Link href="/" className="inline-flex min-h-[44px] items-center hover:text-beyaz transition-colors">
+                Anasayfa
+              </Link>
+              <span className="mx-2">/</span>
+              <span className="text-beyaz font-medium">Biletler</span>
+            </nav>
+            <h1 className="font-display mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Biletler</h1>
+          </div>
+        </div>
+        <TicketsUnavailableNotice variant="page" />
+      </div>
+    );
+  }
+
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   const isGuest = !user;
 
   const today = new Date().toISOString().slice(0, 10);
@@ -44,13 +71,16 @@ export default async function BiletlerPage() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(139,21,56,0.4),transparent)]" />
         <div className="relative mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
           <nav className="text-sm text-beyaz/70">
-            <Link href="/" className="inline-flex min-h-[44px] items-center hover:text-beyaz transition-colors">Anasayfa</Link>
+            <Link href="/" className="inline-flex min-h-[44px] items-center hover:text-beyaz transition-colors">
+              Anasayfa
+            </Link>
             <span className="mx-2">/</span>
             <span className="text-beyaz font-medium">Biletler</span>
           </nav>
           <h1 className="font-display mt-4 text-3xl font-bold tracking-tight sm:text-4xl">Biletler</h1>
           <p className="mt-2 max-w-xl text-beyaz/80">
-            Maç biletleri için bir maç seçip koltuk seçin; etkinlik biletleri için listeden <strong>Ücretsiz Bilet Al</strong> ile alın.
+            Maç biletleri için bir maç seçip koltuk seçin; etkinlik biletleri için listeden{" "}
+            <strong>Ücretsiz Bilet Al</strong> ile alın.
           </p>
         </div>
       </div>
@@ -64,7 +94,7 @@ export default async function BiletlerPage() {
 
         <section>
           <h2 className="text-xl font-bold text-siyah mb-4">Maç Biletleri</h2>
-          {(!matches || matches.length === 0) ? (
+          {!matches || matches.length === 0 ? (
             <div className="rounded-2xl border-2 border-dashed border-siyah/20 bg-beyaz/80 p-12 text-center text-siyah/60 shadow-inner">
               <p className="font-medium">Şu an satışa sunulan maç bulunmuyor.</p>
               <p className="mt-1 text-sm">Yakında yeni maçlar eklenecektir.</p>
@@ -80,7 +110,9 @@ export default async function BiletlerPage() {
             <div className="rounded-2xl border-2 border-dashed border-siyah/20 bg-beyaz/80 p-12 text-center text-siyah/60 shadow-inner">
               <p className="font-medium">Şu an biletli etkinlik bulunmuyor.</p>
               <p className="mt-1 text-sm">Etkinlikler sayfasından biletli etkinlikleri takip edebilirsiniz.</p>
-              <Link href="/haberler" className="mt-3 inline-block text-sm font-medium text-bordo hover:underline">Etkinlikler →</Link>
+              <Link href="/haberler" className="mt-3 inline-block text-sm font-medium text-bordo hover:underline">
+                Etkinlikler →
+              </Link>
             </div>
           ) : (
             <EtkinlikKartlari events={ticketedEvents} isGuest={isGuest} />
