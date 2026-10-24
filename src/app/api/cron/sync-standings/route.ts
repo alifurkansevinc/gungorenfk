@@ -18,6 +18,18 @@ function authorized(request: Request): boolean {
   return urlSecret === secret;
 }
 
+async function readPostedHtml(request: Request): Promise<string | null> {
+  const contentType = request.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) return null;
+  try {
+    const body = (await request.json()) as { html?: unknown };
+    if (typeof body.html === "string" && body.html.length > 1000) return body.html;
+  } catch {
+    return null;
+  }
+  return null;
+}
+
 async function saveSeason(
   supabase: ReturnType<typeof createClient<any>>,
   parsed: ParsedStandings,
@@ -45,6 +57,15 @@ async function saveSeason(
   return { season: parsed.season, league_name: parsed.league_name, count: toUpsert.length };
 }
 
+async function ingestHtml(
+  supabase: ReturnType<typeof createClient<any>>,
+  html: string,
+): Promise<{ season: string; league_name: string; count: number } | { error: string; season: string }> {
+  const parsed = parseStandingsFromHtml(html);
+  if (!parsed) return { error: "Could not parse standings", season: "?" };
+  return saveSeason(supabase, parsed);
+}
+
 /** Güncel ve geçmiş sezonların puan durumunu Mackolik’ten yazar. Maçlara dokunmaz. */
 async function syncStandings(request: Request) {
   if (!authorized(request)) {
@@ -65,6 +86,16 @@ async function syncStandings(request: Request) {
     .eq("competition", "Süper Lig")
     .select("id");
   if (!competitionErr) competitionFixed = fixedRows?.length ?? 0;
+
+  const postedHtml = await readPostedHtml(request);
+  if (postedHtml) {
+    const result = await ingestHtml(supabase, postedHtml);
+    if ("error" in result) {
+      return NextResponse.json({ ok: false, ...result }, { status: 200 });
+    }
+    return NextResponse.json({ ok: true, saved: [result], failed: [], competitionFixed });
+  }
+
   const { data: setting } = await supabase
     .from("site_settings")
     .select("value")
