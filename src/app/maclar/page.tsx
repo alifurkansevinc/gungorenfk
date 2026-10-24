@@ -230,7 +230,7 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
               </div>
             )}
             <p className="mt-2 text-[10px] sm:text-xs text-siyah/50">
-              Kaynak: Mackolik. Güncel sezon ve geçmiş sezonlar günde bir kez güncellenir.
+              Kaynak: Mackolik. Güncel sezon ve geçmiş sezonlar her gün 17:00’de güncellenir.
             </p>
           </section>
         )}

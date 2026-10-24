@@ -43,7 +43,7 @@ export function MackolikLinkForm({ initialUrl }: { initialUrl: string | null }) 
           />
         </div>
         <p className="mt-1 text-xs text-siyah/60">
-          Takımın puan durumu sayfası. Güncel sezon ve listedeki geçmiş sezonlar bu linkten günde bir kez yazılır. Maçlar
+          Takımın puan durumu sayfası. Güncel sezon ve geçmiş sezonlar her gün 17:00’de (Türkiye) Mackolik’ten yazılır. Maçlar
           Optaport’tan gelir.
         </p>
       </div>
