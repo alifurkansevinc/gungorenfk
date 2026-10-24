@@ -229,9 +229,6 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
                 Veritabanında bu sezon için puan satırı yok. Farklı sezon seçin veya cron senkronunu kontrol edin.
               </div>
             )}
-            <p className="mt-2 text-[10px] sm:text-xs text-siyah/50">
-              Kaynak: Mackolik. Güncel sezon ve geçmiş sezonlar her gün 17:00’de güncellenir.
-            </p>
           </section>
         )}
 
