@@ -20,8 +20,8 @@ function EventIcon({ tone }: { tone: string }) {
   return null;
 }
 
-function eventText(row: MatchEventDisplay): string {
-  if (row.tone === "opponent_goal") return "Gol";
+function eventText(row: MatchEventDisplay, opponentLabel = "Gol"): string {
+  if (row.tone === "opponent_goal") return opponentLabel;
   if (row.tone === "goal") return row.detail.split(" · ")[0] || "Gol";
   if (row.tone === "substitution" && row.substitutionIn && row.substitutionOut) {
     return `${row.substitutionIn} ↔ ${row.substitutionOut}`;
@@ -29,9 +29,17 @@ function eventText(row: MatchEventDisplay): string {
   return row.detail || row.label;
 }
 
-function EventLine({ row, align }: { row: MatchEventDisplay; align: "left" | "right" }) {
+function EventLine({
+  row,
+  align,
+  opponentLabel,
+}: {
+  row: MatchEventDisplay;
+  align: "left" | "right";
+  opponentLabel?: string;
+}) {
   const minute = row.minute != null ? `${row.minute}'` : "—";
-  const text = eventText(row);
+  const text = eventText(row, opponentLabel);
   const title = `${minute} ${row.label}${row.detail ? ` — ${row.detail}` : ""}`;
   const minuteEl = <span className="w-7 shrink-0 tabular-nums text-siyah/40">{minute}</span>;
   const nameEl = <span className="min-w-0 font-medium text-siyah/80">{text}</span>;
@@ -73,7 +81,7 @@ function EventColumn({ rows, align }: { rows: MatchEventDisplay[]; align: "left"
   );
 }
 
-/** Fikstür satırı — olaylar ilgili takımın altında, dakika sırasıyla. */
+/** Fikstür satırı — geniş ekranda takımların altında, dar ekranda dakika sırasıyla tek satır. */
 export function MatchEventsChips({
   events,
   homeAway,
@@ -92,10 +100,17 @@ export function MatchEventsChips({
   const right = weAreHome ? theirs : ours;
 
   return (
-    <div className="mt-3 grid w-full max-w-3xl grid-cols-[minmax(0,1fr)_5rem_minmax(0,1fr)] items-start gap-x-4">
-      <EventColumn rows={left} align="left" />
-      <div />
-      <EventColumn rows={right} align="right" />
-    </div>
+    <>
+      <ul className="mt-3 w-full max-w-3xl space-y-1 sm:hidden">
+        {rows.map((row) => (
+          <EventLine key={row.id} row={row} align="left" opponentLabel="Rakip gol" />
+        ))}
+      </ul>
+      <div className="mt-3 hidden w-full max-w-3xl grid-cols-[minmax(0,1fr)_5rem_minmax(0,1fr)] items-start gap-x-4 sm:grid">
+        <EventColumn rows={left} align="left" />
+        <div />
+        <EventColumn rows={right} align="right" />
+      </div>
+    </>
   );
 }
