@@ -26,9 +26,8 @@
   --font-mono: ui-monospace, monospace;
 }
 
-html {
-  overflow-x: hidden;
-}
+/* overflow-x html/body'de olmamalı — sticky header bozulur.
+   Yatay taşma main'de kesilir (layout.tsx). */
 
 body {
   background: var(--background);
@@ -36,7 +35,6 @@ body {
   font-family: var(--font-body), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  overflow-x: hidden;
 }
 
 /* Mobil: ana butonlar ve menü linkleri dokunmatik için yeterli yükseklik (py-3+ kullan) */
