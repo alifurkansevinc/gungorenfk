@@ -4,6 +4,7 @@ import { AnadoluTemsilcisi } from "@/components/AnadoluTemsilcisi";
 import { TaraftarBarStrip } from "@/components/TaraftarBarStrip";
 import { MatchMotmHomeBanner } from "@/components/MatchMotmHomeBanner";
 import { MotmLotteryHomeBanner } from "@/components/MotmLotteryHomeBanner";
+import { WeekPlayerShowcase } from "@/components/WeekPlayerShowcase";
 import { JobApplicationHomeSection } from "@/components/JobApplicationHomeSection";
 import { FadeInSection } from "@/components/FadeInSection";
 import { NextMatchCard } from "@/components/NextMatchCard";
@@ -100,6 +101,8 @@ export default async function Home() {
       <TaraftarBarStrip />
 
       <MatchMotmHomeBanner />
+
+      <WeekPlayerShowcase />
 
       <MotmLotteryHomeBanner />
 

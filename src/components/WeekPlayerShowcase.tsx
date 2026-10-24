@@ -2,9 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { DEMO_IMAGES } from "@/lib/demo-images";
-import { sortSeasonLabelsDesc } from "@/lib/seasons";
+import { sortSeasonLabelsDesc, toCanonicalSeasonKey } from "@/lib/seasons";
 
-export async function WeekPlayerShowcase() {
+export async function WeekPlayerShowcase({ fixtureHref = "/maclar#fikstur" }: { fixtureHref?: string }) {
   const supabase = await createClient();
   const { data: awards } = await supabase
     .from("week_player_awards")
@@ -26,7 +26,9 @@ export async function WeekPlayerShowcase() {
 
   const seasons = sortSeasonLabelsDesc(awards.map((a) => (a as { season: string }).season));
   const wallSeason = seasons[0]!;
-  const wallAwards = awards.filter((r) => (r as { season: string }).season === wallSeason).slice(0, 12);
+  const wallAwards = awards
+    .filter((r) => toCanonicalSeasonKey((r as { season: string }).season) === wallSeason)
+    .slice(0, 12);
 
   const squadIds = [...new Set(wallAwards.map((a) => (a as { squad_id: string }).squad_id))];
   const { data: squadRows } = await supabase
@@ -45,7 +47,7 @@ export async function WeekPlayerShowcase() {
             <h2 className="mt-0.5 font-display text-base font-bold text-white sm:text-lg">Haftanın oyuncuları</h2>
             <p className="mt-0.5 text-[11px] text-zinc-500">{wallSeason} sezonu</p>
           </div>
-          <Link href="#fikstur" className="text-[11px] font-semibold text-bordo hover:text-bordo/90">
+          <Link href={fixtureHref} className="text-[11px] font-semibold text-bordo hover:text-bordo/90">
             Fikstür →
           </Link>
         </div>

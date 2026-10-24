@@ -236,7 +236,7 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
         )}
 
         <div className="mb-14 -mx-4 max-w-none sm:-mx-6 lg:-mx-8">
-          <WeekPlayerShowcase />
+          <WeekPlayerShowcase fixtureHref="#fikstur" />
         </div>
 
         {/* Fikstür ve sonuçlar — Optaport senkronu */}
