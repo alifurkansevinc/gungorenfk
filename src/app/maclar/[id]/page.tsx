@@ -6,7 +6,7 @@ import { notFound } from "next/navigation";
 import { DEMO_IMAGES } from "@/lib/demo-images";
 import { MatchPageRefresh } from "@/components/MatchPageRefresh";
 import { MatchEventsTimeline } from "@/components/MatchEventsTimeline";
-import { getEffectiveMatchStatus } from "@/lib/match-schedule";
+import { getEffectiveMatchStatus, isMatchLineupPublic } from "@/lib/match-schedule";
 
 export const dynamic = "force-dynamic";
 
@@ -71,13 +71,18 @@ export default async function MacDetayPage({ params }: { params: Promise<{ id: s
     status: match.status,
   });
 
-  const showLineup = effectiveStatus === "live" || match.status === "finished";
+  const showLineup = isMatchLineupPublic({
+    match_date: match.match_date,
+    match_time: match.match_time ?? null,
+    status: match.status,
+  });
   const [lineup, events] = await Promise.all([
     showLineup ? getMatchLineupForMatch(id) : Promise.resolve({ starters: [], substitutes: [] }),
     getMatchEventsForMatch(id),
   ]);
   const refreshEnabled =
-    !id.startsWith("demo-") && (effectiveStatus === "live" || match.status === "scheduled");
+    !id.startsWith("demo-") &&
+    (effectiveStatus === "live" || match.status === "scheduled" || showLineup);
 
   const statusLabel =
     match.status === "finished"
@@ -178,7 +183,7 @@ export default async function MacDetayPage({ params }: { params: Promise<{ id: s
           <MatchEventsTimeline events={events} />
         )}
 
-        {/* Kadro — yalnız canlı veya bitmiş; sol ilk 11, sağ yedek; forma numarasına göre */}
+        {/* Kadro — kickoff’tan 15 dk önce / canlı / bitmiş; sol ilk 11, sağ yedek */}
         {showLineup && (lineup.starters.length > 0 || lineup.substitutes.length > 0) && (
           <div className="mt-10 rounded-2xl border border-siyah/10 bg-beyaz p-5 shadow-sm sm:p-6">
             <h2 className="text-sm font-semibold uppercase tracking-wider text-siyah/60">Maç kadrosu</h2>

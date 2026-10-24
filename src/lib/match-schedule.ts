@@ -8,6 +8,8 @@ import { createServiceRoleClient } from "@/lib/supabase/service";
 const TR_TZ_SUFFIX = "+03:00";
 /** Maç günü + uzatma (normal süre, uzatmalar); canlı sayım ve otomatik bitiş için. */
 const LIVE_DURATION_MS = 4 * 60 * 60 * 1000;
+/** İlk 11 + yedeklerin sitede yayınlanabileceği süre: kickoff’tan bu kadar önce. */
+export const LINEUP_PUBLIC_BEFORE_KICKOFF_MS = 15 * 60 * 1000;
 
 /** Takvim günü (YYYY-MM-DD) İstanbul saatiyle — maç tarihi karşılaştırmaları için. */
 export function calendarDateTr(d = new Date()): string {
@@ -69,6 +71,22 @@ export function getEffectiveMatchStatus(
   if (s === "live") return "live";
   if (s === "scheduled" && isWithinLivePlayWindow(row.match_date, row.match_time, nowMs)) return "live";
   return s;
+}
+
+/**
+ * Maç kadrosu (ilk 11 + yedek) sitede gösterilsin mi?
+ * Canlı / bitmiş maçlarda her zaman; programdaki maçlarda kickoff’tan 15 dk önce.
+ */
+export function isMatchLineupPublic(
+  row: { match_date: string; match_time: string | null | undefined; status: string },
+  nowMs: number = Date.now(),
+): boolean {
+  const status = getEffectiveMatchStatus(row, nowMs);
+  if (status === "live" || status === "finished" || row.status === "finished") return true;
+  if (status === "postponed" || status === "cancelled") return false;
+  const kick = getMatchKickoffMs(row.match_date, row.match_time);
+  if (kick == null) return false;
+  return nowMs >= kick - LINEUP_PUBLIC_BEFORE_KICKOFF_MS;
 }
 
 /**
