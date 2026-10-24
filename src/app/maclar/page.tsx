@@ -335,7 +335,7 @@ export default async function MaclarPage({ searchParams }: { searchParams: Promi
                       <span className={`min-w-0 truncate text-right text-sm sm:max-w-[180px] ${teamAway === "Güngören FK" ? "font-extrabold text-siyah" : "font-medium text-siyah"}`}>{teamAway}</span>
                     </Link>
                     {(isFinishedDb || isLiveDb) && (eventsByMatch[m.id]?.length ?? 0) > 0 && (
-                      <MatchEventsChips events={eventsByMatch[m.id]!} max={5} />
+                      <MatchEventsChips events={eventsByMatch[m.id]!} homeAway={m.home_away} />
                     )}
                     <span
                       className={`mt-2 inline-flex items-center justify-center gap-1 text-[11px] font-medium ${

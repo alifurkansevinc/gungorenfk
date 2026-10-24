@@ -1,84 +1,101 @@
 import { ArrowLeftRight, Square, Target } from "lucide-react";
-import { buildMatchEventDisplays, type MatchEventRow } from "@/lib/match-events";
+import { buildMatchEventDisplays, type MatchEventDisplay, type MatchEventRow } from "@/lib/match-events";
 
-function ChipIcon({ tone }: { tone: string }) {
-  if (tone === "goal" || tone === "opponent_goal") {
-    return <Target className="h-3 w-3" strokeWidth={2.5} aria-hidden />;
+function EventIcon({ tone }: { tone: string }) {
+  if (tone === "goal") {
+    return <Target className="h-3 w-3 shrink-0 text-bordo" strokeWidth={2.5} aria-hidden />;
+  }
+  if (tone === "opponent_goal") {
+    return <Target className="h-3 w-3 shrink-0 text-siyah/45" strokeWidth={2.5} aria-hidden />;
   }
   if (tone === "red_card") {
-    return <Square className="h-2.5 w-2.5 fill-red-600 stroke-red-600" aria-hidden />;
+    return <Square className="h-2.5 w-2.5 shrink-0 fill-red-600 stroke-red-600" aria-hidden />;
   }
   if (tone === "yellow_card") {
-    return <Square className="h-2.5 w-2.5 fill-amber-400 stroke-amber-500" aria-hidden />;
+    return <Square className="h-2.5 w-2.5 shrink-0 fill-amber-400 stroke-amber-500" aria-hidden />;
   }
   if (tone === "substitution" || tone === "sub_in" || tone === "sub_out") {
-    return <ArrowLeftRight className="h-3 w-3" aria-hidden />;
+    return <ArrowLeftRight className="h-3 w-3 shrink-0 text-siyah/45" aria-hidden />;
   }
   return null;
 }
 
-function chipClass(tone: string): string {
-  switch (tone) {
-    case "goal":
-      return "border-bordo/20 bg-bordo/8 text-bordo";
-    case "opponent_goal":
-      return "border-siyah/12 bg-siyah/[0.04] text-siyah/65";
-    case "red_card":
-      return "border-red-200 bg-red-50 text-red-700";
-    case "yellow_card":
-      return "border-amber-200 bg-amber-50 text-amber-800";
-    case "substitution":
-    case "sub_in":
-    case "sub_out":
-      return "border-siyah/10 bg-white text-siyah/60";
-    case "injury":
-      return "border-rose-200 bg-rose-50 text-rose-700";
-    default:
-      return "border-siyah/10 bg-white text-siyah/60";
+function eventText(row: MatchEventDisplay): string {
+  if (row.tone === "opponent_goal") return "Gol";
+  if (row.tone === "goal") return row.detail.split(" · ")[0] || "Gol";
+  if (row.tone === "substitution" && row.substitutionIn && row.substitutionOut) {
+    return `${row.substitutionIn} ↔ ${row.substitutionOut}`;
   }
+  return row.detail || row.label;
 }
 
-/** Fikstür satırı — kompakt olay çipleri */
+function EventLine({ row, align }: { row: MatchEventDisplay; align: "left" | "right" }) {
+  const minute = row.minute != null ? `${row.minute}'` : "—";
+  const text = eventText(row);
+  const title = `${minute} ${row.label}${row.detail ? ` — ${row.detail}` : ""}`;
+  const minuteEl = <span className="w-7 shrink-0 tabular-nums text-siyah/40">{minute}</span>;
+  const nameEl = <span className="min-w-0 font-medium text-siyah/80">{text}</span>;
+
+  return (
+    <li
+      title={title}
+      className={`flex items-start gap-1.5 text-[11px] leading-snug ${align === "right" ? "justify-end text-right" : "text-left"}`}
+    >
+      {align === "left" ? (
+        <>
+          {minuteEl}
+          <span className="mt-0.5">
+            <EventIcon tone={row.tone} />
+          </span>
+          {nameEl}
+        </>
+      ) : (
+        <>
+          {nameEl}
+          <span className="mt-0.5">
+            <EventIcon tone={row.tone} />
+          </span>
+          {minuteEl}
+        </>
+      )}
+    </li>
+  );
+}
+
+function EventColumn({ rows, align }: { rows: MatchEventDisplay[]; align: "left" | "right" }) {
+  if (rows.length === 0) return <div />;
+  return (
+    <ul className="min-w-0 space-y-1">
+      {rows.map((row) => (
+        <EventLine key={row.id} row={row} align={align} />
+      ))}
+    </ul>
+  );
+}
+
+/** Fikstür satırı — olaylar ilgili takımın altında, dakika sırasıyla. */
 export function MatchEventsChips({
   events,
-  max = 6,
+  homeAway,
 }: {
   events: MatchEventRow[];
-  max?: number;
+  homeAway: "home" | "away" | string | null;
 }) {
   if (!events?.length) return null;
   const rows = buildMatchEventDisplays(events);
   if (rows.length === 0) return null;
 
-  const shown = rows.slice(0, max);
-  const rest = rows.length - shown.length;
+  const ours = rows.filter((row) => row.tone !== "opponent_goal");
+  const theirs = rows.filter((row) => row.tone === "opponent_goal");
+  const weAreHome = homeAway !== "away";
+  const left = weAreHome ? ours : theirs;
+  const right = weAreHome ? theirs : ours;
 
   return (
-    <div className="mt-2.5 flex max-w-xl flex-wrap items-center justify-center gap-1.5">
-      {shown.map((row) => {
-        const shortDetail =
-          row.tone === "goal" || row.tone === "opponent_goal" || row.tone === "red_card" || row.tone === "yellow_card"
-            ? row.detail.split(" · ")[0]
-            : row.tone === "substitution"
-              ? row.substitutionIn || row.detail
-              : row.detail;
-        return (
-          <span
-            key={row.id}
-            title={`${row.minute != null ? `${row.minute}' ` : ""}${row.label}${row.detail ? ` — ${row.detail}` : ""}`}
-            className={`inline-flex max-w-[11rem] items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold ${chipClass(row.tone)}`}
-          >
-            <span className="tabular-nums opacity-70">{row.minute != null ? `${row.minute}'` : "—"}</span>
-            <ChipIcon tone={row.tone} />
-            <span className="truncate">{shortDetail || row.label}</span>
-          </span>
-        );
-      })}
-      {rest > 0 && (
-        <span className="rounded-full border border-siyah/10 bg-siyah/[0.03] px-2 py-0.5 text-[10px] font-semibold text-siyah/45">
-          +{rest}
-        </span>
-      )}
+    <div className="mt-3 grid w-full max-w-xl grid-cols-[1fr_5rem_1fr] items-start gap-x-4">
+      <EventColumn rows={left} align="left" />
+      <div />
+      <EventColumn rows={right} align="right" />
     </div>
   );
 }
