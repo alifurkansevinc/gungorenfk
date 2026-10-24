@@ -20,10 +20,19 @@ type NextMatch = {
   goals_against?: number | null;
 } | null;
 
-export function NextMatchCard({ match }: { match: NextMatch }) {
+export function NextMatchCard({
+  match,
+  variant = "page",
+}: {
+  match: NextMatch;
+  /** `hero`: anasayfa hero alanı — alt boşluk yok, daha dolu padding */
+  variant?: "page" | "hero";
+}) {
+  const sectionClass = variant === "hero" ? "" : "mb-14";
+
   if (!match) {
     return (
-      <section className="mb-14">
+      <section className={sectionClass}>
         <div className="relative overflow-hidden rounded-3xl border-2 border-siyah/10 bg-gradient-to-br from-siyah/5 to-siyah/10 px-8 py-12 text-center">
           <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-20%,rgba(139,21,56,0.15),transparent)]" />
           <p className="relative text-siyah/60">Bu sezonu şampiyon tamamladık, Temmuz ayında hazırlık maçlarıyla sezonu açacağız.</p>
@@ -58,9 +67,16 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
   });
   const timeStr = match.match_time?.trim() || "";
 
+  const padClass =
+    variant === "hero" ? "px-6 py-12 sm:px-10 sm:py-16 md:py-20" : "px-6 py-10 sm:px-10 sm:py-14";
+
   return (
-    <section className="mb-14">
-      <div className="group relative overflow-hidden rounded-3xl bg-siyah shadow-2xl">
+    <section className={sectionClass}>
+      <div
+        className={`group relative overflow-hidden bg-siyah shadow-2xl ${
+          variant === "hero" ? "rounded-none sm:rounded-3xl" : "rounded-3xl"
+        }`}
+      >
         <div className="absolute inset-0 bg-gradient-to-br from-bordo/90 via-siyah to-siyah" />
         <div
           className="absolute inset-0 opacity-[0.07]"
@@ -70,7 +86,7 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
         />
         <div className="absolute inset-0 bg-gradient-to-t from-siyah/80 via-transparent to-bordo/20" />
 
-        <div className="relative z-10 px-6 py-10 sm:px-10 sm:py-14">
+        <div className={`relative z-10 ${padClass}`}>
           <p className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-beyaz/70">
             {normalizeSiteCompetition(match.competition) || "Maç"}
           </p>
@@ -193,8 +209,16 @@ export function NextMatchCard({ match }: { match: NextMatch }) {
                   Bilet al
                 </Link>
               )}
+              {variant === "hero" && (
+                <Link
+                  href="/maclar"
+                  className="inline-flex items-center gap-2 rounded-xl border-2 border-beyaz/50 px-6 py-3 font-bold text-beyaz transition-all hover:bg-beyaz/10"
+                >
+                  Sıralama & Maçlar
+                </Link>
+              )}
             </div>
-            {!TICKETS_PUBLIC_ENABLED && (
+            {!TICKETS_PUBLIC_ENABLED && variant !== "hero" && (
               <p className="max-w-md text-center text-sm text-beyaz/80">{TICKETS_UNAVAILABLE_MESSAGE}</p>
             )}
           </div>
