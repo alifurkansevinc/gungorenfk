@@ -92,7 +92,7 @@ export function MatchEventsChips({
   const right = weAreHome ? theirs : ours;
 
   return (
-    <div className="mt-3 grid w-full max-w-xl grid-cols-[1fr_5rem_1fr] items-start gap-x-4">
+    <div className="mt-3 grid w-full max-w-3xl grid-cols-[minmax(0,1fr)_5rem_minmax(0,1fr)] items-start gap-x-4">
       <EventColumn rows={left} align="left" />
       <div />
       <EventColumn rows={right} align="right" />
