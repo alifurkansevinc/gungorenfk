@@ -47,7 +47,10 @@ function isOpponentGoal(e: MatchEventRow): boolean {
 }
 
 /** Ham olayları gösterim satırlarına çevir (gol+asist, değişiklik çiftleri). */
-export function buildMatchEventDisplays(events: MatchEventRow[]): MatchEventDisplay[] {
+export function buildMatchEventDisplays(
+  events: MatchEventRow[],
+  options?: { separateAssists?: boolean },
+): MatchEventDisplay[] {
   const sorted = [...events].sort((a, b) => {
     const am = a.minute ?? 999;
     const bm = b.minute ?? 999;
@@ -84,14 +87,16 @@ export function buildMatchEventDisplays(events: MatchEventRow[]): MatchEventDisp
             (!!e.player_name && a.meta?.goal_player_name === e.player_name)),
       );
       const assistName = e.related_player_name || assist?.player_name || null;
-      if (assist) used.add(assist.id);
+      const separateAssists = options?.separateAssists === true;
+      if (assist && !separateAssists) used.add(assist.id);
       used.add(e.id);
       const scorer = e.player_name || "—";
+      const assistOnGoal = assistName && !(separateAssists && assist);
       rows.push({
         id: e.id,
         minute: e.minute,
         label: "Gol",
-        detail: assistName ? `${scorer} · Asist: ${assistName}` : scorer,
+        detail: assistOnGoal ? `${scorer} · Asist: ${assistName}` : scorer,
         tone: "goal",
         isPrimary: true,
       });

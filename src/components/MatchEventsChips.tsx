@@ -22,7 +22,11 @@ function EventIcon({ tone }: { tone: string }) {
 
 function eventText(row: MatchEventDisplay, opponentLabel = "Gol"): string {
   if (row.tone === "opponent_goal") return opponentLabel;
-  if (row.tone === "goal") return row.detail.split(" · ")[0] || "Gol";
+  if (row.tone === "goal") {
+    const [scorer, assist] = row.detail.split(" · Asist: ");
+    if (assist) return `${scorer} · asist ${assist}`;
+    return scorer || "Gol";
+  }
   if (row.tone === "substitution" && row.substitutionIn && row.substitutionOut) {
     return `${row.substitutionIn} ↔ ${row.substitutionOut}`;
   }

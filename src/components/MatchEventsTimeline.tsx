@@ -18,6 +18,9 @@ function ToneIcon({ tone }: { tone: string }) {
   if (tone === "goal" || tone === "opponent_goal") {
     return <Target className="h-3.5 w-3.5" strokeWidth={2.25} aria-hidden />;
   }
+  if (tone === "assist") {
+    return <span className="text-[10px] font-black leading-none">A</span>;
+  }
   if (tone === "red_card") {
     return <Square className="h-3 w-3 fill-red-600 stroke-red-600" aria-hidden />;
   }
@@ -98,49 +101,29 @@ function EventItem({ row, emphasize }: { row: MatchEventDisplay; emphasize?: boo
   );
 }
 
-/** Maç detay — dakika dakika olay zaman çizelgesi */
+const DETAIL_TONES = new Set(["goal", "assist", "red_card", "opponent_goal"]);
+
+/** Maç detay — gol, asist ve kırmızı kart. */
 export function MatchEventsTimeline({ events }: { events: MatchEventRow[] }) {
   if (!events.length) return null;
 
-  const all = buildMatchEventDisplays(events);
-  if (all.length === 0) return null;
-  const primary = all.filter((r) => r.isPrimary);
-  const secondary = all.filter((r) => !r.isPrimary);
+  const rows = buildMatchEventDisplays(events, { separateAssists: true }).filter((row) =>
+    DETAIL_TONES.has(row.tone),
+  );
+  if (rows.length === 0) return null;
 
   return (
     <section className="mt-10 overflow-hidden rounded-2xl border border-siyah/10 bg-beyaz shadow-sm">
       <div className="border-b border-siyah/8 bg-gradient-to-r from-bordo/[0.06] via-transparent to-transparent px-5 py-4 sm:px-6">
         <h2 className="text-sm font-semibold uppercase tracking-wider text-siyah/60">Maç olayları</h2>
-        <p className="mt-1 text-xs text-siyah/45">Dakika dakika — Optaport kaydı</p>
+        <p className="mt-1 text-xs text-siyah/45">Gol, asist ve kırmızı kart</p>
       </div>
 
-      <div className="grid gap-0 md:grid-cols-2">
-        <div className="px-5 py-5 sm:px-6">
-          <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.18em] text-bordo/80">Skor & kritik</p>
-          {primary.length === 0 ? (
-            <p className="text-sm text-siyah/45">Gol veya kritik olay yok.</p>
-          ) : (
-            <ol className="space-y-4">
-              {primary.map((row) => (
-                <EventItem key={row.id} row={row} emphasize />
-              ))}
-            </ol>
-          )}
-        </div>
-
-        <div className="border-t border-siyah/8 bg-siyah/[0.015] px-5 py-5 md:border-l md:border-t-0 sm:px-6">
-          <p className="mb-4 text-[10px] font-bold uppercase tracking-[0.18em] text-siyah/40">Kart & değişiklik</p>
-          {secondary.length === 0 ? (
-            <p className="text-sm text-siyah/45">Kart veya değişiklik kaydı yok.</p>
-          ) : (
-            <ol className="space-y-4">
-              {secondary.map((row) => (
-                <EventItem key={row.id} row={row} />
-              ))}
-            </ol>
-          )}
-        </div>
-      </div>
+      <ol className="space-y-4 px-5 py-5 sm:px-6">
+        {rows.map((row) => (
+          <EventItem key={row.id} row={row} emphasize={row.tone === "goal" || row.tone === "assist" || row.tone === "red_card"} />
+        ))}
+      </ol>
     </section>
   );
 }
