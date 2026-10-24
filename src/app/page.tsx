@@ -38,7 +38,7 @@ export default async function Home() {
         <>
           {matchIsLive && <MatchPageRefresh enabled intervalMs={12_000} />}
           <section className="relative min-h-[70vh] flex items-center justify-center bg-siyah overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-b from-siyah via-siyah to-bordo/40" />
+            <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-siyah via-siyah to-bordo/40" />
             <div className="relative z-10 w-full mx-auto max-w-7xl px-0 sm:px-6 lg:px-8 py-6 sm:py-10">
               <NextMatchCard match={nextMatch} variant="hero" />
             </div>

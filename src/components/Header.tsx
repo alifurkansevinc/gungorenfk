@@ -37,7 +37,7 @@ export function Header() {
   const navLinks = [...NAV_BASE, benimKosemLink];
 
   return (
-    <header className="sticky top-0 z-50 bg-siyah pt-[env(safe-area-inset-top)]">
+    <header className="sticky top-0 z-50 isolate bg-siyah pt-[env(safe-area-inset-top)]">
       <div className="border-b border-beyaz/10">
         <div className="mx-auto flex h-10 max-w-7xl items-center justify-end gap-3 px-4 sm:h-9 sm:gap-4 sm:px-6 lg:px-8">
           {signedIn ? (

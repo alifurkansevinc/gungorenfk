@@ -91,11 +91,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="tr" className="scroll-smooth">
-      <body className={`${oswald.variable} ${outfit.variable} font-body antialiased min-h-screen flex flex-col bg-beyaz text-siyah overflow-x-hidden`}>
+      <body className={`${oswald.variable} ${outfit.variable} font-body antialiased min-h-screen flex flex-col bg-beyaz text-siyah`}>
         <CartProvider>
           <RecoveryRedirect />
           <Header />
-          <main className="flex-1">{children}</main>
+          {/* overflow-x burada: body'de olursa sticky header bozulur, üst menü kaybolur */}
+          <main className="flex-1 overflow-x-hidden">{children}</main>
           <Footer />
           <PwaInstallBanner />
         </CartProvider>
